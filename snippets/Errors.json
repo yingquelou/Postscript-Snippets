@@ -1,0 +1,136 @@
+{
+    "dictfull": {
+        "prefix": "dictfull",
+        "body": "dictfull",
+        "description": "returns:;remarks:"
+    },
+    "dictstackoverflow": {
+        "prefix": "dictstackoverflow",
+        "body": "dictstackoverflow",
+        "description": "returns:;remarks:"
+    },
+    "dictstackunderflow": {
+        "prefix": "dictstackunderflow",
+        "body": "dictstackunderflow",
+        "description": "returns:;remarks:"
+    },
+    "execstackoverflow": {
+        "prefix": "execstackoverflow",
+        "body": "execstackoverflow",
+        "description": "returns:;remarks:"
+    },
+    "handleerror": {
+        "prefix": "handleerror",
+        "body": "handleerror",
+        "description": "returns:;remarks:"
+    },
+    "interrupt": {
+        "prefix": "interrupt",
+        "body": "interrupt",
+        "description": "returns:;remarks:"
+    },
+    "invalidaccess": {
+        "prefix": "invalidaccess",
+        "body": "invalidaccess",
+        "description": "returns:;remarks:"
+    },
+    "invalidexit": {
+        "prefix": "invalidexit",
+        "body": "invalidexit",
+        "description": "returns:;remarks:"
+    },
+    "invalidfileaccess": {
+        "prefix": "invalidfileaccess",
+        "body": "invalidfileaccess",
+        "description": "returns:;remarks:"
+    },
+    "invalidfont": {
+        "prefix": "invalidfont",
+        "body": "invalidfont",
+        "description": "returns:;remarks:"
+    },
+    "invalidrestore": {
+        "prefix": "invalidrestore",
+        "body": "invalidrestore",
+        "description": "returns:;remarks:"
+    },
+    "ioerror": {
+        "prefix": "ioerror",
+        "body": "ioerror",
+        "description": "returns:;remarks:"
+    },
+    "limitcheck": {
+        "prefix": "limitcheck",
+        "body": "limitcheck",
+        "description": "returns:;remarks:"
+    },
+    "nocurrentpoint": {
+        "prefix": "nocurrentpoint",
+        "body": "nocurrentpoint",
+        "description": "returns:;remarks:"
+    },
+    "rangecheck": {
+        "prefix": "rangecheck",
+        "body": "rangecheck",
+        "description": "returns:;remarks:"
+    },
+    "stackoverflow": {
+        "prefix": "stackoverflow",
+        "body": "stackoverflow",
+        "description": "returns:;remarks:"
+    },
+    "stackunderflow": {
+        "prefix": "stackunderflow",
+        "body": "stackunderflow",
+        "description": "returns:;remarks:"
+    },
+    "syntaxerror": {
+        "prefix": "syntaxerror",
+        "body": "syntaxerror",
+        "description": "returns:;remarks:"
+    },
+    "timeout": {
+        "prefix": "timeout",
+        "body": "timeout",
+        "description": "returns:;remarks:"
+    },
+    "typecheck": {
+        "prefix": "typecheck",
+        "body": "typecheck",
+        "description": "returns:;remarks:"
+    },
+    "undefined": {
+        "prefix": "undefined",
+        "body": "undefined",
+        "description": "returns:;remarks:"
+    },
+    "undefinedfilename": {
+        "prefix": "undefinedfilename",
+        "body": "undefinedfilename",
+        "description": "returns:;remarks:"
+    },
+    "undefinedresult": {
+        "prefix": "undefinedresult",
+        "body": "undefinedresult",
+        "description": "returns:;remarks:"
+    },
+    "unmatchedmark": {
+        "prefix": "unmatchedmark",
+        "body": "unmatchedmark",
+        "description": "returns:;remarks:"
+    },
+    "unregistered": {
+        "prefix": "unregistered",
+        "body": "unregistered",
+        "description": "returns:;remarks:"
+    },
+    "VMerror": {
+        "prefix": "VMerror",
+        "body": "VMerror",
+        "description": "returns:;remarks:"
+    },
+    "Errors": {
+        "prefix": "commandForErrors",
+        "body": "${1|dictfull,dictstackoverflow,dictstackunderflow,execstackoverflow,handleerror,interrupt,invalidaccess,invalidexit,invalidfileaccess,invalidfont,invalidrestore,ioerror,limitcheck,nocurrentpoint,rangecheck,stackoverflow,stackunderflow,syntaxerror,timeout,typecheck,undefined,undefinedfilename,undefinedresult,unmatchedmark,unregistered,VMerror|}"
+    }
+}

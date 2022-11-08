@@ -1,0 +1,146 @@
+{
+    "newpath": {
+        "prefix": "newpath",
+        "body": "newpath",
+        "description": "returns:-;remarks:clears current path"
+    },
+    "currentpoint": {
+        "prefix": "currentpoint",
+        "body": "currentpoint",
+        "description": "returns:x y;remarks:returns current point"
+    },
+    "x y moveto": {
+        "prefix": "moveto",
+        "body": "${1:x} ${2:y} moveto",
+        "description": "returns:-;remarks:absolute move: changes current point"
+    },
+    "x y rmoveto": {
+        "prefix": "rmoveto",
+        "body": "${1:x} ${2:y} rmoveto",
+        "description": "returns:-;remarks:relative move: changes current point"
+    },
+    "x y lineto": {
+        "prefix": "lineto",
+        "body": "${1:x} ${2:y} lineto",
+        "description": "returns:-;remarks:puts line from current point to (x, y)"
+    },
+    "x y rlineto": {
+        "prefix": "rlineto",
+        "body": "${1:x} ${2:y} rlineto",
+        "description": "returns:-;remarks:line from current point to current point + (x, y)"
+    },
+    "centerx centery radius angle1 angle2 arc": {
+        "prefix": "arc",
+        "body": "${1:centerx} ${2:centery} ${3:radius} ${4:angle1} ${5:angle2} arc",
+        "description": "returns:-;remarks:counter-clockwise"
+    },
+    "centerx centery radius angle1 angle2 arcn": {
+        "prefix": "arcn",
+        "body": "${1:centerx} ${2:centery} ${3:radius} ${4:angle1} ${5:angle2} arcn",
+        "description": "returns:-;remarks:clockwise"
+    },
+    "arcto": {
+        "prefix": "arcto",
+        "body": "arcto",
+        "description": "returns:;remarks:"
+    },
+    "curveto": {
+        "prefix": "curveto",
+        "body": "curveto",
+        "description": "returns:;remarks:"
+    },
+    "rcurveto": {
+        "prefix": "rcurveto",
+        "body": "rcurveto",
+        "description": "returns:;remarks:"
+    },
+    "closepath": {
+        "prefix": "closepath",
+        "body": "closepath",
+        "description": "returns:-;remarks:closes the current path with a straight line to the last moveto location"
+    },
+    "flattenpath": {
+        "prefix": "flattenpath",
+        "body": "flattenpath",
+        "description": "returns:;remarks:"
+    },
+    "reversepath": {
+        "prefix": "reversepath",
+        "body": "reversepath",
+        "description": "returns:;remarks:"
+    },
+    "strokepath": {
+        "prefix": "strokepath",
+        "body": "strokepath",
+        "description": "returns:;remarks:"
+    },
+    "string bool charpath": {
+        "prefix": "charpath",
+        "body": "${1:string} ${2:bool} charpath",
+        "description": "returns:-;remarks:add character outlines of string to current path"
+    },
+    "clippath": {
+        "prefix": "clippath",
+        "body": "clippath",
+        "description": "returns:-;remarks:set current path to clipping path"
+    },
+    "pathbbox": {
+        "prefix": "pathbbox",
+        "body": "pathbbox",
+        "description": "returns:llx lly urx ury;remarks:returns bounding box of current path"
+    },
+    "move line curve close pathforall": {
+        "prefix": "pathforall",
+        "body": "${1:move} ${2:line} ${3:curve} ${4:close} pathforall",
+        "description": "returns:-;remarks:enumerate current path"
+    },
+    "- initclip": {
+        "prefix": "initclip",
+        "body": "${1:-} initclip",
+        "description": "returns:-;remarks:set clip path to device default"
+    },
+    "clip": {
+        "prefix": "clip",
+        "body": "clip",
+        "description": "returns:-;remarks:sets new clipping path"
+    },
+    "eoclip": {
+        "prefix": "eoclip",
+        "body": "eoclip",
+        "description": "returns:-;remarks:clip using even-odd rule"
+    },
+    "erasepage": {
+        "prefix": "erasepage",
+        "body": "erasepage",
+        "description": "returns:-;remarks:sets current page white"
+    },
+    "fill": {
+        "prefix": "fill",
+        "body": "fill",
+        "description": "returns:-;remarks:fills current path with current color"
+    },
+    "eofill": {
+        "prefix": "eofill",
+        "body": "eofill",
+        "description": "returns:-;remarks:fill using even-odd rule"
+    },
+    "stroke": {
+        "prefix": "stroke",
+        "body": "stroke",
+        "description": "returns:-;remarks:paints the current path with the current color and line width"
+    },
+    "width height bits/sample matrix proc image": {
+        "prefix": "image",
+        "body": "${1:width} ${2:height} ${3|bits,sample|} ${4:matrix} ${5:proc} image",
+        "description": "returns:-;remarks:render sampled image onto current page"
+    },
+    "width height invert matrix proc imagemask": {
+        "prefix": "imagemask",
+        "body": "${1:width} ${2:height} ${3:invert} ${4:matrix} ${5:proc} imagemask",
+        "description": "returns:-;remarks:renders mask onto current page"
+    },
+    "Paths": {
+        "prefix": "commandForPaths",
+        "body": "${1|initclip,arcto,arc,arcn,clip,clippath,closepath,currentpoint,curveto,eoclip,eofill,erasepage,fill,flattenpath,pathforall,newpath,pathbbox,rcurveto,reversepath,charpath,stroke,strokepath,image,imagemask,lineto,moveto,rlineto,rmoveto|}"
+    }
+}

@@ -1,0 +1,61 @@
+{
+    "num1 num2 exch": {
+        "prefix": "exch",
+        "body": "${1:num1} ${2:num2} exch",
+        "description": "returns:num2 num1;remarks:"
+    },
+    "any pop": {
+        "prefix": "pop",
+        "body": "${1:any} pop",
+        "description": "returns:-;remarks:"
+    },
+    "any[0] ... any[n-1] n copy": {
+        "prefix": "copy",
+        "body": "${1:any[0] ... any[n-1]} ${2:n} copy",
+        "description": "returns:any[0] ... any[n-1] any[0] ... any[n-1];remarks:copy has array, sequence, dictionary, string forms"
+    },
+    "any dup": {
+        "prefix": "dup",
+        "body": "${1:any} dup",
+        "description": "returns:any any;remarks:"
+    },
+    "any[n] ... any[0] n index": {
+        "prefix": "index",
+        "body": "${1:any[n] ... any[0]} ${2:n} index",
+        "description": "returns:any[n] ... any[0] any[n];remarks:"
+    },
+    "any[n-1] ... any[0] n j roll": {
+        "prefix": "roll",
+        "body": "${1:any[n-1] ... any[0]} ${2:n} ${3:j} roll",
+        "description": "returns:any[j-1 mod n] ... any[j mod n];remarks:rolls to right (left if j negative)"
+    },
+    "* any[1] ... any[n] clear": {
+        "prefix": "clear",
+        "body": "${1:* any[1] ... any[n]} clear",
+        "description": "returns:*;remarks:* means stack bottom"
+    },
+    "* any[1] ... any[n] count": {
+        "prefix": "count",
+        "body": "${1:* any[1] ... any[n]} count",
+        "description": "returns:* any[1] ... any[n] n;remarks:* means stack bottom"
+    },
+    "- mark": {
+        "prefix": "mark",
+        "body": "${1:-} mark",
+        "description": "returns:mark;remarks:"
+    },
+    "mark obj[1] ... obj[n] cleartomark": {
+        "prefix": "cleartomark",
+        "body": "${1:mark} ${2:obj[1] ... obj[n]} cleartomark",
+        "description": "returns:-;remarks:"
+    },
+    "mark obj[1] ... obj[n] countomark": {
+        "prefix": "countomark",
+        "body": "${1:mark} ${2:obj[1] ... obj[n]} countomark",
+        "description": "returns:mark obj[1] ... obj[n] n;remarks:"
+    },
+    "Stack manipulation": {
+        "prefix": "commandForStack manipulation",
+        "body": "${1|clear,count,mark,dup,pop,copy,roll,index,cleartomark,countomark,exch|}"
+    }
+}

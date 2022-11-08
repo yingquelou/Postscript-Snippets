@@ -1,0 +1,141 @@
+{
+    "string1 string2 file": {
+        "prefix": "file",
+        "body": "${1:string1} ${2:string2} file",
+        "description": "returns:file;remarks:opens file string1 with access string2"
+    },
+    "file closefile": {
+        "prefix": "closefile",
+        "body": "${1:file} closefile",
+        "description": "returns:-;remarks:"
+    },
+    "file read": {
+        "prefix": "read",
+        "body": "${1:file} read",
+        "description": "returns:int true OR false;remarks:reads one character from file"
+    },
+    "file int write": {
+        "prefix": "write",
+        "body": "${1:file} ${2:int} write",
+        "description": "returns:-;remarks:"
+    },
+    "file string readhexstring": {
+        "prefix": "readhexstring",
+        "body": "${1:file} ${2:string} readhexstring",
+        "description": "returns:substring bool;remarks:reads hex from file into string"
+    },
+    "file string writehexstring": {
+        "prefix": "writehexstring",
+        "body": "${1:file} ${2:string} writehexstring",
+        "description": "returns:-;remarks:writes characters of string to file as hex"
+    },
+    "file string readstring": {
+        "prefix": "readstring",
+        "body": "${1:file} ${2:string} readstring",
+        "description": "returns:substring bool;remarks:reads from file into string"
+    },
+    "file string writestring": {
+        "prefix": "writestring",
+        "body": "${1:file} ${2:string} writestring",
+        "description": "returns:-;remarks:writes characters of string to file"
+    },
+    "file string readline": {
+        "prefix": "readline",
+        "body": "${1:file} ${2:string} readline",
+        "description": "returns:substring bool;remarks:reads line from file into string"
+    },
+    "file token": {
+        "prefix": "token",
+        "body": "${1:file} token",
+        "description": "returns:token true OR false;remarks:reads token from file"
+    },
+    "file bytesavailable": {
+        "prefix": "bytesavailable",
+        "body": "${1:file} bytesavailable",
+        "description": "returns:int;remarks:number of bytes available to read"
+    },
+    "flush": {
+        "prefix": "flush",
+        "body": "flush",
+        "description": "returns:-;remarks:sends buffered data to standard output"
+    },
+    "file flushfile": {
+        "prefix": "flushfile",
+        "body": "${1:file} flushfile",
+        "description": "returns:-;remarks:sends buffered data to file"
+    },
+    "file resetfile": {
+        "prefix": "resetfile",
+        "body": "${1:file} resetfile",
+        "description": "returns:-;remarks:discard buffered characters"
+    },
+    "file status": {
+        "prefix": "status",
+        "body": "${1:file} status",
+        "description": "returns:bool;remarks:returns status of file"
+    },
+    "string run": {
+        "prefix": "run",
+        "body": "${1:string} run",
+        "description": "returns:-;remarks:executes contents of named file"
+    },
+    "currentfile": {
+        "prefix": "currentfile",
+        "body": "currentfile",
+        "description": "returns:file;remarks:"
+    },
+    "string print": {
+        "prefix": "print",
+        "body": "${1:string} print",
+        "description": "returns:-;remarks:writes characters of string to standard output"
+    },
+    "any =": {
+        "prefix": "=",
+        "body": "${1:any} =",
+        "description": "returns:=;remarks:writes text representation of any to stdout"
+    },
+    "* any[1] ... any[n] stack": {
+        "prefix": "stack",
+        "body": "${1:* any[1] ... any[n]} stack",
+        "description": "returns:* any[1] ... any[n];remarks:prints stack non-destructively"
+    },
+    "any ==": {
+        "prefix": "==",
+        "body": "${1:any} ==",
+        "description": "returns:-;remarks:destructive display of top of stack"
+    },
+    "* obj[1] ... obj[n] pstack": {
+        "prefix": "pstack",
+        "body": "${1:* obj[1] ... obj[n]} pstack",
+        "description": "returns:* obj[1] ... obj[n];remarks:non-destructive display of whole stack"
+    },
+    "prompt": {
+        "prefix": "prompt",
+        "body": "prompt",
+        "description": "returns:-;remarks:executed when ready for interactive input"
+    },
+    "bool echo": {
+        "prefix": "echo",
+        "body": "${1:bool} echo",
+        "description": "returns:-;remarks:turns on/off echoing"
+    },
+    "save": {
+        "prefix": "save",
+        "body": "save",
+        "description": "returns:save;remarks:create VM snapshot"
+    },
+    "save restore": {
+        "prefix": "restore",
+        "body": "${1:save} restore",
+        "description": "returns:-;remarks:restore VM snapshot"
+    },
+    "vmstatus": {
+        "prefix": "vmstatus",
+        "body": "vmstatus",
+        "description": "returns:level used maximum;remarks:report VM status"
+    },
+    "Files": {
+        "prefix": "commandForFiles",
+        "body": "${1|stack,pstack,=,==,echo,currentfile,bytesavailable,closefile,flushfile,write,read,resetfile,status,readhexstring,readline,readstring,writehexstring,writestring,token,flush,prompt,save,restore,print,run,file,vmstatus|}"
+    }
+}

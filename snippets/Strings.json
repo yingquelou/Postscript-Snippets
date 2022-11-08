@@ -1,0 +1,61 @@
+{
+    "int string": {
+        "prefix": "string",
+        "body": "${1:int} string",
+        "description": "returns:string;remarks:creates string of length int"
+    },
+    "string length": {
+        "prefix": "length",
+        "body": "${1:string} length",
+        "description": "returns:int;remarks:returns length of string"
+    },
+    "string index get": {
+        "prefix": "get",
+        "body": "${1:string} ${2:index} get",
+        "description": "returns:int;remarks:returns string[index]"
+    },
+    "string index int put": {
+        "prefix": "put",
+        "body": "${1:string} ${2:index} ${3:int} put",
+        "description": "returns:-;remarks:assigns string[index] = int"
+    },
+    "string index count getinterval": {
+        "prefix": "getinterval",
+        "body": "${1:string} ${2:index} ${3:count} getinterval",
+        "description": "returns:substring;remarks:returns {string[index] .. string[index + count - 1]}"
+    },
+    "string1 index string2 putinterval": {
+        "prefix": "putinterval",
+        "body": "${1:string1} ${2:index} ${3:string2} putinterval",
+        "description": "returns:-;remarks:replaces string1[index] ... by string2"
+    },
+    "string1 string2 copy": {
+        "prefix": "copy",
+        "body": "${1:string1} ${2:string2} copy",
+        "description": "returns:substring2;remarks:copies string1 to initial substring of string2"
+    },
+    "string proc forall": {
+        "prefix": "forall",
+        "body": "${1:string} ${2:proc} forall",
+        "description": "returns:-;remarks:executes proc for each element of string"
+    },
+    "string seek anchorsearch": {
+        "prefix": "anchorsearch",
+        "body": "${1:string} ${2:seek} anchorsearch",
+        "description": "returns:post match true OR string false;remarks:determines if seek is initial substring of string"
+    },
+    "string seek search": {
+        "prefix": "search",
+        "body": "${1:string} ${2:seek} search",
+        "description": "returns:post match true OR string false;remarks:determines if seek is substring of string"
+    },
+    "string token": {
+        "prefix": "token",
+        "body": "${1:string} token",
+        "description": "returns:post token true OR false;remarks:read token from start of string"
+    },
+    "Strings": {
+        "prefix": "commandForStrings",
+        "body": "${1|string,getinterval,get,put,length,forall,anchorsearch,search,token,putinterval,copy|}"
+    }
+}

@@ -1,0 +1,71 @@
+{
+    "any exec": {
+        "prefix": "exec",
+        "body": "${1:any} exec",
+        "description": "returns:-;remarks:executes arbitrary object"
+    },
+    "bool proc if": {
+        "prefix": "if",
+        "body": "${1:bool} ${2:proc} if",
+        "description": "returns:-;remarks:"
+    },
+    "bool proc1 proc2 ifelse": {
+        "prefix": "ifelse",
+        "body": "${1:bool} ${2:proc1} ${3:proc2} ifelse",
+        "description": "returns:-;remarks:"
+    },
+    "j k l proc for": {
+        "prefix": "for",
+        "body": "${1:j} ${2:k} ${3:l} ${4:proc} for",
+        "description": "returns:-;remarks:for i= j to l step k do proc"
+    },
+    "n proc repeat": {
+        "prefix": "repeat",
+        "body": "${1:n} ${2:proc} repeat",
+        "description": "returns:-;remarks:does proc n times"
+    },
+    "proc loop": {
+        "prefix": "loop",
+        "body": "${1:proc} loop",
+        "description": "returns:-;remarks:do proc forever (include exit)"
+    },
+    "exit": {
+        "prefix": "exit",
+        "body": "exit",
+        "description": "returns:-;remarks:exits innermost loop"
+    },
+    "stop": {
+        "prefix": "stop",
+        "body": "stop",
+        "description": "returns:-;remarks:terminates stopped context (?)"
+    },
+    "any stopped": {
+        "prefix": "stopped",
+        "body": "${1:any} stopped",
+        "description": "returns:bool;remarks:establish context for catching stop"
+    },
+    "countexecstack": {
+        "prefix": "countexecstack",
+        "body": "countexecstack",
+        "description": "returns:int;remarks:count elements on execution stack"
+    },
+    "array execstack": {
+        "prefix": "execstack",
+        "body": "${1:array} execstack",
+        "description": "returns:subarray;remarks:copy execstack into array"
+    },
+    "quit": {
+        "prefix": "quit",
+        "body": "quit",
+        "description": "returns:-;remarks:terminate interpreter"
+    },
+    "start": {
+        "prefix": "start",
+        "body": "start",
+        "description": "returns:-;remarks:executed automatically at interpreter startup"
+    },
+    "Flow control": {
+        "prefix": "commandForFlow control",
+        "body": "${1|exec,stopped,execstack,if,ifelse,countexecstack,exit,for,repeat,loop,quit,start,stop|}"
+    }
+}

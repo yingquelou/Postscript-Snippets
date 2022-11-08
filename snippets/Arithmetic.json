@@ -1,0 +1,116 @@
+{
+    "num1 num2 add": {
+        "prefix": "add",
+        "body": "${1:num1} ${2:num2} add",
+        "description": "returns:num1 + num2;remarks:"
+    },
+    "num1 num2 div": {
+        "prefix": "div",
+        "body": "${1:num1} ${2:num2} div",
+        "description": "returns:num1/num2;remarks:"
+    },
+    "num1 num2 sub": {
+        "prefix": "sub",
+        "body": "${1:num1} ${2:num2} sub",
+        "description": "returns:num1 - num2;remarks:"
+    },
+    "int1 int2 idiv": {
+        "prefix": "idiv",
+        "body": "${1:int1} ${2:int2} idiv",
+        "description": "returns:(int) int1/int2;remarks:"
+    },
+    "num1 num2 mul": {
+        "prefix": "mul",
+        "body": "${1:num1} ${2:num2} mul",
+        "description": "returns:num1*num2;remarks:"
+    },
+    "int1 int2 mod": {
+        "prefix": "mod",
+        "body": "${1:int1} ${2:int2} mod",
+        "description": "returns:int1 mod int2;remarks:"
+    },
+    "num abs": {
+        "prefix": "abs",
+        "body": "${1:num} abs",
+        "description": "returns:abs(num);remarks:"
+    },
+    "num neg": {
+        "prefix": "neg",
+        "body": "${1:num} neg",
+        "description": "returns:-num;remarks:"
+    },
+    "num1 ceiling": {
+        "prefix": "ceiling",
+        "body": "${1:num1} ceiling",
+        "description": "returns:num2;remarks:"
+    },
+    "num1 floor": {
+        "prefix": "floor",
+        "body": "${1:num1} floor",
+        "description": "returns:num2;remarks:returns the greatest integer value less than or equal to num1: 3.2 -&gt; 3.0; -4.8 -&gt; -5.0"
+    },
+    "num round": {
+        "prefix": "round",
+        "body": "${1:num} round",
+        "description": "returns:num;remarks:rounds to nearest integer"
+    },
+    "num truncate": {
+        "prefix": "truncate",
+        "body": "${1:num} truncate",
+        "description": "returns:num - fractional part;remarks:"
+    },
+    "num sqrt": {
+        "prefix": "sqrt",
+        "body": "${1:num} sqrt",
+        "description": "returns:sqrt(num);remarks:"
+    },
+    "num den atan": {
+        "prefix": "atan",
+        "body": "${1:num} ${2:den} atan",
+        "description": "returns:arctan(num/den);remarks:degrees"
+    },
+    "deg cos": {
+        "prefix": "cos",
+        "body": "${1:deg} cos",
+        "description": "returns:cos(deg);remarks:degrees"
+    },
+    "deg sin": {
+        "prefix": "sin",
+        "body": "${1:deg} sin",
+        "description": "returns:sin(deg);remarks:degrees"
+    },
+    "base num exp": {
+        "prefix": "exp",
+        "body": "${1:base} ${2:num} exp",
+        "description": "returns:base^{num};remarks:"
+    },
+    "num ln": {
+        "prefix": "ln",
+        "body": "${1:num} ln",
+        "description": "returns:log_{e} num;remarks:"
+    },
+    "num log": {
+        "prefix": "log",
+        "body": "${1:num} log",
+        "description": "returns:log_{10} num;remarks:"
+    },
+    "rand": {
+        "prefix": "rand",
+        "body": "rand",
+        "description": "returns:int;remarks:"
+    },
+    "int srand": {
+        "prefix": "srand",
+        "body": "${1:int} srand",
+        "description": "returns:-;remarks:sets random number seed"
+    },
+    "rrand": {
+        "prefix": "rrand",
+        "body": "rrand",
+        "description": "returns:int;remarks:returns random number seed"
+    },
+    "Arithmetic": {
+        "prefix": "commandForArithmetic",
+        "body": "${1|exp,cos,sin,srand,idiv,mod,abs,atan,ln,log,neg,round,sqrt,truncate,ceiling,floor,add,div,mul,sub,rand,rrand|}"
+    }
+}

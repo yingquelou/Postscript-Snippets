@@ -1,0 +1,99 @@
+{
+  "name": "postscriptsnippets",
+  "displayName": "Postscript Snippets",
+  "publisher": "yingquelou",
+  "description": "",
+  "version": "0.0.6",
+  "engines": {
+    "vscode": "^1.73.0"
+  },
+  "categories": [
+    "Snippets"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "postscript",
+        "extensions": [
+          ".ps",
+          ".eps"
+        ],
+        "aliases": [
+          "postscript",
+          "ghostscript",
+          "optscript"
+        ]
+      }
+    ],
+    "snippets": [
+      {
+        "language": "postscript",
+        "path": "./snippets/Arithmetic.json"
+      },
+      {
+        "language": "postscript",
+        "path": "./snippets/Arrays.json"
+      },
+      {
+        "language": "postscript",
+        "path": "./snippets/Bit and Boolean operations.json"
+      },
+      {
+        "language": "postscript",
+        "path": "./snippets/Errors.json"
+      },
+      {
+        "language": "postscript",
+        "path": "./snippets/Files.json"
+      },
+      {
+        "language": "postscript",
+        "path": "./snippets/Flow control.json"
+      },
+      {
+        "language": "postscript",
+        "path": "./snippets/Font caches.json"
+      },
+      {
+        "language": "postscript",
+        "path": "./snippets/Fonts.json"
+      },
+      {
+        "language": "postscript",
+        "path": "./snippets/Graphics.json"
+      },
+      {
+        "language": "postscript",
+        "path": "./snippets/Matrices.json"
+      },
+      {
+        "language": "postscript",
+        "path": "./snippets/Miscellaneous.json"
+      },
+      {
+        "language": "postscript",
+        "path": "./snippets/Paths.json"
+      },
+      {
+        "language": "postscript",
+        "path": "./snippets/Set up.json"
+      },
+      {
+        "language": "postscript",
+        "path": "./snippets/Stack manipulation.json"
+      },
+      {
+        "language": "postscript",
+        "path": "./snippets/Strings.json"
+      },
+      {
+        "language": "postscript",
+        "path": "./snippets/Types and conversions.json"
+      }
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yingquelou/Postscript-Snippets.git"
+  }
+}

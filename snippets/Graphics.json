@@ -1,0 +1,136 @@
+{
+    "gsave": {
+        "prefix": "gsave",
+        "body": "gsave",
+        "description": "returns:-;remarks:saves graphics state"
+    },
+    "grestore": {
+        "prefix": "grestore",
+        "body": "grestore",
+        "description": "returns:-;remarks:restores graphics state"
+    },
+    "grestoreall": {
+        "prefix": "grestoreall",
+        "body": "grestoreall",
+        "description": "returns:-;remarks:restore to bottommost graphics state"
+    },
+    "initgraphics": {
+        "prefix": "initgraphics",
+        "body": "initgraphics",
+        "description": "returns:-;remarks:reset graphics state parameters"
+    },
+    "num setlinewidth": {
+        "prefix": "setlinewidth",
+        "body": "${1:num} setlinewidth",
+        "description": "returns:-;remarks:sets line width"
+    },
+    "currentlinewidth": {
+        "prefix": "currentlinewidth",
+        "body": "currentlinewidth",
+        "description": "returns:num;remarks:returns current line width"
+    },
+    "int setlinecap": {
+        "prefix": "setlinecap",
+        "body": "${1:int} setlinecap",
+        "description": "returns:-;remarks:sets shape of line ends (0=butt,1=round,2=square)"
+    },
+    "currentlinecap": {
+        "prefix": "currentlinecap",
+        "body": "currentlinecap",
+        "description": "returns:int;remarks:"
+    },
+    "int setlinejoin": {
+        "prefix": "setlinejoin",
+        "body": "${1:int} setlinejoin",
+        "description": "returns:-;remarks:sets shape of corners for stroke (0=miter,1=round,2=bevel)"
+    },
+    "currentlinejoin": {
+        "prefix": "currentlinejoin",
+        "body": "currentlinejoin",
+        "description": "returns:int;remarks:"
+    },
+    "num setmiterlimit": {
+        "prefix": "setmiterlimit",
+        "body": "${1:num} setmiterlimit",
+        "description": "returns:-;remarks:sets miter length limit"
+    },
+    "currentmiterlimit": {
+        "prefix": "currentmiterlimit",
+        "body": "currentmiterlimit",
+        "description": "returns:num;remarks:"
+    },
+    "array offset setdash": {
+        "prefix": "setdash",
+        "body": "${1:array} ${2:offset} setdash",
+        "description": "returns:-;remarks:sets dash pattern for stroking"
+    },
+    "currentdash": {
+        "prefix": "currentdash",
+        "body": "currentdash",
+        "description": "returns:array offset;remarks:"
+    },
+    "num setflat": {
+        "prefix": "setflat",
+        "body": "${1:num} setflat",
+        "description": "returns:-;remarks:sets flatness tolerance"
+    },
+    "currentflat": {
+        "prefix": "currentflat",
+        "body": "currentflat",
+        "description": "returns:num;remarks:"
+    },
+    "num setgray": {
+        "prefix": "setgray",
+        "body": "${1:num} setgray",
+        "description": "returns:-;remarks:sets gray level for fill: 1.0 = white"
+    },
+    "currentgray": {
+        "prefix": "currentgray",
+        "body": "currentgray",
+        "description": "returns:num;remarks:"
+    },
+    "hue sat brt sethsbcolor": {
+        "prefix": "sethsbcolor",
+        "body": "${1:hue} ${2:sat} ${3:brt} sethsbcolor",
+        "description": "returns:-;remarks:sets color given hue, saturation, brightness"
+    },
+    "- currenthsbcolor": {
+        "prefix": "currenthsbcolor",
+        "body": "currenthsbcolor",
+        "description": "returns:hue sat brt;remarks:"
+    },
+    "red green blue setrgbcolor": {
+        "prefix": "setrgbcolor",
+        "body": "${1:red} ${2:green} ${3:blue} setrgbcolor",
+        "description": "returns:-;remarks:sets color given red, green, blue"
+    },
+    "currentrgbcolor": {
+        "prefix": "currentrgbcolor",
+        "body": "currentrgbcolor",
+        "description": "returns:red green blue;remarks:"
+    },
+    "freq angle proc setscreen": {
+        "prefix": "setscreen",
+        "body": "${1:freq} ${2:angle} ${3:proc} setscreen",
+        "description": "returns:-;remarks:sets halftone screen"
+    },
+    "currentscreen": {
+        "prefix": "currentscreen",
+        "body": "currentscreen",
+        "description": "returns:freq angle proc;remarks:"
+    },
+    "proc settransfer": {
+        "prefix": "settransfer",
+        "body": "${1:proc} settransfer",
+        "description": "returns:-;remarks:sets gray transfer function"
+    },
+    "currenttransfer": {
+        "prefix": "currenttransfer",
+        "body": "currenttransfer",
+        "description": "returns:proc;remarks:"
+    },
+    "Graphics": {
+        "prefix": "commandForGraphics",
+        "body": "${1|currenthsbcolor,setdash,currentdash,currentflat,currentgray,currentlinecap,currentlinejoin,currentlinewidth,currentmiterlimit,currentrgbcolor,currentscreen,currenttransfer,setscreen,grestore,grestoreall,gsave,sethsbcolor,initgraphics,setlinecap,setlinejoin,setflat,setgray,setlinewidth,setmiterlimit,settransfer,setrgbcolor|}"
+    }
+}
