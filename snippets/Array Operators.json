@@ -1,0 +1,66 @@
+﻿{
+"Create array of length int":{
+"prefix":"array",
+"body":"array",
+"description":"pushed:array"
+},
+"Start array construction":{
+"prefix":"[",
+"body":"[",
+"description":"pushed:mark"
+},
+"End array construction":{
+"prefix":"]",
+"body":"${1|mark|} ${2|obj0…obj(n-1)|} ]",
+"description":"pushed:array"
+},
+"Return number of elements in array":{
+"prefix":"length",
+"body":"length",
+"description":"pushed:int"
+},
+"Return array element indexed by index":{
+"prefix":"get",
+"body":"${1|array|} ${2|index|} get",
+"description":"pushed:any"
+},
+"Put any into array at index":{
+"prefix":"put",
+"body":"${1|array|} ${2|index|} ${3|any|} put",
+"description":"pushed:"
+},
+"Return subarray of array starting at index for count elements":{
+"prefix":"getinterval",
+"body":"${1|array|} ${2|index|} ${3|count|} getinterval",
+"description":"pushed:subarray"
+},
+"Replace subarray of array1 starting at index by array2,packedarray2":{
+"prefix":"putinterval",
+"body":"${1|array1|} ${2|index|} ${3|array2,packedarray2|} putinterval",
+"description":"pushed:"
+},
+"Pop elements from stack into array":{
+"prefix":"astore",
+"body":"${1|any0…any(n-1)|} ${2|array|} astore",
+"description":"pushed:array"
+},
+"Push all elements of array on stack":{
+"prefix":"aload",
+"body":"aload",
+"description":"pushed:any0…any(n-1) array"
+},
+"Copy elements of array1 to initial subarray of array2":{
+"prefix":"copy",
+"body":"${1|array1|} ${2|array2|} copy",
+"description":"pushed:subarray2"
+},
+"Execute proc for each element of array":{
+"prefix":"forall",
+"body":"${1|array|} ${2|proc|} forall",
+"description":"pushed:"
+},
+"Array Operators":{
+"prefix":"OperatorsForArray Operators",
+"body":"${1|array,[,],length,get,put,getinterval,putinterval,astore,aload,copy,forall|}",
+"description":"returns:"
+}}

@@ -1,0 +1,61 @@
+﻿{
+"Create string of length int":{
+"prefix":"string",
+"body":"string",
+"description":"pushed:string"
+},
+"Return number of elements in string":{
+"prefix":"length",
+"body":"length",
+"description":"pushed:int"
+},
+"Return string element indexed by index":{
+"prefix":"get",
+"body":"${1|string|} ${2|index|} get",
+"description":"pushed:int"
+},
+"Put int into string at index":{
+"prefix":"put",
+"body":"${1|string|} ${2|index|} ${3|int|} put",
+"description":"pushed:"
+},
+"Return substring of string starting at index for count elements":{
+"prefix":"getinterval",
+"body":"${1|string|} ${2|index|} ${3|count|} getinterval",
+"description":"pushed:substring"
+},
+"Replace substring of string1 starting at index by string2":{
+"prefix":"putinterval",
+"body":"${1|string1|} ${2|index|} ${3|string2|} putinterval",
+"description":"pushed:"
+},
+"Copy elements of string1 to initial substring of string2":{
+"prefix":"copy",
+"body":"${1|string1|} ${2|string2|} copy",
+"description":"pushed:substring2"
+},
+"Execute proc for each element of string":{
+"prefix":"forall",
+"body":"${1|string|} ${2|proc|} forall",
+"description":"pushed:"
+},
+"Search for seek at start of string":{
+"prefix":"anchorsearch",
+"body":"${1|string|} ${2|seek|} anchorsearch",
+"description":"pushed:post match true or string false"
+},
+"Search for seek in string":{
+"prefix":"search",
+"body":"${1|string|} ${2|seek|} search",
+"description":"pushed:post match pre true or string false"
+},
+"Read token from start of string":{
+"prefix":"token",
+"body":"token",
+"description":"pushed:post any true or false"
+},
+"String Operators":{
+"prefix":"OperatorsForString Operators",
+"body":"${1|string,length,get,put,getinterval,putinterval,copy,forall,anchorsearch,search,token|}",
+"description":"returns:post any true or false"
+}}

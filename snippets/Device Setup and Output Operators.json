@@ -1,0 +1,31 @@
+﻿{
+"Transmit and reset current page":{
+"prefix":"showpage",
+"body":"showpage",
+"description":"pushed:"
+},
+"Transmit current page":{
+"prefix":"copypage",
+"body":"copypage",
+"description":"pushed:"
+},
+"Install page-oriented output device":{
+"prefix":"setpagedevice",
+"body":"setpagedevice",
+"description":"pushed:"
+},
+"Return current page device parameters":{
+"prefix":"currentpagedevice",
+"body":"currentpagedevice",
+"description":"pushed:dict"
+},
+"Install no-output device":{
+"prefix":"nulldevice",
+"body":"nulldevice",
+"description":"pushed:"
+},
+"Device Setup and Output Operators":{
+"prefix":"OperatorsForDevice Setup and Output Operators",
+"body":"${1|showpage,copypage,setpagedevice,currentpagedevice,nulldevice|}",
+"description":"returns:"
+}}

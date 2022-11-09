@@ -1,0 +1,25 @@
+Operator Summary
+Operand Stack Manipulation Operators
+Arithmetic and Math Operators
+Array Operators
+Packed Array Operators
+Dictionary Operators
+String Operators
+Relational,Boolean,and Bitwise Operators
+Control Operators
+Type,Attribute,and Conversion Operators
+File Operators
+Resource Operators
+Virtual Memory Operators
+Miscellaneous Operators
+Graphics State Operators (Device-Independent)
+Graphics State Operators (Device-Dependent)
+Coordinate System and Matrix Operators
+Path Construction Operators
+Painting Operators
+Insideness-Testing Operators
+Form and Pattern Operators
+Device Setup and Output Operators
+Glyph and Font Operators
+Interpreter Parameter Operators
+Errors

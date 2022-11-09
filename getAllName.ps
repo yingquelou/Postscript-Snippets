@@ -1,0 +1,23 @@
+%! ghostscript
+/isdicttype {type (dicttype) eq} def
+/exception <</tempfiles 1>> def
+/getallname
+{
+    {
+        3 1 roll 2 copy known {pop exch pop} 
+        {
+            2 copy 1 put 
+
+            exception exch known {exch pop} {
+            
+                exch
+                dup isdicttype 
+                {
+                    getallname
+                } {pop} ifelse
+            
+            } ifelse
+        } ifelse
+    } forall
+} def
+<< >> systemdict getallname {pop =} forall

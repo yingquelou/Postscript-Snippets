@@ -1,0 +1,71 @@
+﻿{
+"Test whether (x,y) would be painted by fill":{
+"prefix":"infill",
+"body":"${1|x|} ${2|y|} infill",
+"description":"pushed:bool"
+},
+"Test whether pixels in userpath would be painted by fill":{
+"prefix":"infill",
+"body":"infill",
+"description":"pushed:bool"
+},
+"Test whether (x,y) would be painted by eofill":{
+"prefix":"ineofill",
+"body":"${1|x|} ${2|y|} ineofill",
+"description":"pushed:bool"
+},
+"Test whether pixels in userpath would be painted by eofill":{
+"prefix":"ineofill",
+"body":"ineofill",
+"description":"pushed:bool"
+},
+"Test whether (x,y) would be painted by ufill of userpath":{
+"prefix":"inufill",
+"body":"${1|x|} ${2|y|} ${3|userpath|} inufill",
+"description":"pushed:bool"
+},
+"Test whether pixels in userpath1 would be painted by ufill of userpath2":{
+"prefix":"inufill",
+"body":"${1|userpath1|} ${2|userpath2|} inufill",
+"description":"pushed:bool"
+},
+"Test whether (x,y) would be painted by ueofill of userpath":{
+"prefix":"inueofill",
+"body":"${1|x|} ${2|y|} ${3|userpath|} inueofill",
+"description":"pushed:bool"
+},
+"Test whether pixels in userpath1 would be painted by ueofill of userpath2":{
+"prefix":"inueofill",
+"body":"${1|userpath1|} ${2|userpath2|} inueofill",
+"description":"pushed:bool"
+},
+"Test whether (x,y) would be painted by stroke":{
+"prefix":"instroke",
+"body":"${1|x|} ${2|y|} instroke",
+"description":"pushed:bool"
+},
+"Test whether (x,y) would be painted by ustroke of userpath":{
+"prefix":"inustroke",
+"body":"${1|x|} ${2|y|} ${3|userpath|} inustroke",
+"description":"pushed:bool"
+},
+"Test whether (x,y) would be painted by ustroke of userpath":{
+"prefix":"inustroke",
+"body":"${1|x|} ${2|y|} ${3|userpath|} ${4|matrix|} inustroke",
+"description":"pushed:bool"
+},
+"Test whether pixels in userpath1 would be painted by ustroke of userpath2":{
+"prefix":"inustroke",
+"body":"${1|userpath1|} ${2|userpath2|} inustroke",
+"description":"pushed:bool"
+},
+"Test whether pixels in userpath1 would be painted by ustroke of userpath2":{
+"prefix":"inustroke",
+"body":"${1|userpath1|} ${2|userpath2|} ${3|matrix|} inustroke",
+"description":"pushed:bool"
+},
+"Insideness-Testing Operators":{
+"prefix":"OperatorsForInsideness-Testing Operators",
+"body":"${1|infill,infill,ineofill,ineofill,inufill,inufill,inueofill,inueofill,instroke,inustroke,inustroke,inustroke,inustroke|}",
+"description":"returns:bool"
+}}

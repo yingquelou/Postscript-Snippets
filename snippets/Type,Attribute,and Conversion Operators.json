@@ -1,0 +1,76 @@
+﻿{
+"Return type of any":{
+"prefix":"type",
+"body":"type",
+"description":"pushed:name"
+},
+"Make object literal":{
+"prefix":"cvlit",
+"body":"cvlit",
+"description":"pushed:any"
+},
+"Make object executable":{
+"prefix":"cvx",
+"body":"cvx",
+"description":"pushed:any"
+},
+"Test executable attribute":{
+"prefix":"xcheck",
+"body":"xcheck",
+"description":"pushed:bool"
+},
+"Reduce access to execute-only":{
+"prefix":"executeonly",
+"body":"executeonly",
+"description":"pushed:array,packedarray,file,string"
+},
+"Disallow any access":{
+"prefix":"noaccess",
+"body":"noaccess",
+"description":"pushed:array,packedarray,dict,file,string"
+},
+"Reduce access to read-only":{
+"prefix":"readonly",
+"body":"readonly",
+"description":"pushed:array,packedarray,dict,file,string"
+},
+"Test read access":{
+"prefix":"rcheck",
+"body":"rcheck",
+"description":"pushed:bool"
+},
+"Test write access":{
+"prefix":"wcheck",
+"body":"wcheck",
+"description":"pushed:bool"
+},
+"Convert to integer":{
+"prefix":"cvi",
+"body":"cvi",
+"description":"pushed:int"
+},
+"Convert to name":{
+"prefix":"cvn",
+"body":"cvn",
+"description":"pushed:name"
+},
+"Convert to real":{
+"prefix":"cvr",
+"body":"cvr",
+"description":"pushed:real"
+},
+"Convert with radix to string":{
+"prefix":"cvrs",
+"body":"${1|num|} ${2|radix|} ${3|string|} cvrs",
+"description":"pushed:substring"
+},
+"Convert to string":{
+"prefix":"cvs",
+"body":"${1|any|} ${2|string|} cvs",
+"description":"pushed:substring"
+},
+"Type,Attribute,and Conversion Operators":{
+"prefix":"OperatorsForType,Attribute,and Conversion Operators",
+"body":"${1|type,cvlit,cvx,xcheck,executeonly,noaccess,readonly,rcheck,wcheck,cvi,cvn,cvr,cvrs,cvs|}",
+"description":"returns:substring"
+}}

@@ -1,0 +1,116 @@
+﻿{
+"Return num1 plus num2":{
+"prefix":"add",
+"body":"${1|num1|} ${2|num2|} add",
+"description":"pushed:sum"
+},
+"Return num1 divided by num2":{
+"prefix":"div",
+"body":"${1|num1|} ${2|num2|} div",
+"description":"pushed:quotient"
+},
+"Return int1 divided by int2":{
+"prefix":"idiv",
+"body":"${1|int1|} ${2|int2|} idiv",
+"description":"pushed:quotient"
+},
+"Return remainder after dividing int1 by int2":{
+"prefix":"mod",
+"body":"${1|int1|} ${2|int2|} mod",
+"description":"pushed:remainder"
+},
+"Return num1 times num2":{
+"prefix":"mul",
+"body":"${1|num1|} ${2|num2|} mul",
+"description":"pushed:product"
+},
+"Return num1 minus num2":{
+"prefix":"sub",
+"body":"${1|num1|} ${2|num2|} sub",
+"description":"pushed:difference"
+},
+"Return absolute value of num1":{
+"prefix":"abs",
+"body":"abs",
+"description":"pushed:num2"
+},
+"Return negative of num1":{
+"prefix":"neg",
+"body":"neg",
+"description":"pushed:num2"
+},
+"Return ceiling of num1":{
+"prefix":"ceiling",
+"body":"ceiling",
+"description":"pushed:num2"
+},
+"Return floor of num1":{
+"prefix":"floor",
+"body":"floor",
+"description":"pushed:num2"
+},
+"Round num1 to nearest integer":{
+"prefix":"round",
+"body":"round",
+"description":"pushed:num2"
+},
+"Remove fractional part of num1":{
+"prefix":"truncate",
+"body":"truncate",
+"description":"pushed:num2"
+},
+"Return square root of num":{
+"prefix":"sqrt",
+"body":"sqrt",
+"description":"pushed:real"
+},
+"Return arctangent of num/den in degrees":{
+"prefix":"atan",
+"body":"${1|num|} ${2|den|} atan",
+"description":"pushed:angle"
+},
+"Return cosine of angle degrees":{
+"prefix":"cos",
+"body":"cos",
+"description":"pushed:real"
+},
+"Return sine of angle degrees":{
+"prefix":"sin",
+"body":"sin",
+"description":"pushed:real"
+},
+"Raise base to exponent power":{
+"prefix":"exp",
+"body":"${1|base|} ${2|exponent|} exp",
+"description":"pushed:real"
+},
+"Return natural logarithm (base e)":{
+"prefix":"ln",
+"body":"ln",
+"description":"pushed:real"
+},
+"Return common logarithm (base10)":{
+"prefix":"log",
+"body":"log",
+"description":"pushed:real"
+},
+"Generate pseudo-random integer":{
+"prefix":"rand",
+"body":"rand",
+"description":"pushed:int"
+},
+"Set random number seed":{
+"prefix":"srand",
+"body":"srand",
+"description":"pushed:"
+},
+"Return random number seed":{
+"prefix":"rrand",
+"body":"rrand",
+"description":"pushed:int"
+},
+"Arithmetic and Math Operators":{
+"prefix":"OperatorsForArithmetic and Math Operators",
+"body":"${1|add,div,idiv,mod,mul,sub,abs,neg,ceiling,floor,round,truncate,sqrt,atan,cos,sin,exp,ln,log,rand,srand,rrand|}",
+"description":"returns:int"
+}}

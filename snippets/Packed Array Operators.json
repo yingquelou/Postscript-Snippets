@@ -1,0 +1,51 @@
+﻿{
+"Create packed array consisting ofn elements from stack":{
+"prefix":"packedarray",
+"body":"${1|any0…any(n-1)|} ${2|n|} packedarray",
+"description":"pushed:packedarray"
+},
+"Set array packing mode for {…} syntax (true = packed array)":{
+"prefix":"setpacking",
+"body":"setpacking",
+"description":"pushed:"
+},
+"Return array packing mode":{
+"prefix":"currentpacking",
+"body":"currentpacking",
+"description":"pushed:bool"
+},
+"Return number of elements in packedarray":{
+"prefix":"length",
+"body":"length",
+"description":"pushed:int"
+},
+"Return packedarray element indexed by index":{
+"prefix":"get",
+"body":"${1|packedarray|} ${2|index|} get",
+"description":"pushed:any"
+},
+"Return subarray of packedarray starting at index for count elements":{
+"prefix":"getinterval",
+"body":"${1|packedarray|} ${2|index|} ${3|count|} getinterval",
+"description":"pushed:subarray"
+},
+"Push all elements of packedarray on stack":{
+"prefix":"aload",
+"body":"aload",
+"description":"pushed:any0…any(n-1) packedarray"
+},
+"Copy elements of packedarray1 to initial subarray of array2":{
+"prefix":"copy",
+"body":"${1|packedarray1|} ${2|array2|} copy",
+"description":"pushed:subarray2"
+},
+"Execute proc for each element of packedarray":{
+"prefix":"forall",
+"body":"${1|packedarray|} ${2|proc|} forall",
+"description":"pushed:"
+},
+"Packed Array Operators":{
+"prefix":"OperatorsForPacked Array Operators",
+"body":"${1|packedarray,setpacking,currentpacking,length,get,getinterval,aload,copy,forall|}",
+"description":"returns:"
+}}

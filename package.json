@@ -2,8 +2,8 @@
   "name": "postscriptsnippets",
   "displayName": "Postscript Snippets",
   "publisher": "yingquelou",
-  "description": "",
-  "version": "0.0.6",
+  "description": "postscript ghostscript optscript",
+  "version": "0.0.7",
   "engines": {
     "vscode": "^1.73.0"
   },
@@ -22,73 +22,106 @@
           "postscript",
           "ghostscript",
           "optscript"
-        ]
+        ],
+        "configuration": "./language-configuration.json"
       }
     ],
     "snippets": [
       {
         "language": "postscript",
-        "path": "./snippets/Arithmetic.json"
+        "path": "./Snippets/Arithmetic and Math Operators.json"
       },
       {
         "language": "postscript",
-        "path": "./snippets/Arrays.json"
+        "path": "./Snippets/Array Operators.json"
       },
       {
         "language": "postscript",
-        "path": "./snippets/Bit and Boolean operations.json"
+        "path": "./Snippets/Control Operators.json"
       },
       {
         "language": "postscript",
-        "path": "./snippets/Errors.json"
+        "path": "./Snippets/Coordinate System and Matrix Operators.json"
       },
       {
         "language": "postscript",
-        "path": "./snippets/Files.json"
+        "path": "./Snippets/Device Setup and Output Operators.json"
       },
       {
         "language": "postscript",
-        "path": "./snippets/Flow control.json"
+        "path": "./Snippets/Dictionary Operators.json"
       },
       {
         "language": "postscript",
-        "path": "./snippets/Font caches.json"
+        "path": "./Snippets/Errors.json"
       },
       {
         "language": "postscript",
-        "path": "./snippets/Fonts.json"
+        "path": "./Snippets/File Operators.json"
       },
       {
         "language": "postscript",
-        "path": "./snippets/Graphics.json"
+        "path": "./Snippets/Form and Pattern Operators.json"
       },
       {
         "language": "postscript",
-        "path": "./snippets/Matrices.json"
+        "path": "./Snippets/Glyph and Font Operators.json"
       },
       {
         "language": "postscript",
-        "path": "./snippets/Miscellaneous.json"
+        "path": "./Snippets/Graphics State Operators (Device-Dependent).json"
       },
       {
         "language": "postscript",
-        "path": "./snippets/Paths.json"
+        "path": "./Snippets/Graphics State Operators (Device-Independent).json"
       },
       {
         "language": "postscript",
-        "path": "./snippets/Set up.json"
+        "path": "./Snippets/Insideness-Testing Operators.json"
       },
       {
         "language": "postscript",
-        "path": "./snippets/Stack manipulation.json"
+        "path": "./Snippets/Interpreter Parameter Operators.json"
       },
       {
         "language": "postscript",
-        "path": "./snippets/Strings.json"
+        "path": "./Snippets/Miscellaneous Operators.json"
       },
       {
         "language": "postscript",
-        "path": "./snippets/Types and conversions.json"
+        "path": "./Snippets/Operand Stack Manipulation Operators.json"
+      },
+      {
+        "language": "postscript",
+        "path": "./Snippets/Packed Array Operators.json"
+      },
+      {
+        "language": "postscript",
+        "path": "./Snippets/Painting Operators.json"
+      },
+      {
+        "language": "postscript",
+        "path": "./Snippets/Path Construction Operators.json"
+      },
+      {
+        "language": "postscript",
+        "path": "./Snippets/Relational,Boolean,and Bitwise Operators.json"
+      },
+      {
+        "language": "postscript",
+        "path": "./Snippets/Resource Operators.json"
+      },
+      {
+        "language": "postscript",
+        "path": "./Snippets/String Operators.json"
+      },
+      {
+        "language": "postscript",
+        "path": "./Snippets/Type,Attribute,and Conversion Operators.json"
+      },
+      {
+        "language": "postscript",
+        "path": "./Snippets/Virtual Memory Operators.json"
       }
     ]
   },

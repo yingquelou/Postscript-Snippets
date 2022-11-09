@@ -1,0 +1,136 @@
+﻿{
+"Set halftone dictionary":{
+"prefix":"sethalftone",
+"body":"sethalftone",
+"description":"pushed:"
+},
+"Return current halftone dictionary":{
+"prefix":"currenthalftone",
+"body":"currenthalftone",
+"description":"pushed:halftone"
+},
+"Set gray halftone screen by frequency,angle,and spot function":{
+"prefix":"setscreen",
+"body":"${1|frequency|} ${2|angle|} ${3|proc|} setscreen",
+"description":"pushed:"
+},
+"Set gray halftone screen from halftone dictionary":{
+"prefix":"setscreen",
+"body":"${1|frequency|} ${2|angle|} ${3|halftone|} setscreen",
+"description":"pushed:"
+},
+"Return current gray halftone screen":{
+"prefix":"currentscreen",
+"body":"currentscreen",
+"description":"pushed:frequency angle proc,halftone"
+},
+"Set all four halftone screens 1":{
+"prefix":"setcolorscreen",
+"body":"${1|redfreq|} ${2|redang|} ${3|redproc,redhalftone|} setcolorscreen",
+"description":"pushed:"
+},
+"Set all four halftone screens 2":{
+"prefix":"setcolorscreen",
+"body":"${1|greenfreq|} ${2|greenang|} ${3|greenproc,greenhalftone|} setcolorscreen",
+"description":"pushed:"
+},
+"Set all four halftone screens 3":{
+"prefix":"setcolorscreen",
+"body":"${1|bluefreq|} ${2|blueang|} ${3|blueproc,bluehalftone|} setcolorscreen",
+"description":"pushed:"
+},
+"Set all four halftone screens 4":{
+"prefix":"setcolorscreen",
+"body":"${1|grayfreq|} ${2|grayang|} ${3|grayproc,grayhalftone|} setcolorscreen",
+"description":"pushed:"
+},
+"Return all four halftone screens":{
+"prefix":"currentcolorscreen",
+"body":"currentcolorscreen",
+"description":"pushed:redfreq redang redproc,redhalftone;greenfreq greenang greenproc,greenhalftone;bluefreq blueang blueproc,bluehalftone;grayfreq grayang grayproc,grayhalftone"
+},
+"Set gray transfer function":{
+"prefix":"settransfer",
+"body":"settransfer",
+"description":"pushed:"
+},
+"Return current gray transfer function":{
+"prefix":"currenttransfer",
+"body":"currenttransfer",
+"description":"pushed:proc"
+},
+"Set all four transfer functions":{
+"prefix":"setcolortransfer",
+"body":"${1|redproc|} ${2|greenproc|} ${3|blueproc|} ${4|grayproc|} setcolortransfer",
+"description":"pushed:"
+},
+"Return current transfer functions":{
+"prefix":"currentcolortransfer",
+"body":"currentcolortransfer",
+"description":"pushed:redproc greenproc blueproc grayproc"
+},
+"Set black-generation function":{
+"prefix":"setblackgeneration",
+"body":"setblackgeneration",
+"description":"pushed:"
+},
+"Return current black-generation function":{
+"prefix":"currentblackgeneration",
+"body":"currentblackgeneration",
+"description":"pushed:proc"
+},
+"Set undercolor-removal function":{
+"prefix":"setundercolorremoval",
+"body":"setundercolorremoval",
+"description":"pushed:"
+},
+"Return current undercolor-removal function":{
+"prefix":"currentundercolorremoval",
+"body":"currentundercolorremoval",
+"description":"pushed:proc"
+},
+"Set CIE-based color rendering dictionary":{
+"prefix":"setcolorrendering",
+"body":"setcolorrendering",
+"description":"pushed:"
+},
+"Return current CIE-based color rendering dictionary":{
+"prefix":"currentcolorrendering",
+"body":"currentcolorrendering",
+"description":"pushed:dict"
+},
+"Set flatness tolerance":{
+"prefix":"setflat",
+"body":"setflat",
+"description":"pushed:"
+},
+"Return current flatness":{
+"prefix":"currentflat",
+"body":"currentflat",
+"description":"pushed:num"
+},
+"Set overprint parameter":{
+"prefix":"setoverprint",
+"body":"setoverprint",
+"description":"pushed:"
+},
+"Return current overprint parameter":{
+"prefix":"currentoverprint",
+"body":"currentoverprint",
+"description":"pushed:bool"
+},
+"Set smoothness parameter":{
+"prefix":"setsmoothness",
+"body":"setsmoothness",
+"description":"pushed:"
+},
+"Return current smoothness parameter":{
+"prefix":"currentsmoothness",
+"body":"currentsmoothness",
+"description":"pushed:num"
+},
+"Graphics State Operators (Device-Dependent)":{
+"prefix":"OperatorsForGraphics State Operators (Device-Dependent)",
+"body":"${1|sethalftone,currenthalftone,setscreen,setscreen,currentscreen,setcolorscreen,setcolorscreen,setcolorscreen,setcolorscreen,currentcolorscreen,settransfer,currenttransfer,setcolortransfer,currentcolortransfer,setblackgeneration,currentblackgeneration,setundercolorremoval,currentundercolorremoval,setcolorrendering,currentcolorrendering,setflat,currentflat,setoverprint,currentoverprint,setsmoothness,currentsmoothness|}",
+"description":"returns:num"
+}}

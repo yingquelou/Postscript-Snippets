@@ -1,0 +1,176 @@
+﻿{
+"Push graphics state":{
+"prefix":"gsave",
+"body":"gsave",
+"description":"pushed:"
+},
+"Pop graphics state":{
+"prefix":"grestore",
+"body":"grestore",
+"description":"pushed:"
+},
+"Push clipping path":{
+"prefix":"clipsave",
+"body":"clipsave",
+"description":"pushed:"
+},
+"Pop clipping path":{
+"prefix":"cliprestore",
+"body":"cliprestore",
+"description":"pushed:"
+},
+"Pop to bottommost graphics state":{
+"prefix":"grestoreall",
+"body":"grestoreall",
+"description":"pushed:"
+},
+"Reset graphics state parameters":{
+"prefix":"initgraphics",
+"body":"initgraphics",
+"description":"pushed:"
+},
+"Create graphics state object":{
+"prefix":"gstate",
+"body":"gstate",
+"description":"pushed:gstate"
+},
+"Set graphics state from gstate":{
+"prefix":"setgstate",
+"body":"setgstate",
+"description":"pushed:"
+},
+"Copy current graphics state into gstate":{
+"prefix":"currentgstate",
+"body":"currentgstate",
+"description":"pushed:gstate"
+},
+"Set line width":{
+"prefix":"setlinewidth",
+"body":"setlinewidth",
+"description":"pushed:"
+},
+"Return current line width int setlinecap-Set shape of line ends for stroke (0 = butt,1 = round,2 = square)":{
+"prefix":"currentlinewidth",
+"body":"currentlinewidth",
+"description":"pushed:num"
+},
+"Return current line cap":{
+"prefix":"currentlinecap",
+"body":"currentlinecap",
+"description":"pushed:int"
+},
+"Set shape of corners for stroke (0 = miter,1 = round,2 = bevel)":{
+"prefix":"setlinejoin",
+"body":"setlinejoin",
+"description":"pushed:"
+},
+"Return current line join":{
+"prefix":"currentlinejoin",
+"body":"currentlinejoin",
+"description":"pushed:int"
+},
+"Set miter length limit":{
+"prefix":"setmiterlimit",
+"body":"setmiterlimit",
+"description":"pushed:"
+},
+"Return current miter limit":{
+"prefix":"currentmiterlimit",
+"body":"currentmiterlimit",
+"description":"pushed:num"
+},
+"Set stroke adjustment (false = disable,true = enable)":{
+"prefix":"setstrokeadjust",
+"body":"setstrokeadjust",
+"description":"pushed:"
+},
+"Return current stroke adjustment":{
+"prefix":"currentstrokeadjust",
+"body":"currentstrokeadjust",
+"description":"pushed:bool"
+},
+"Set dash pattern for stroking":{
+"prefix":"setdash",
+"body":"${1|array|} ${2|offset|} setdash",
+"description":"pushed:"
+},
+"Return current dash pattern":{
+"prefix":"currentdash",
+"body":"currentdash",
+"description":"pushed:array offset"
+},
+"Set color space":{
+"prefix":"setcolorspace",
+"body":"setcolorspace",
+"description":"pushed:"
+},
+"Return current color space":{
+"prefix":"currentcolorspace",
+"body":"currentcolorspace",
+"description":"pushed:array"
+},
+"Set color components":{
+"prefix":"setcolor",
+"body":"setcolor",
+"description":"pushed:"
+},
+"Set colored tiling pattern as current color":{
+"prefix":"setcolor",
+"body":"setcolor",
+"description":"pushed:"
+},
+"Set uncolored tiling pattern as current color":{
+"prefix":"setcolor",
+"body":"${1|comp1…compn|} ${2|pattern|} setcolor",
+"description":"pushed:"
+},
+"Return current color components":{
+"prefix":"currentcolor",
+"body":"currentcolor",
+"description":"pushed:comp1…comp n"
+},
+"Set color space to DeviceGray and color to specified gray value (0 = black,1 = white)":{
+"prefix":"setgray",
+"body":"setgray",
+"description":"pushed:"
+},
+"Return current color as gray value":{
+"prefix":"currentgray",
+"body":"currentgray",
+"description":"pushed:num"
+},
+"Set color space to DeviceRGB and color to specified hue,saturation,brightness":{
+"prefix":"sethsbcolor",
+"body":"${1|hue|} ${2|saturation|} ${3|brightness|} sethsbcolor",
+"description":"pushed:"
+},
+"Return current color as hue,saturation,brightness":{
+"prefix":"currenthsbcolor",
+"body":"currenthsbcolor",
+"description":"pushed:hue saturation brightness"
+},
+"Set color space to DeviceRGB and color to specified red,green,blue":{
+"prefix":"setrgbcolor",
+"body":"${1|red|} ${2|green|} ${3|blue|} setrgbcolor",
+"description":"pushed:"
+},
+"Return current color as red,green,blue":{
+"prefix":"currentrgbcolor",
+"body":"currentrgbcolor",
+"description":"pushed:red green blue"
+},
+"Set color space to DeviceCMYK and color to specified cyan,magenta,yellow,black":{
+"prefix":"setcmykcolor",
+"body":"${1|cyan|} ${2|magenta|} ${3|yellow|} ${4|black|} setcmykcolor",
+"description":"pushed:"
+},
+"Return current color as cyan,magenta,yellow,black":{
+"prefix":"currentcmykcolor",
+"body":"currentcmykcolor",
+"description":"pushed:cyan magenta yellow black"
+},
+"Graphics State Operators (Device-Independent)":{
+"prefix":"OperatorsForGraphics State Operators (Device-Independent)",
+"body":"${1|gsave,grestore,clipsave,cliprestore,grestoreall,initgraphics,gstate,setgstate,currentgstate,setlinewidth,currentlinewidth,currentlinecap,setlinejoin,currentlinejoin,setmiterlimit,currentmiterlimit,setstrokeadjust,currentstrokeadjust,setdash,currentdash,setcolorspace,currentcolorspace,setcolor,setcolor,setcolor,currentcolor,setgray,currentgray,sethsbcolor,currenthsbcolor,setrgbcolor,currentrgbcolor,setcmykcolor,currentcmykcolor|}",
+"description":"returns:cyan magenta yellow black"
+}}

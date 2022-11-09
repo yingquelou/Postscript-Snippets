@@ -1,0 +1,61 @@
+﻿{
+"Discard top element":{
+"prefix":"pop",
+"body":"pop",
+"description":"pushed:"
+},
+"Exchange top two elements":{
+"prefix":"exch",
+"body":"${1|any1|} ${2|any2|} exch",
+"description":"pushed:any2 any1"
+},
+"Duplicate top element":{
+"prefix":"dup",
+"body":"dup",
+"description":"pushed:any any"
+},
+"Duplicate topn elements":{
+"prefix":"copy",
+"body":"${1|any1…anyn|} ${2|n|} copy",
+"description":"pushed:any1…anyn any1…anyn"
+},
+"Duplicate arbitrary element":{
+"prefix":"index",
+"body":"${1|anyn…any0|} ${2|n|} index",
+"description":"pushed:anyn…any0 anyn"
+},
+"Rolln elements up j times":{
+"prefix":"roll",
+"body":"${1|any(n-1)…any0|} ${2|n|} ${3|j|} roll",
+"description":"pushed:any(j-1)modn…any0 any(n-1)…anyjmodn"
+},
+"Discard all elements":{
+"prefix":"clear",
+"body":"clear",
+"description":"pushed:"
+},
+"Count elements on stack":{
+"prefix":"count",
+"body":"count",
+"description":"pushed:any1…anyn n"
+},
+"Push mark on stack":{
+"prefix":"mark",
+"body":"mark",
+"description":"pushed:"
+},
+"Discard elements down through mark":{
+"prefix":"cleartomark",
+"body":"${1|mark|} ${2|obj1…objn|} cleartomark",
+"description":"pushed:"
+},
+"Count elements down to mark":{
+"prefix":"counttomark",
+"body":"${1|mark|} ${2|obj1…objn|} counttomark",
+"description":"pushed:mark obj1…objn n"
+},
+"Operand Stack Manipulation Operators":{
+"prefix":"OperatorsForOperand Stack Manipulation Operators",
+"body":"${1|pop,exch,dup,copy,index,roll,clear,count,mark,cleartomark,counttomark|}",
+"description":"returns:mark obj1…objn n"
+}}

@@ -1,0 +1,56 @@
+﻿{
+"Create VM snapshot":{
+"prefix":"save",
+"body":"save",
+"description":"pushed:save"
+},
+"Restore VM snapshot":{
+"prefix":"restore",
+"body":"restore",
+"description":"pushed:"
+},
+"Set VM allocation mode (false = local,true = global)":{
+"prefix":"setglobal",
+"body":"setglobal",
+"description":"pushed:"
+},
+"Return current VM allocation mode":{
+"prefix":"currentglobal",
+"body":"currentglobal",
+"description":"pushed:bool"
+},
+"Return true if any is simple or in global VM,false if in local VM":{
+"prefix":"gcheck",
+"body":"gcheck",
+"description":"pushed:bool"
+},
+"Start new job that will alter initial VM if bool1 is true":{
+"prefix":"startjob",
+"body":"${1|bool1|} ${2|password|} startjob",
+"description":"pushed:bool2"
+},
+"Define user object associated with index":{
+"prefix":"defineuserobject",
+"body":"${1|index|} ${2|any|} defineuserobject",
+"description":"pushed:"
+},
+"Execute user object associated with index":{
+"prefix":"execuserobject",
+"body":"execuserobject",
+"description":"pushed:"
+},
+"Remove user object associated with index":{
+"prefix":"undefineuserobject",
+"body":"undefineuserobject",
+"description":"pushed:"
+},
+"Return current UserObjects array defined in userdict":{
+"prefix":"UserObjects",
+"body":"UserObjects",
+"description":"pushed:array"
+},
+"Virtual Memory Operators":{
+"prefix":"OperatorsForVirtual Memory Operators",
+"body":"${1|save,restore,setglobal,currentglobal,gcheck,startjob,defineuserobject,execuserobject,undefineuserobject,UserObjects|}",
+"description":"returns:array"
+}}
