@@ -1,7 +1,7 @@
 ﻿{
 "Set systemwide interpreter parameters":{
 "prefix":"setsystemparams",
-"body":"setsystemparams",
+"body":"${1:dict} setsystemparams",
 "description":"pushed:"
 },
 "Return systemwide interpreter parameters":{
@@ -11,7 +11,7 @@
 },
 "Set per-context interpreter parameters":{
 "prefix":"setuserparams",
-"body":"setuserparams",
+"body":"${1:dict} setuserparams",
 "description":"pushed:"
 },
 "Return per-context interpreter parameters":{
@@ -21,22 +21,22 @@
 },
 "Set parameters for input/output device":{
 "prefix":"setdevparams",
-"body":"${1|string|} ${2|dict|} setdevparams",
+"body":"${1:string} ${2:dict} setdevparams",
 "description":"pushed:"
 },
 "Return device parameters":{
 "prefix":"currentdevparams",
-"body":"currentdevparams",
+"body":"${1:string} currentdevparams",
 "description":"pushed:dict"
 },
 "Control garbage collector":{
 "prefix":"vmreclaim",
-"body":"vmreclaim",
+"body":"${1:int} vmreclaim",
 "description":"pushed:"
 },
 "Control garbage collector":{
 "prefix":"setvmthreshold",
-"body":"setvmthreshold",
+"body":"${1:int} setvmthreshold",
 "description":"pushed:"
 },
 "Report VM status":{
@@ -51,12 +51,12 @@
 },
 "Set maximum bytes in cached glyph":{
 "prefix":"setcachelimit",
-"body":"setcachelimit",
+"body":"${1:int} setcachelimit",
 "description":"pushed:"
 },
 "Set font cache parameters":{
 "prefix":"setcacheparams",
-"body":"${1|mark|} ${2|size|} ${3|lower|} ${4|upper|} setcacheparams",
+"body":"${1:mark} ${2:size} ${3:lower} ${4:upper} setcacheparams",
 "description":"pushed:"
 },
 "Return current font cache parameters":{
@@ -66,7 +66,7 @@
 },
 "Set user path cache parameters":{
 "prefix":"setucacheparams",
-"body":"${1|mark|} ${2|blimit|} setucacheparams",
+"body":"${1:mark} ${2:blimit} setucacheparams",
 "description":"pushed:"
 },
 "Return user path cache status and parameters":{

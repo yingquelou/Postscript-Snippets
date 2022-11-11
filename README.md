@@ -1,6 +1,6 @@
-# postscriptsnippets
+# Postscript Snippets
 
-for postscript ghostscript optscript
+This's an extensions in Visual Studio Code about postscript,ghostscript,optscript.
 
 It is a good idea to install a script interpreter on your computer before using this extension.
 

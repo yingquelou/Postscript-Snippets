@@ -1,37 +1,37 @@
 ﻿{
 "Register font,cidfont in Font resource category":{
 "prefix":"definefont",
-"body":"${1|key|} ${2|font,cidfont|} definefont",
+"body":"${1:key} ${2|font,cidfont|} definefont",
 "description":"pushed:font,cidfont"
 },
 "Register composite font dictionary created from,CMap and array of CIDFonts or fonts":{
 "prefix":"composefont",
-"body":"${1|key|} ${2|name,string,dict|} ${3|array|} composefont",
+"body":"${1:key} ${2|name,string,dict|} ${3:array} composefont",
 "description":"pushed:font"
 },
 "Remove Font resource registration":{
 "prefix":"undefinefont",
-"body":"undefinefont",
+"body":"${1:key} undefinefont",
 "description":"pushed:"
 },
 "Return Font resource instance identified by key":{
 "prefix":"findfont",
-"body":"findfont",
+"body":"${1:key} findfont",
 "description":"pushed:font,cidfont"
 },
 "Scale font,cidfont by scale to produce font′,cidfont′":{
 "prefix":"scalefont",
-"body":"${1|font,cidfont|} ${2|scale|} scalefont",
+"body":"${1|font,cidfont|} ${2:scale} scalefont",
 "description":"pushed:font′,cidfont′"
 },
 "Transform font,cidfont by matrix to produce font′,cidfont′":{
 "prefix":"makefont",
-"body":"${1|font,cidfont|} ${2|matrix|} makefont",
+"body":"${1|font,cidfont|} ${2:matrix} makefont",
 "description":"pushed:font′,cidfont′"
 },
 "Set font or CIDFont in graphics state":{
 "prefix":"setfont",
-"body":"setfont",
+"body":"${1|font,cidfont|} setfont",
 "description":"pushed:"
 },
 "Return last set font or CIDFont":{
@@ -46,62 +46,62 @@
 },
 "Set font or CIDFont given name and transform":{
 "prefix":"selectfont",
-"body":"${1|key|} ${2|scale,matrix|} selectfont",
+"body":"${1:key} ${2|scale,matrix|} selectfont",
 "description":"pushed:"
 },
 "Paint glyphs for string in current font":{
 "prefix":"show",
-"body":"show",
+"body":"${1:string} show",
 "description":"pushed:"
 },
 "Add (ax,ay) to width of each glyph while showing string":{
 "prefix":"ashow",
-"body":"${1|ax|} ${2|ay|} ${3|string|} ashow",
+"body":"${1:ax} ${2:ay} ${3:string} ashow",
 "description":"pushed:"
 },
 "Add (cx,cy) to width of glyph for char while showing string":{
 "prefix":"widthshow",
-"body":"${1|cx|} ${2|cy|} ${3|char|} ${4|string|} widthshow",
+"body":"${1:cx} ${2:cy} ${3:char} ${4:string} widthshow",
 "description":"pushed:"
 },
 "Combine effects of ashow and widthshow":{
 "prefix":"awidthshow",
-"body":"${1|cx|} ${2|cy|} ${3|char|} ${4|ax|} ${5|ay|} ${6|string|} awidthshow",
+"body":"${1:cx} ${2:cy} ${3:char} ${4:ax} ${5:ay} ${6:string} awidthshow",
 "description":"pushed:"
 },
 "Paint glyphs for string using x widths in numarray,numstring":{
 "prefix":"xshow",
-"body":"${1|string|} ${2|numarray,numstring|} xshow",
+"body":"${1:string} ${2|numarray,numstring|} xshow",
 "description":"pushed:"
 },
 "Paint glyphs for string using x and y widths in numarray,numstring":{
 "prefix":"xyshow",
-"body":"${1|string|} ${2|numarray,numstring|} xyshow",
+"body":"${1:string} ${2|numarray,numstring|} xyshow",
 "description":"pushed:"
 },
 "Paint glyphs for string using y widths in numarray,numstring":{
 "prefix":"yshow",
-"body":"${1|string|} ${2|numarray,numstring|} yshow",
+"body":"${1:string} ${2|numarray,numstring|} yshow",
 "description":"pushed:"
 },
 "Paint glyph for character identified by name,cid":{
 "prefix":"glyphshow",
-"body":"glyphshow",
+"body":"${1|name,cid|} glyphshow",
 "description":"pushed:"
 },
 "Return width of glyphs for string in current font":{
 "prefix":"stringwidth",
-"body":"stringwidth",
+"body":"${1:string} stringwidth",
 "description":"pushed:wx wy"
 },
 "Invoke character mapping algorithm and call proc":{
 "prefix":"cshow",
-"body":"${1|proc|} ${2|string|} cshow",
+"body":"${1:proc} ${2:string} cshow",
 "description":"pushed:"
 },
 "Execute proc between characters shown from string":{
 "prefix":"kshow",
-"body":"${1|proc|} ${2|string|} kshow",
+"body":"${1:proc} ${2:string} kshow",
 "description":"pushed:"
 },
 "Return dictionary of Font resource instances":{
@@ -126,27 +126,27 @@
 },
 "Find encoding vector":{
 "prefix":"findencoding",
-"body":"findencoding",
+"body":"${1:key} findencoding",
 "description":"pushed:array"
 },
 "Declare cached glyph metrics":{
 "prefix":"setcachedevice",
-"body":"${1|wx|} ${2|wy|} ${3|llx|} ${4|lly|} ${5|urx|} ${6|ury|} setcachedevice",
+"body":"${1:wx} ${2:wy} ${3:llx} ${4:lly} ${5:urx} ${6:ury} setcachedevice",
 "description":"pushed:"
 },
 "Declare cached glyph metrics 1":{
 "prefix":"setcachedevice2",
-"body":"${1|w0x|} ${2|w0y|} ${3|llx|} ${4|lly|} ${5|urx|} ${6|ury|} setcachedevice2",
+"body":"${1:w0x} ${2:w0y} ${3:llx} ${4:lly} ${5:urx} ${6:ury} setcachedevice2",
 "description":"pushed:"
 },
 "Declare cached glyph metrics 2":{
 "prefix":"setcachedevice2",
-"body":"${1|w1x|} ${2|w1y|} ${3|vx|} ${4|vy|} setcachedevice2",
+"body":"${1:w1x} ${2:w1y} ${3:vx} ${4:vy} setcachedevice2",
 "description":"pushed:"
 },
 "Declare uncached glyph metrics":{
 "prefix":"setcharwidth",
-"body":"${1|wx|} ${2|wy|} setcharwidth",
+"body":"${1:wx} ${2:wy} setcharwidth",
 "description":"pushed:"
 },
 "Glyph and Font Operators":{

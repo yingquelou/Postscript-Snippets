@@ -11,7 +11,7 @@
 },
 "Install page-oriented output device":{
 "prefix":"setpagedevice",
-"body":"setpagedevice",
+"body":"${1:dict} setpagedevice",
 "description":"pushed:"
 },
 "Return current page device parameters":{

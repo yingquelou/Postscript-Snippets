@@ -1,67 +1,67 @@
 ﻿{
 "Open named file with specified access":{
 "prefix":"file",
-"body":"${1|filename|} ${2|access|} file",
+"body":"${1:filename} ${2:access} file",
 "description":"pushed:file"
 },
 "Establish filtered file 1":{
 "prefix":"filter",
-"body":"${1|datasrc,datatgt|} ${2|dict|} filter",
+"body":"${1|datasrc,datatgt|} ${2:dict} filter",
 "description":"pushed:file"
 },
 "Establish filtered file 2":{
 "prefix":"filter",
-"body":"${1|param1…paramn|} ${2|filtername|} filter",
+"body":"${1:param1…paramn} ${2:filtername} filter",
 "description":"pushed:file"
 },
 "Close file":{
 "prefix":"closefile",
-"body":"closefile",
+"body":"${1:file} closefile",
 "description":"pushed:"
 },
 "Read one character from file":{
 "prefix":"read",
-"body":"read",
+"body":"${1:file} read",
 "description":"pushed:int true or false"
 },
 "Write one character to file":{
 "prefix":"write",
-"body":"${1|file|} ${2|int|} write",
+"body":"${1:file} ${2:int} write",
 "description":"pushed:"
 },
 "Read hexadecimal numbers from file into string":{
 "prefix":"readhexstring",
-"body":"${1|file|} ${2|string|} readhexstring",
+"body":"${1:file} ${2:string} readhexstring",
 "description":"pushed:substring bool"
 },
 "Write string to file as hexadecimal":{
 "prefix":"writehexstring",
-"body":"${1|file|} ${2|string|} writehexstring",
+"body":"${1:file} ${2:string} writehexstring",
 "description":"pushed:"
 },
 "Read string from file":{
 "prefix":"readstring",
-"body":"${1|file|} ${2|string|} readstring",
+"body":"${1:file} ${2:string} readstring",
 "description":"pushed:substring bool"
 },
 "Write string to file":{
 "prefix":"writestring",
-"body":"${1|file|} ${2|string|} writestring",
+"body":"${1:file} ${2:string} writestring",
 "description":"pushed:"
 },
 "Read line from file into string":{
 "prefix":"readline",
-"body":"${1|file|} ${2|string|} readline",
+"body":"${1:file} ${2:string} readline",
 "description":"pushed:substring bool"
 },
 "Read token from file":{
 "prefix":"token",
-"body":"token",
+"body":"${1:file} token",
 "description":"pushed:any true or false"
 },
 "Return number of bytes available to read":{
 "prefix":"bytesavailable",
-"body":"bytesavailable",
+"body":"${1:file} bytesavailable",
 "description":"pushed:int"
 },
 "Send buffered data to standard output file":{
@@ -71,27 +71,27 @@
 },
 "Send buffered data or read to EOF":{
 "prefix":"flushfile",
-"body":"flushfile",
+"body":"${1:file} flushfile",
 "description":"pushed:"
 },
 "Discard buffered characters":{
 "prefix":"resetfile",
-"body":"resetfile",
+"body":"${1:file} resetfile",
 "description":"pushed:"
 },
 "Return status of file (true = valid)":{
 "prefix":"status",
-"body":"status",
+"body":"${1:file} status",
 "description":"pushed:bool"
 },
 "Return information about named file":{
 "prefix":"status",
-"body":"status",
+"body":"${1:filename} status",
 "description":"pushed:pages bytes referenced created true or false"
 },
 "Execute contents of named file":{
 "prefix":"run",
-"body":"run",
+"body":"${1:filename} run",
 "description":"pushed:"
 },
 "Return file currently being executed":{
@@ -101,67 +101,67 @@
 },
 "Delete named file":{
 "prefix":"deletefile",
-"body":"deletefile",
+"body":"${1:filename} deletefile",
 "description":"pushed:"
 },
 "Rename file filename1 to filename2":{
 "prefix":"renamefile",
-"body":"${1|filename1|} ${2|filename2|} renamefile",
+"body":"${1:filename1} ${2:filename2} renamefile",
 "description":"pushed:"
 },
 "Execute proc for each file name matching template":{
 "prefix":"filenameforall",
-"body":"${1|template|} ${2|proc|} ${3|scratch|} filenameforall",
+"body":"${1:template} ${2:proc} ${3:scratch} filenameforall",
 "description":"pushed:"
 },
 "Set file to specified position":{
 "prefix":"setfileposition",
-"body":"${1|file|} ${2|position|} setfileposition",
+"body":"${1:file} ${2:position} setfileposition",
 "description":"pushed:"
 },
 "Return current position in file":{
 "prefix":"fileposition",
-"body":"fileposition",
+"body":"${1:file} fileposition",
 "description":"pushed:position"
 },
 "Write string to standard output file":{
 "prefix":"print",
-"body":"print",
+"body":"${1:string} print",
 "description":"pushed:"
 },
 "Write text representation of any to standard output file":{
 "prefix":"=",
-"body":"=",
+"body":"${1:any} =",
 "description":"pushed:"
 },
 "Write syntactic representation of any to standard output file":{
 "prefix":"==",
-"body":"==",
+"body":"${1:any} ==",
 "description":"pushed:"
 },
 "Print stack nondestructively using =":{
 "prefix":"stack",
-"body":"stack",
+"body":"${1:any1…anyn} stack",
 "description":"pushed:any1…anyn"
 },
 "Print stack nondestructively using ==":{
 "prefix":"pstack",
-"body":"pstack",
+"body":"${1:any1…anyn} pstack",
 "description":"pushed:any1…anyn"
 },
 "Write binary object to standard output file,using tag":{
 "prefix":"printobject",
-"body":"${1|obj|} ${2|tag|} printobject",
+"body":"${1:obj} ${2:tag} printobject",
 "description":"pushed:"
 },
 "Write binary object to file,using tag":{
 "prefix":"writeobject",
-"body":"${1|file|} ${2|obj|} ${3|tag|} writeobject",
+"body":"${1:file} ${2:obj} ${3:tag} writeobject",
 "description":"pushed:"
 },
 "Set binary object format (0 = disable,1 = IEEE high,2 = IEEE low,3 = native high,4 = native low)":{
 "prefix":"setobjectformat",
-"body":"setobjectformat",
+"body":"${1:int} setobjectformat",
 "description":"pushed:"
 },
 "Return binary object format":{

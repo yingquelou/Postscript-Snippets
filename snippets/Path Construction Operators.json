@@ -11,52 +11,52 @@
 },
 "Set current point to (x,y)":{
 "prefix":"moveto",
-"body":"${1|x|} ${2|y|} moveto",
+"body":"${1:x} ${2:y} moveto",
 "description":"pushed:"
 },
 "Perform relative moveto":{
 "prefix":"rmoveto",
-"body":"${1|dx|} ${2|dy|} rmoveto",
+"body":"${1:dx} ${2:dy} rmoveto",
 "description":"pushed:"
 },
 "Append straight line to (x,y)":{
 "prefix":"lineto",
-"body":"${1|x|} ${2|y|} lineto",
+"body":"${1:x} ${2:y} lineto",
 "description":"pushed:"
 },
 "Perform relative lineto":{
 "prefix":"rlineto",
-"body":"${1|dx|} ${2|dy|} rlineto",
+"body":"${1:dx} ${2:dy} rlineto",
 "description":"pushed:"
 },
 "Append counterclockwise arc":{
 "prefix":"arc",
-"body":"${1|x|} ${2|y|} ${3|r|} ${4|angle1|} ${5|angle2|} arc",
+"body":"${1:x} ${2:y} ${3:r} ${4:angle1} ${5:angle2} arc",
 "description":"pushed:"
 },
 "Append clockwise arc":{
 "prefix":"arcn",
-"body":"${1|x|} ${2|y|} ${3|r|} ${4|angle1|} ${5|angle2|} arcn",
+"body":"${1:x} ${2:y} ${3:r} ${4:angle1} ${5:angle2} arcn",
 "description":"pushed:"
 },
 "Append tangent arc":{
 "prefix":"arct",
-"body":"${1|x1|} ${2|y1|} ${3|x2|} ${4|y2|} ${5|r|} arct",
+"body":"${1:x1} ${2:y1} ${3:x2} ${4:y2} ${5:r} arct",
 "description":"pushed:"
 },
 "Append tangent arc":{
 "prefix":"arcto",
-"body":"${1|x1|} ${2|y1|} ${3|x2|} ${4|y2|} ${5|r|} arcto",
+"body":"${1:x1} ${2:y1} ${3:x2} ${4:y2} ${5:r} arcto",
 "description":"pushed:xt1 yt1 xt2 yt2"
 },
 "Append Bézier cubic section":{
 "prefix":"curveto",
-"body":"${1|x1|} ${2|y1|} ${3|x2|} ${4|y2|} ${5|x3|} ${6|y3|} curveto",
+"body":"${1:x1} ${2:y1} ${3:x2} ${4:y2} ${5:x3} ${6:y3} curveto",
 "description":"pushed:"
 },
 "Perform relative curveto":{
 "prefix":"rcurveto",
-"body":"${1|dx1|} ${2|dy1|} ${3|dx2|} ${4|dy2|} ${5|dx3|} ${6|dy3|} rcurveto",
+"body":"${1:dx1} ${2:dy1} ${3:dx2} ${4:dy2} ${5:dx3} ${6:dy3} rcurveto",
 "description":"pushed:"
 },
 "Connect subpath back to its starting point":{
@@ -81,22 +81,22 @@
 },
 "Compute outline of stroked userpath":{
 "prefix":"ustrokepath",
-"body":"ustrokepath",
+"body":"${1:userpath} ustrokepath",
 "description":"pushed:"
 },
 "Compute outline of stroked userpath":{
 "prefix":"ustrokepath",
-"body":"${1|userpath|} ${2|matrix|} ustrokepath",
+"body":"${1:userpath} ${2:matrix} ustrokepath",
 "description":"pushed:"
 },
 "Append glyph outline to current path":{
 "prefix":"charpath",
-"body":"${1|string|} ${2|bool|} charpath",
+"body":"${1:string} ${2:bool} charpath",
 "description":"pushed:"
 },
 "Interpret userpath and append to current path":{
 "prefix":"uappend",
-"body":"uappend",
+"body":"${1:userpath} uappend",
 "description":"pushed:"
 },
 "Set current path to clipping path":{
@@ -106,7 +106,7 @@
 },
 "Set bounding box for current path":{
 "prefix":"setbbox",
-"body":"${1|llx|} ${2|lly|} ${3|urx|} ${4|ury|} setbbox",
+"body":"${1:llx} ${2:lly} ${3:urx} ${4:ury} setbbox",
 "description":"pushed:"
 },
 "Return bounding box of current path":{
@@ -116,12 +116,12 @@
 },
 "Enumerate current path":{
 "prefix":"pathforall",
-"body":"${1|move|} ${2|line|} ${3|curve|} ${4|close|} pathforall",
+"body":"${1:move} ${2:line} ${3:curve} ${4:close} pathforall",
 "description":"pushed:"
 },
 "Create userpath for current path; include ucache if bool is true":{
 "prefix":"upath",
-"body":"upath",
+"body":"${1:bool} upath",
 "description":"pushed:userpath"
 },
 "Set clipping path to device default":{
@@ -141,12 +141,12 @@
 },
 "Clip with rectangular path":{
 "prefix":"rectclip",
-"body":"${1|x|} ${2|y|} ${3|width|} ${4|height|} rectclip",
+"body":"${1:x} ${2:y} ${3:width} ${4:height} rectclip",
 "description":"pushed:"
 },
 "Clip with rectangular paths":{
 "prefix":"rectclip",
-"body":"rectclip",
+"body":"${1|numarray,numstring|} rectclip",
 "description":"pushed:"
 },
 "Declare that user path is to be cached":{

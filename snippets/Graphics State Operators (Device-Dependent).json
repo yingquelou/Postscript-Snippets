@@ -1,7 +1,7 @@
 ﻿{
 "Set halftone dictionary":{
 "prefix":"sethalftone",
-"body":"sethalftone",
+"body":"${1:halftone} sethalftone",
 "description":"pushed:"
 },
 "Return current halftone dictionary":{
@@ -11,12 +11,12 @@
 },
 "Set gray halftone screen by frequency,angle,and spot function":{
 "prefix":"setscreen",
-"body":"${1|frequency|} ${2|angle|} ${3|proc|} setscreen",
+"body":"${1:frequency} ${2:angle} ${3:proc} setscreen",
 "description":"pushed:"
 },
 "Set gray halftone screen from halftone dictionary":{
 "prefix":"setscreen",
-"body":"${1|frequency|} ${2|angle|} ${3|halftone|} setscreen",
+"body":"${1:frequency} ${2:angle} ${3:halftone} setscreen",
 "description":"pushed:"
 },
 "Return current gray halftone screen":{
@@ -26,22 +26,22 @@
 },
 "Set all four halftone screens 1":{
 "prefix":"setcolorscreen",
-"body":"${1|redfreq|} ${2|redang|} ${3|redproc,redhalftone|} setcolorscreen",
+"body":"${1:redfreq} ${2:redang} ${3|redproc,redhalftone|} setcolorscreen",
 "description":"pushed:"
 },
 "Set all four halftone screens 2":{
 "prefix":"setcolorscreen",
-"body":"${1|greenfreq|} ${2|greenang|} ${3|greenproc,greenhalftone|} setcolorscreen",
+"body":"${1:greenfreq} ${2:greenang} ${3|greenproc,greenhalftone|} setcolorscreen",
 "description":"pushed:"
 },
 "Set all four halftone screens 3":{
 "prefix":"setcolorscreen",
-"body":"${1|bluefreq|} ${2|blueang|} ${3|blueproc,bluehalftone|} setcolorscreen",
+"body":"${1:bluefreq} ${2:blueang} ${3|blueproc,bluehalftone|} setcolorscreen",
 "description":"pushed:"
 },
 "Set all four halftone screens 4":{
 "prefix":"setcolorscreen",
-"body":"${1|grayfreq|} ${2|grayang|} ${3|grayproc,grayhalftone|} setcolorscreen",
+"body":"${1:grayfreq} ${2:grayang} ${3|grayproc,grayhalftone|} setcolorscreen",
 "description":"pushed:"
 },
 "Return all four halftone screens":{
@@ -51,7 +51,7 @@
 },
 "Set gray transfer function":{
 "prefix":"settransfer",
-"body":"settransfer",
+"body":"${1:proc} settransfer",
 "description":"pushed:"
 },
 "Return current gray transfer function":{
@@ -61,7 +61,7 @@
 },
 "Set all four transfer functions":{
 "prefix":"setcolortransfer",
-"body":"${1|redproc|} ${2|greenproc|} ${3|blueproc|} ${4|grayproc|} setcolortransfer",
+"body":"${1:redproc} ${2:greenproc} ${3:blueproc} ${4:grayproc} setcolortransfer",
 "description":"pushed:"
 },
 "Return current transfer functions":{
@@ -71,7 +71,7 @@
 },
 "Set black-generation function":{
 "prefix":"setblackgeneration",
-"body":"setblackgeneration",
+"body":"${1:proc} setblackgeneration",
 "description":"pushed:"
 },
 "Return current black-generation function":{
@@ -81,7 +81,7 @@
 },
 "Set undercolor-removal function":{
 "prefix":"setundercolorremoval",
-"body":"setundercolorremoval",
+"body":"${1:proc} setundercolorremoval",
 "description":"pushed:"
 },
 "Return current undercolor-removal function":{
@@ -91,7 +91,7 @@
 },
 "Set CIE-based color rendering dictionary":{
 "prefix":"setcolorrendering",
-"body":"setcolorrendering",
+"body":"${1:dict} setcolorrendering",
 "description":"pushed:"
 },
 "Return current CIE-based color rendering dictionary":{
@@ -101,7 +101,7 @@
 },
 "Set flatness tolerance":{
 "prefix":"setflat",
-"body":"setflat",
+"body":"${1:num} setflat",
 "description":"pushed:"
 },
 "Return current flatness":{
@@ -111,7 +111,7 @@
 },
 "Set overprint parameter":{
 "prefix":"setoverprint",
-"body":"setoverprint",
+"body":"${1:bool} setoverprint",
 "description":"pushed:"
 },
 "Return current overprint parameter":{
@@ -121,7 +121,7 @@
 },
 "Set smoothness parameter":{
 "prefix":"setsmoothness",
-"body":"setsmoothness",
+"body":"${1:num} setsmoothness",
 "description":"pushed:"
 },
 "Return current smoothness parameter":{

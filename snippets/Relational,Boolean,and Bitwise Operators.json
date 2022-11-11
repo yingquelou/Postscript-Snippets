@@ -1,12 +1,12 @@
 ﻿{
 "Test equal":{
 "prefix":"eq",
-"body":"${1|any1|} ${2|any2|} eq",
+"body":"${1:any1} ${2:any2} eq",
 "description":"pushed:bool"
 },
 "Test not equal":{
 "prefix":"ne",
-"body":"${1|any1|} ${2|any2|} ne",
+"body":"${1:any1} ${2:any2} ne",
 "description":"pushed:bool"
 },
 "Test greater than or equal":{
@@ -36,7 +36,7 @@
 },
 "Perform logical,bitwise not":{
 "prefix":"not",
-"body":"not",
+"body":"${1|bool1,int1|} not",
 "description":"pushed:bool2,int2"
 },
 "bitwise inclusive or":{
@@ -61,7 +61,7 @@
 },
 "Perform bitwise shift of int1 (positive is left)":{
 "prefix":"bitshift",
-"body":"${1|int1|} ${2|shift|} bitshift",
+"body":"${1:int1} ${2:shift} bitshift",
 "description":"pushed:int2"
 },
 "Relational,Boolean,and Bitwise Operators":{

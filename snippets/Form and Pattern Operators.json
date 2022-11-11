@@ -1,22 +1,22 @@
 ﻿{
 "Create pattern instance from prototype":{
 "prefix":"makepattern",
-"body":"${1|pattern|} ${2|matrix|} makepattern",
+"body":"${1:pattern} ${2:matrix} makepattern",
 "description":"pushed:pattern’"
 },
 "Install pattern as current color":{
 "prefix":"setpattern",
-"body":"setpattern",
+"body":"${1:pattern} setpattern",
 "description":"pushed:"
 },
 "Install pattern as current color":{
 "prefix":"setpattern",
-"body":"${1|comp1…compn|} ${2|pattern|} setpattern",
+"body":"${1:comp1…compn} ${2:pattern} setpattern",
 "description":"pushed:"
 },
 "Paint form":{
 "prefix":"execform",
-"body":"execform",
+"body":"${1:form} execform",
 "description":"pushed:"
 },
 "Form and Pattern Operators":{

@@ -11,107 +11,107 @@
 },
 "Fill matrix with identity transform":{
 "prefix":"identmatrix",
-"body":"identmatrix",
+"body":"${1:matrix} identmatrix",
 "description":"pushed:matrix"
 },
 "Fill matrix with device default matrix":{
 "prefix":"defaultmatrix",
-"body":"defaultmatrix",
+"body":"${1:matrix} defaultmatrix",
 "description":"pushed:matrix"
 },
 "Fill matrix with CTM":{
 "prefix":"currentmatrix",
-"body":"currentmatrix",
+"body":"${1:matrix} currentmatrix",
 "description":"pushed:matrix"
 },
 "Replace CTM by matrix":{
 "prefix":"setmatrix",
-"body":"setmatrix",
+"body":"${1:matrix} setmatrix",
 "description":"pushed:"
 },
 "Translate user space by (tx,ty)":{
 "prefix":"translate",
-"body":"${1|tx|} ${2|ty|} translate",
+"body":"${1:tx} ${2:ty} translate",
 "description":"pushed:"
 },
 "Define translation by (tx,ty)":{
 "prefix":"translate",
-"body":"${1|tx|} ${2|ty|} ${3|matrix|} translate",
+"body":"${1:tx} ${2:ty} ${3:matrix} translate",
 "description":"pushed:matrix"
 },
 "Scale user space by sx and sy":{
 "prefix":"scale",
-"body":"${1|sx|} ${2|sy|} scale",
+"body":"${1:sx} ${2:sy} scale",
 "description":"pushed:"
 },
 "Define scaling by sx and sy":{
 "prefix":"scale",
-"body":"${1|sx|} ${2|sy|} ${3|matrix|} scale",
+"body":"${1:sx} ${2:sy} ${3:matrix} scale",
 "description":"pushed:matrix"
 },
 "Rotate user space by angle degrees":{
 "prefix":"rotate",
-"body":"rotate",
+"body":"${1:angle} rotate",
 "description":"pushed:"
 },
 "Define rotation by angle degrees":{
 "prefix":"rotate",
-"body":"${1|angle|} ${2|matrix|} rotate",
+"body":"${1:angle} ${2:matrix} rotate",
 "description":"pushed:matrix"
 },
 "Replace CTM by matrix × CTM":{
 "prefix":"concat",
-"body":"concat",
+"body":"${1:matrix} concat",
 "description":"pushed:"
 },
 "Fill matrix3 with matrix1 × matrix2":{
 "prefix":"concatmatrix",
-"body":"${1|matrix1|} ${2|matrix2|} ${3|matrix3|} concatmatrix",
+"body":"${1:matrix1} ${2:matrix2} ${3:matrix3} concatmatrix",
 "description":"pushed:matrix3"
 },
 "Transform (x,y) by CTM":{
 "prefix":"transform",
-"body":"${1|x|} ${2|y|} transform",
+"body":"${1:x} ${2:y} transform",
 "description":"pushed:x′ y′"
 },
 "Transform (x,y) by matrix":{
 "prefix":"transform",
-"body":"${1|x|} ${2|y|} ${3|matrix|} transform",
+"body":"${1:x} ${2:y} ${3:matrix} transform",
 "description":"pushed:x′ y′"
 },
 "Transform distance (dx,dy) by CTM":{
 "prefix":"dtransform",
-"body":"${1|dx|} ${2|dy|} dtransform",
+"body":"${1:dx} ${2:dy} dtransform",
 "description":"pushed:dx′ dy′"
 },
 "Transform distance (dx,dy) by matrix":{
 "prefix":"dtransform",
-"body":"${1|dx|} ${2|dy|} ${3|matrix|} dtransform",
+"body":"${1:dx} ${2:dy} ${3:matrix} dtransform",
 "description":"pushed:dx′ dy′"
 },
 "Perform inverse transform of (x′,y′) by CTM":{
 "prefix":"itransform",
-"body":"${1|x′|} ${2|y′|} itransform",
+"body":"${1:x′} ${2:y′} itransform",
 "description":"pushed:x y"
 },
 "Perform inverse transform of (x′,y′) by matrix":{
 "prefix":"itransform",
-"body":"${1|x′|} ${2|y′|} ${3|matrix|} itransform",
+"body":"${1:x′} ${2:y′} ${3:matrix} itransform",
 "description":"pushed:x y"
 },
 "Perform inverse transform of distance (dx′,dy′) by CTM":{
 "prefix":"idtransform",
-"body":"${1|dx′|} ${2|dy′|} idtransform",
+"body":"${1:dx′} ${2:dy′} idtransform",
 "description":"pushed:dx dy"
 },
 "Perform inverse transform of distance (dx′,dy′) by matrix":{
 "prefix":"idtransform",
-"body":"${1|dx′|} ${2|dy′|} ${3|matrix|} idtransform",
+"body":"${1:dx′} ${2:dy′} ${3:matrix} idtransform",
 "description":"pushed:dx dy"
 },
 "Fill matrix2 with inverse of matrix1":{
 "prefix":"invertmatrix",
-"body":"${1|matrix1|} ${2|matrix2|} invertmatrix",
+"body":"${1:matrix1} ${2:matrix2} invertmatrix",
 "description":"pushed:matrix2"
 },
 "Coordinate System and Matrix Operators":{

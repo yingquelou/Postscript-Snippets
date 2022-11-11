@@ -36,17 +36,17 @@
 },
 "Set graphics state from gstate":{
 "prefix":"setgstate",
-"body":"setgstate",
+"body":"${1:gstate} setgstate",
 "description":"pushed:"
 },
 "Copy current graphics state into gstate":{
 "prefix":"currentgstate",
-"body":"currentgstate",
+"body":"${1:gstate} currentgstate",
 "description":"pushed:gstate"
 },
 "Set line width":{
 "prefix":"setlinewidth",
-"body":"setlinewidth",
+"body":"${1:num} setlinewidth",
 "description":"pushed:"
 },
 "Return current line width int setlinecap-Set shape of line ends for stroke (0 = butt,1 = round,2 = square)":{
@@ -61,7 +61,7 @@
 },
 "Set shape of corners for stroke (0 = miter,1 = round,2 = bevel)":{
 "prefix":"setlinejoin",
-"body":"setlinejoin",
+"body":"${1:int} setlinejoin",
 "description":"pushed:"
 },
 "Return current line join":{
@@ -71,7 +71,7 @@
 },
 "Set miter length limit":{
 "prefix":"setmiterlimit",
-"body":"setmiterlimit",
+"body":"${1:num} setmiterlimit",
 "description":"pushed:"
 },
 "Return current miter limit":{
@@ -81,7 +81,7 @@
 },
 "Set stroke adjustment (false = disable,true = enable)":{
 "prefix":"setstrokeadjust",
-"body":"setstrokeadjust",
+"body":"${1:bool} setstrokeadjust",
 "description":"pushed:"
 },
 "Return current stroke adjustment":{
@@ -91,7 +91,7 @@
 },
 "Set dash pattern for stroking":{
 "prefix":"setdash",
-"body":"${1|array|} ${2|offset|} setdash",
+"body":"${1:array} ${2:offset} setdash",
 "description":"pushed:"
 },
 "Return current dash pattern":{
@@ -101,7 +101,7 @@
 },
 "Set color space":{
 "prefix":"setcolorspace",
-"body":"setcolorspace",
+"body":"${1|array,name|} setcolorspace",
 "description":"pushed:"
 },
 "Return current color space":{
@@ -111,17 +111,17 @@
 },
 "Set color components":{
 "prefix":"setcolor",
-"body":"setcolor",
+"body":"${1:comp1…compn} setcolor",
 "description":"pushed:"
 },
 "Set colored tiling pattern as current color":{
 "prefix":"setcolor",
-"body":"setcolor",
+"body":"${1:pattern} setcolor",
 "description":"pushed:"
 },
 "Set uncolored tiling pattern as current color":{
 "prefix":"setcolor",
-"body":"${1|comp1…compn|} ${2|pattern|} setcolor",
+"body":"${1:comp1…compn} ${2:pattern} setcolor",
 "description":"pushed:"
 },
 "Return current color components":{
@@ -131,7 +131,7 @@
 },
 "Set color space to DeviceGray and color to specified gray value (0 = black,1 = white)":{
 "prefix":"setgray",
-"body":"setgray",
+"body":"${1:num} setgray",
 "description":"pushed:"
 },
 "Return current color as gray value":{
@@ -141,7 +141,7 @@
 },
 "Set color space to DeviceRGB and color to specified hue,saturation,brightness":{
 "prefix":"sethsbcolor",
-"body":"${1|hue|} ${2|saturation|} ${3|brightness|} sethsbcolor",
+"body":"${1:hue} ${2:saturation} ${3:brightness} sethsbcolor",
 "description":"pushed:"
 },
 "Return current color as hue,saturation,brightness":{
@@ -151,7 +151,7 @@
 },
 "Set color space to DeviceRGB and color to specified red,green,blue":{
 "prefix":"setrgbcolor",
-"body":"${1|red|} ${2|green|} ${3|blue|} setrgbcolor",
+"body":"${1:red} ${2:green} ${3:blue} setrgbcolor",
 "description":"pushed:"
 },
 "Return current color as red,green,blue":{
@@ -161,7 +161,7 @@
 },
 "Set color space to DeviceCMYK and color to specified cyan,magenta,yellow,black":{
 "prefix":"setcmykcolor",
-"body":"${1|cyan|} ${2|magenta|} ${3|yellow|} ${4|black|} setcmykcolor",
+"body":"${1:cyan} ${2:magenta} ${3:yellow} ${4:black} setcmykcolor",
 "description":"pushed:"
 },
 "Return current color as cyan,magenta,yellow,black":{
