@@ -169,8 +169,17 @@
 "body":"currentobjectformat",
 "description":"pushed:int"
 },
+"Opens the file of the given name for reading":{
+"prefix":"findlibfile",
+"body":"${1:string} findlibfile",
+"description":"pushed:(foundstring file true),string false"
+},
+"Called from the modified PostScript run operator (which copies stdin to a temp file if required)":{
+"prefix":"runpdf",
+"body":"${1:file} runpdf",
+"description":"pushed:"
+},
 "File Operators":{
 "prefix":"OperatorsForFile Operators",
-"body":"${1|file,filter,filter,closefile,read,write,readhexstring,writehexstring,readstring,writestring,readline,token,bytesavailable,flush,flushfile,resetfile,status,status,run,currentfile,deletefile,renamefile,filenameforall,setfileposition,fileposition,print,=,==,stack,pstack,printobject,writeobject,setobjectformat,currentobjectformat|}",
-"description":"returns:int"
+"body":"${1|file,filter,filter,closefile,read,write,readhexstring,writehexstring,readstring,writestring,readline,token,bytesavailable,flush,flushfile,resetfile,status,status,run,currentfile,deletefile,renamefile,filenameforall,setfileposition,fileposition,print,=,==,stack,pstack,printobject,writeobject,setobjectformat,currentobjectformat,findlibfile,runpdf|}"
 }}

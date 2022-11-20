@@ -49,6 +49,11 @@
 "body":"${1:string} ${2:seek} search",
 "description":"pushed:post match pre true or string false"
 },
+"Search for seek in string,but the search order is reversed with /search":{
+"prefix":"rsearch",
+"body":"${1:string} ${2:seek} rsearch",
+"description":"pushed:post match pre true or string false"
+},
 "Read token from start of string":{
 "prefix":"token",
 "body":"${1:string} token",
@@ -56,6 +61,5 @@
 },
 "String Operators":{
 "prefix":"OperatorsForString Operators",
-"body":"${1|string,length,get,put,getinterval,putinterval,copy,forall,anchorsearch,search,token|}",
-"description":"returns:post any true or false"
+"body":"${1|string,length,get,put,getinterval,putinterval,copy,forall,anchorsearch,search,rsearch,token|}"
 }}

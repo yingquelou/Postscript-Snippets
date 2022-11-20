@@ -94,18 +94,17 @@
 "body":"${1:datasrc0…datasrc(ncomp-1)} ${2:multi} ${3:ncomp} colorimage",
 "description":"pushed:"
 },
-"Paint current color through mask":{
+"Paint current color through mask 1":{
 "prefix":"imagemask",
 "body":"${1:dict} imagemask",
 "description":"pushed:"
 },
-"Paint current color through mask":{
+"Paint current color through mask 2":{
 "prefix":"imagemask",
 "body":"${1:width} ${2:height} ${3:polarity} ${4:matrix} ${5:datasrc} imagemask",
 "description":"pushed:"
 },
 "Painting Operators":{
 "prefix":"OperatorsForPainting Operators",
-"body":"${1|erasepage,stroke,fill,eofill,rectstroke,rectstroke,rectstroke,rectstroke,rectfill,rectfill,ustroke,ustroke,ufill,ueofill,shfill,image,image,colorimage,colorimage,imagemask,imagemask|}",
-"description":"returns:"
+"body":"${1|erasepage,stroke,fill,eofill,rectstroke,rectstroke,rectstroke,rectstroke,rectfill,rectfill,ustroke,ustroke,ufill,ueofill,shfill,image,image,colorimage,colorimage,imagemask,imagemask|}"
 }}

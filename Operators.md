@@ -33,9 +33,11 @@
 |num1|round|num2|Round num1 to nearest integer
 |num1|truncate|num2|Remove fractional part of num1
 |num|sqrt|real|Return square root of num
-|num den|atan|angle|Return arctangent of num/den in degrees
-|angle|cos|real|Return cosine of angle degrees
 |angle|sin|real|Return sine of angle degrees
+|real|arcsin|angle|Returns the angle corresponding to a sinusoidal value
+|angle|cos|real|Return cosine of angle degrees
+|real|arccos|angle|Returns the angle corresponding to a cosine value
+|num den|atan|angle|Return arctangent of num/den in degrees
 |base exponent|exp|real|Raise base to exponent power
 |num|ln|real|Return natural logarithm (base e)
 |num|log|real|Return common logarithm (base10)
@@ -105,6 +107,7 @@
 ||countdictstack|int|Count elements on dictionary stack
 |array|dictstack|subarray|Copy dictionary stack into array
 ||cleardictstack||Pop all nonpermanent dictionaries off dictionary stack
+|int|internaldict|dict|pushes the internal dictionary object on the operand stack
 
 ## String Operators
 
@@ -120,6 +123,7 @@
 |string proc|forall||Execute proc for each element of string
 |string seek|anchorsearch|post match true or string false|Search for seek at start of string
 |string seek|search|post match pre true or string false|Search for seek in string
+|string seek|rsearch|post match pre true or string false|Search for seek in string,but the search order is reversed with /search
 |string|token|post any true or false|Read token from start of string
 
 ## Relational,Boolean,and Bitwise Operators
@@ -145,6 +149,7 @@
 |param|operator|returns|remarks
 |-|-|-|-
 |any|exec||Execute arbitrary object
+|file,string|eexec||causes the contents of file (open for reading) or string to be decrypted and then executed in a manner similar to the exec operator.
 |bool proc|if||Execute proc if bool is true
 |bool proc1 proc2|ifelse||Execute proc1 if bool is true,proc2 if false
 |initial increment limit proc|for||Execute proc with values from initial by steps of increment to limit
@@ -215,6 +220,8 @@
 |file obj tag|writeobject||Write binary object to file,using tag
 |int|setobjectformat||Set binary object format (0 = disable,1 = IEEE high,2 = IEEE low,3 = native high,4 = native low)
 ||currentobjectformat|int|Return binary object format
+|string|findlibfile|(foundstring file true),string false|Opens the file of the given name for reading
+|file|runpdf||Called from the modified PostScript run operator (which copies stdin to a temp file if required)
 
 ## Resource Operators
 
@@ -234,13 +241,15 @@
 ||save|save|Create VM snapshot
 |save|restore||Restore VM snapshot
 |bool|setglobal||Set VM allocation mode (false = local,true = global)
+|bool|setshared||Equivalent to /setglobal
 ||currentglobal|bool|Return current VM allocation mode
+||currentshared|bool|Equivalent to /currentglobal
 |any|gcheck|bool|Return true if any is simple or in global VM,false if in local VM
+|any|scheck|bool|Equivalent to /gcheck
 |bool1 password|startjob|bool2|Start new job that will alter initial VM if bool1 is true
 |index any|defineuserobject||Define user object associated with index
 |index|execuserobject||Execute user object associated with index
 |index|undefineuserobject||Remove user object associated with index
-||UserObjects|array|Return current UserObjects array defined in userdict
 
 ## Miscellaneous Operators
 
@@ -274,6 +283,7 @@
 |gstate|currentgstate|gstate|Copy current graphics state into gstate
 |num|setlinewidth||Set line width
 ||currentlinewidth|num|Return current line width int setlinecap-Set shape of line ends for stroke (0 = butt,1 = round,2 = square)
+|int|setlinecap||Sets the line cap parameter in the graphics state to int, which must be 0, 1, or 2.
 ||currentlinecap|int|Return current line cap
 |int|setlinejoin||Set shape of corners for stroke (0 = miter,1 = round,2 = bevel)
 ||currentlinejoin|int|Return current line join
@@ -297,6 +307,8 @@
 ||currentrgbcolor|red green blue|Return current color as red,green,blue
 |cyan magenta yellow black|setcmykcolor||Set color space to DeviceCMYK and color to specified cyan,magenta,yellow,black
 ||currentcmykcolor|cyan magenta yellow black|Return current color as cyan,magenta,yellow,black
+|bool|setoverprintmode||Sets the overprint mode in the graphics state.
+||currentoverprintmode|bool|Returns the current overprint mode
 
 ## Graphics State Operators (Device-Dependent)
 
@@ -374,6 +386,7 @@
 |x1 y1 x2 y2 x3 y3|curveto||Append Bézier cubic section
 |dx1 dy1 dx2 dy2 dx3 dy3|rcurveto||Perform relative curveto
 ||closepath||Connect subpath back to its starting point
+||flushpage||Flush page
 ||flattenpath||Convert curves to sequences of straight lines
 ||reversepath||Reverse direction of current path
 ||strokepath||Compute outline of stroked path
@@ -416,8 +429,8 @@
 |width height bits/sample matrix datasrc|image||Paint monochrome sampled image
 |width height bits/comp matrix|colorimage||Paint color sampled image 1
 |datasrc0…datasrc(ncomp-1) multi ncomp|colorimage||Paint color sampled image 2
-|dict|imagemask||Paint current color through mask
-|width height polarity matrix datasrc|imagemask||Paint current color through mask
+|dict|imagemask||Paint current color through mask 1
+|width height polarity matrix datasrc|imagemask||Paint current color through mask 2
 
 ## Insideness-Testing Operators
 
@@ -432,18 +445,18 @@
 |x y userpath|inueofill|bool|Test whether (x,y) would be painted by ueofill of userpath
 |userpath1 userpath2|inueofill|bool|Test whether pixels in userpath1 would be painted by ueofill of userpath2
 |x y|instroke|bool|Test whether (x,y) would be painted by stroke
-|x y userpath|inustroke|bool|Test whether (x,y) would be painted by ustroke of userpath
-|x y userpath matrix|inustroke|bool|Test whether (x,y) would be painted by ustroke of userpath
-|userpath1 userpath2|inustroke|bool|Test whether pixels in userpath1 would be painted by ustroke of userpath2
-|userpath1 userpath2 matrix|inustroke|bool|Test whether pixels in userpath1 would be painted by ustroke of userpath2
+|x y userpath|inustroke|bool|Test whether (x,y) would be painted by ustroke of userpath 1
+|x y userpath matrix|inustroke|bool|Test whether (x,y) would be painted by ustroke of userpath 2
+|userpath1 userpath2|inustroke|bool|Test whether pixels in userpath1 would be painted by ustroke of userpath2 1
+|userpath1 userpath2 matrix|inustroke|bool|Test whether pixels in userpath1 would be painted by ustroke of userpath2 2
 
 ## Form and Pattern Operators
 
 |param|operator|returns|remarks
 |-|-|-|-
-|pattern matrix|makepattern|pattern’|Create pattern instance from prototype
-|pattern|setpattern||Install pattern as current color
-|comp1…compn pattern|setpattern||Install pattern as current color
+|pattern matrix|makepattern|pattern'|Create pattern instance from prototype
+|pattern|setpattern||Install pattern as current color 1
+|comp1…compn pattern|setpattern||Install pattern as current color 2
 |form|execform||Paint form
 
 ## Device Setup and Output Operators
@@ -455,6 +468,13 @@
 |dict|setpagedevice||Install page-oriented output device
 ||currentpagedevice|dict|Return current page device parameters
 ||nulldevice||Install no-output device
+|device|copydevice|device|Copies a device
+|matrix width height palette|makeimagedevice|device|Makes a new device that accumulates an image in memory
+|device index string|copyscanlines|substring|Copies one or more scan lines from an image device into a string, starting at a given scan line in the image
+|device|setdevice||Sets the current device to the specified device
+||currentdevice|device|Gets the current device from the graphics state
+|device|getdeviceprops|mark name1 value1 ... namen valuen|Gets the properties of a device
+|mark name1 value1...namen valuen device|putdeviceprops|device|Sets properties of a device
 
 ## Glyph and Font Operators
 
@@ -501,8 +521,8 @@
 ||currentuserparams|dict|Return per-context interpreter parameters
 |string dict|setdevparams||Set parameters for input/output device
 |string|currentdevparams|dict|Return device parameters
-|int|vmreclaim||Control garbage collector
-|int|setvmthreshold||Control garbage collector
+|int|VMReclaim||Control garbage collector(use VMReclaim)
+|int|setvmthreshold||Control garbage collector(use setvmthreshold)
 ||vmstatus|level used maximum|Report VM status
 ||cachestatus|bsize bmax msize mmax csize cmax blimit|Return font cache status and parameters
 |int|setcachelimit||Set maximum bytes in cached glyph

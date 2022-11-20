@@ -116,6 +116,5 @@
 },
 "Coordinate System and Matrix Operators":{
 "prefix":"OperatorsForCoordinate System and Matrix Operators",
-"body":"${1|matrix,initmatrix,identmatrix,defaultmatrix,currentmatrix,setmatrix,translate,translate,scale,scale,rotate,rotate,concat,concatmatrix,transform,transform,dtransform,dtransform,itransform,itransform,idtransform,idtransform,invertmatrix|}",
-"description":"returns:matrix2"
+"body":"${1|matrix,initmatrix,identmatrix,defaultmatrix,currentmatrix,setmatrix,translate,translate,scale,scale,rotate,rotate,concat,concatmatrix,transform,transform,dtransform,dtransform,itransform,itransform,idtransform,idtransform,invertmatrix|}"
 }}

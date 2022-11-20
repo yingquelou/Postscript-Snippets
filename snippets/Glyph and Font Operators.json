@@ -151,6 +151,5 @@
 },
 "Glyph and Font Operators":{
 "prefix":"OperatorsForGlyph and Font Operators",
-"body":"${1|definefont,composefont,undefinefont,findfont,scalefont,makefont,setfont,rootfont,currentfont,selectfont,show,ashow,widthshow,awidthshow,xshow,xyshow,yshow,glyphshow,stringwidth,cshow,kshow,FontDirectory,GlobalFontDirectory,StandardEncoding,ISOLatin1Encoding,findencoding,setcachedevice,setcachedevice2,setcachedevice2,setcharwidth|}",
-"description":"returns:"
+"body":"${1|definefont,composefont,undefinefont,findfont,scalefont,makefont,setfont,rootfont,currentfont,selectfont,show,ashow,widthshow,awidthshow,xshow,xyshow,yshow,glyphshow,stringwidth,cshow,kshow,FontDirectory,GlobalFontDirectory,StandardEncoding,ISOLatin1Encoding,findencoding,setcachedevice,setcachedevice2,setcachedevice2,setcharwidth|}"
 }}

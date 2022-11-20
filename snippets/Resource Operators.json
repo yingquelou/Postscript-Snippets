@@ -31,6 +31,5 @@
 },
 "Resource Operators":{
 "prefix":"OperatorsForResource Operators",
-"body":"${1|defineresource,undefineresource,findresource,findcolorrendering,resourcestatus,resourceforall|}",
-"description":"returns:"
+"body":"${1|defineresource,undefineresource,findresource,findcolorrendering,resourcestatus,resourceforall|}"
 }}

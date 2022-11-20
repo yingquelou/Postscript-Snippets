@@ -1,5 +1,5 @@
-%! ghostscript
-/isdicttype {type (dicttype) eq} def
+%!ps
+/isdicttype {type /dicttype eq} def
 /exception <</tempfiles 1>> def
 /getallname
 {
@@ -20,4 +20,5 @@
         } ifelse
     } forall
 } def
-<< >> systemdict getallname {pop =} forall
+% example
+<< >> /add where {getallname {pop =} forall}if

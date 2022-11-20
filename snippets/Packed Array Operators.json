@@ -46,6 +46,5 @@
 },
 "Packed Array Operators":{
 "prefix":"OperatorsForPacked Array Operators",
-"body":"${1|packedarray,setpacking,currentpacking,length,get,getinterval,aload,copy,forall|}",
-"description":"returns:"
+"body":"${1|packedarray,setpacking,currentpacking,length,get,getinterval,aload,copy,forall|}"
 }}

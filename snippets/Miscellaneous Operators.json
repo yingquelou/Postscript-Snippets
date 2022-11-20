@@ -61,6 +61,5 @@
 },
 "Miscellaneous Operators":{
 "prefix":"OperatorsForMiscellaneous Operators",
-"body":"${1|bind,null,version,realtime,usertime,languagelevel,product,revision,serialnumber,executive,echo,prompt|}",
-"description":"returns:"
+"body":"${1|bind,null,version,realtime,usertime,languagelevel,product,revision,serialnumber,executive,echo,prompt|}"
 }}

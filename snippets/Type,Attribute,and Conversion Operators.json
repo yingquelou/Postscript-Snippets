@@ -71,6 +71,5 @@
 },
 "Type,Attribute,and Conversion Operators":{
 "prefix":"OperatorsForType,Attribute,and Conversion Operators",
-"body":"${1|type,cvlit,cvx,xcheck,executeonly,noaccess,readonly,rcheck,wcheck,cvi,cvn,cvr,cvrs,cvs|}",
-"description":"returns:substring"
+"body":"${1|type,cvlit,cvx,xcheck,executeonly,noaccess,readonly,rcheck,wcheck,cvi,cvn,cvr,cvrs,cvs|}"
 }}

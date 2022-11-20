@@ -29,12 +29,12 @@
 "body":"${1:string} currentdevparams",
 "description":"pushed:dict"
 },
-"Control garbage collector":{
-"prefix":"vmreclaim",
-"body":"${1:int} vmreclaim",
+"Control garbage collector(use VMReclaim)":{
+"prefix":"VMReclaim",
+"body":"${1:int} VMReclaim",
 "description":"pushed:"
 },
-"Control garbage collector":{
+"Control garbage collector(use setvmthreshold)":{
 "prefix":"setvmthreshold",
 "body":"${1:int} setvmthreshold",
 "description":"pushed:"
@@ -76,6 +76,5 @@
 },
 "Interpreter Parameter Operators":{
 "prefix":"OperatorsForInterpreter Parameter Operators",
-"body":"${1|setsystemparams,currentsystemparams,setuserparams,currentuserparams,setdevparams,currentdevparams,vmreclaim,setvmthreshold,vmstatus,cachestatus,setcachelimit,setcacheparams,currentcacheparams,setucacheparams,ucachestatus|}",
-"description":"returns:mark bsize bmax rsize rmax blimit"
+"body":"${1|setsystemparams,currentsystemparams,setuserparams,currentuserparams,setdevparams,currentdevparams,VMReclaim,setvmthreshold,vmstatus,cachestatus,setcachelimit,setcacheparams,currentcacheparams,setucacheparams,ucachestatus|}"
 }}

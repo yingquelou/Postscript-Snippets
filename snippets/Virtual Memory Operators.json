@@ -14,14 +14,29 @@
 "body":"${1:bool} setglobal",
 "description":"pushed:"
 },
+"Equivalent to /setglobal":{
+"prefix":"setshared",
+"body":"${1:bool} setshared",
+"description":"pushed:"
+},
 "Return current VM allocation mode":{
 "prefix":"currentglobal",
 "body":"currentglobal",
 "description":"pushed:bool"
 },
+"Equivalent to /currentglobal":{
+"prefix":"currentshared",
+"body":"currentshared",
+"description":"pushed:bool"
+},
 "Return true if any is simple or in global VM,false if in local VM":{
 "prefix":"gcheck",
 "body":"${1:any} gcheck",
+"description":"pushed:bool"
+},
+"Equivalent to /gcheck":{
+"prefix":"scheck",
+"body":"${1:any} scheck",
 "description":"pushed:bool"
 },
 "Start new job that will alter initial VM if bool1 is true":{
@@ -44,13 +59,7 @@
 "body":"${1:index} undefineuserobject",
 "description":"pushed:"
 },
-"Return current UserObjects array defined in userdict":{
-"prefix":"UserObjects",
-"body":"${1:This operator may be outdated.} UserObjects",
-"description":"pushed:array"
-},
 "Virtual Memory Operators":{
 "prefix":"OperatorsForVirtual Memory Operators",
-"body":"${1|save,restore,setglobal,currentglobal,gcheck,startjob,defineuserobject,execuserobject,undefineuserobject,UserObjects|}",
-"description":"returns:array"
+"body":"${1|save,restore,setglobal,setshared,currentglobal,currentshared,gcheck,scheck,startjob,defineuserobject,execuserobject,undefineuserobject|}"
 }}

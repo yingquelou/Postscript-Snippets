@@ -61,6 +61,5 @@
 },
 "Array Operators":{
 "prefix":"OperatorsForArray Operators",
-"body":"${1|array,[,],length,get,put,getinterval,putinterval,astore,aload,copy,forall|}",
-"description":"returns:"
+"body":"${1|array,[,],length,get,put,getinterval,putinterval,astore,aload,copy,forall|}"
 }}

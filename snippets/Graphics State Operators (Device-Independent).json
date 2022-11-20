@@ -54,6 +54,11 @@
 "body":"currentlinewidth",
 "description":"pushed:num"
 },
+"Sets the line cap parameter in the graphics state to int, which must be 0, 1, or 2.":{
+"prefix":"setlinecap",
+"body":"${1:int} setlinecap",
+"description":"pushed:"
+},
 "Return current line cap":{
 "prefix":"currentlinecap",
 "body":"currentlinecap",
@@ -169,8 +174,17 @@
 "body":"currentcmykcolor",
 "description":"pushed:cyan magenta yellow black"
 },
+"Sets the overprint mode in the graphics state.":{
+"prefix":"setoverprintmode",
+"body":"${1:bool} setoverprintmode",
+"description":"pushed:"
+},
+"Returns the current overprint mode":{
+"prefix":"currentoverprintmode",
+"body":"currentoverprintmode",
+"description":"pushed:bool"
+},
 "Graphics State Operators (Device-Independent)":{
 "prefix":"OperatorsForGraphics State Operators (Device-Independent)",
-"body":"${1|gsave,grestore,clipsave,cliprestore,grestoreall,initgraphics,gstate,setgstate,currentgstate,setlinewidth,currentlinewidth,currentlinecap,setlinejoin,currentlinejoin,setmiterlimit,currentmiterlimit,setstrokeadjust,currentstrokeadjust,setdash,currentdash,setcolorspace,currentcolorspace,setcolor,setcolor,setcolor,currentcolor,setgray,currentgray,sethsbcolor,currenthsbcolor,setrgbcolor,currentrgbcolor,setcmykcolor,currentcmykcolor|}",
-"description":"returns:cyan magenta yellow black"
+"body":"${1|gsave,grestore,clipsave,cliprestore,grestoreall,initgraphics,gstate,setgstate,currentgstate,setlinewidth,currentlinewidth,setlinecap,currentlinecap,setlinejoin,currentlinejoin,setmiterlimit,currentmiterlimit,setstrokeadjust,currentstrokeadjust,setdash,currentdash,setcolorspace,currentcolorspace,setcolor,setcolor,setcolor,currentcolor,setgray,currentgray,sethsbcolor,currenthsbcolor,setrgbcolor,currentrgbcolor,setcmykcolor,currentcmykcolor,setoverprintmode,currentoverprintmode|}"
 }}

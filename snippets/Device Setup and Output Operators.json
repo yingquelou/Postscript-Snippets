@@ -24,8 +24,42 @@
 "body":"nulldevice",
 "description":"pushed:"
 },
+"Copies a device":{
+"prefix":"copydevice",
+"body":"${1:device} copydevice",
+"description":"pushed:device"
+},
+"Makes a new device that accumulates an image in memory":{
+"prefix":"makeimagedevice",
+"body":"${1:matrix} ${2:width} ${3:height} ${4:palette} makeimagedevice",
+"description":"pushed:device"
+},
+"Copies one or more scan lines from an image device into a string, starting at a given scan line in the image":{
+"prefix":"copyscanlines",
+"body":"${1:device} ${2:index} ${3:string} copyscanlines",
+"description":"pushed:substring"
+},
+"Sets the current device to the specified device":{
+"prefix":"setdevice",
+"body":"${1:device} setdevice",
+"description":"pushed:"
+},
+"Gets the current device from the graphics state":{
+"prefix":"currentdevice",
+"body":"currentdevice",
+"description":"pushed:device"
+},
+"Gets the properties of a device":{
+"prefix":"getdeviceprops",
+"body":"${1:device} getdeviceprops",
+"description":"pushed:mark name1 value1 ... namen valuen"
+},
+"Sets properties of a device":{
+"prefix":"putdeviceprops",
+"body":"${1:mark} ${2:name1} ${3:value1...namen} ${4:valuen} ${5:device} putdeviceprops",
+"description":"pushed:device"
+},
 "Device Setup and Output Operators":{
 "prefix":"OperatorsForDevice Setup and Output Operators",
-"body":"${1|showpage,copypage,setpagedevice,currentpagedevice,nulldevice|}",
-"description":"returns:"
+"body":"${1|showpage,copypage,setpagedevice,currentpagedevice,nulldevice,copydevice,makeimagedevice,copyscanlines,setdevice,currentdevice,getdeviceprops,putdeviceprops|}"
 }}

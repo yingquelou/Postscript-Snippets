@@ -64,6 +64,11 @@
 "body":"closepath",
 "description":"pushed:"
 },
+"Flush page":{
+"prefix":"flushpage",
+"body":"flushpage",
+"description":"pushed:"
+},
 "Convert curves to sequences of straight lines":{
 "prefix":"flattenpath",
 "body":"flattenpath",
@@ -156,6 +161,5 @@
 },
 "Path Construction Operators":{
 "prefix":"OperatorsForPath Construction Operators",
-"body":"${1|newpath,currentpoint,moveto,rmoveto,lineto,rlineto,arc,arcn,arct,arcto,curveto,rcurveto,closepath,flattenpath,reversepath,strokepath,ustrokepath,ustrokepath,charpath,uappend,clippath,setbbox,pathbbox,pathforall,upath,initclip,clip,eoclip,rectclip,rectclip,ucache|}",
-"description":"returns:"
+"body":"${1|newpath,currentpoint,moveto,rmoveto,lineto,rlineto,arc,arcn,arct,arcto,curveto,rcurveto,closepath,flushpage,flattenpath,reversepath,strokepath,ustrokepath,ustrokepath,charpath,uappend,clippath,setbbox,pathbbox,pathforall,upath,initclip,clip,eoclip,rectclip,rectclip,ucache|}"
 }}

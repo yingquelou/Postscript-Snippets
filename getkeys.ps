@@ -1,0 +1,74 @@
+%!ps
+
+% Gets a collection of keys in a dictionary whose values are of the specified type.
+% If other dictionaries exist in this dictionary, they will also be traversed.
+% syntax:dict typename getKeys -> array
+% @param dict dicttype it's a dictionary
+% @param typename nametype it's some type of name,Here it is:
+% /arraytype
+% /booleantype
+% /devicetype
+% /dicttype
+% /integertype
+% /nametype
+% /nulltype
+% /operatortype
+% /packedarraytype
+% /stringtype
+% @returns array arraytype 
+/getKeys {
+    % Bind parameters
+    /typeName exch def
+    /srcDt exch def
+
+    % syntax:any isThisType -> bool
+    /isThisType {type typeName eq} bind def
+    % syntax:any isDictType -> bool
+    /isDictType {type (dicttype) eq} bind def
+    /checked << /typeName 1 /srcDt 1 /isThisType 1 
+                /checked 1 /forRet 1 /isDictType 1 
+                /findKeys 1 /mainFunc 1 /tempfiles 1
+             >> def
+    /forRet <<>> def
+    
+    % syntax:dict findKeys ->save at forRet
+    /findKeys {
+        {
+          isThisType {forRet exch 1 put} {pop} ifelse
+        } forall
+    } def
+
+    /mainFunc {
+      dup findKeys
+      {
+        dup isDictType {
+            checked 2 index known {pop pop} {checked 3 -1 roll 1 put mainFunc} ifelse
+        } {pop pop} ifelse
+      } forall
+    } def
+    
+    % start running 
+    srcDt mainFunc
+
+    % Clear some definitions.
+    [/typeName /srcDt /isThisType /checked 
+     /isDictType /findKeys /mainFunc] {
+        dup where {exch undef} {pop} ifelse
+    } bind forall
+    
+    % Some key-value pairs were deleted from the result set.
+    [/typeName /srcDt /isThisType /checked 
+     /isDictType /findKeys /mainFunc /forRet] {
+        forRet exch 2 copy known {undef} {pop pop} ifelse
+    } forall
+
+    % The results are output here.
+    [forRet {pop} forall]
+
+    % Clear the last definition.
+    /forRet dup where {exch undef} {pop} ifelse
+
+} def
+
+% example 1:You can find almost all of the operators defined in the current script interpreter.
+/add where {/operatortype getKeys {=} forall}if

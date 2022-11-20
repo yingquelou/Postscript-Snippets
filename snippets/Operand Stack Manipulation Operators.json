@@ -56,6 +56,5 @@
 },
 "Operand Stack Manipulation Operators":{
 "prefix":"OperatorsForOperand Stack Manipulation Operators",
-"body":"${1|pop,exch,dup,copy,index,roll,clear,count,mark,cleartomark,counttomark|}",
-"description":"returns:mark obj1…objn n"
+"body":"${1|pop,exch,dup,copy,index,roll,clear,count,mark,cleartomark,counttomark|}"
 }}

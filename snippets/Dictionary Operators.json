@@ -134,8 +134,12 @@
 "body":"cleardictstack",
 "description":"pushed:"
 },
+"pushes the internal dictionary object on the operand stack":{
+"prefix":"internaldict",
+"body":"${1:int} internaldict",
+"description":"pushed:dict"
+},
 "Dictionary Operators":{
 "prefix":"OperatorsForDictionary Operators",
-"body":"${1|dict,<<,>>,length,maxlength,begin,end,def,load,store,get,put,undef,known,where,copy,forall,currentdict,errordict,$error,systemdict,userdict,globaldict,statusdict,countdictstack,dictstack,cleardictstack|}",
-"description":"returns:"
+"body":"${1|dict,<<,>>,length,maxlength,begin,end,def,load,store,get,put,undef,known,where,copy,forall,currentdict,errordict,$error,systemdict,userdict,globaldict,statusdict,countdictstack,dictstack,cleardictstack,internaldict|}"
 }}

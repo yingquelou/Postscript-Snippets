@@ -64,9 +64,14 @@
 "body":"${1:num} sqrt",
 "description":"pushed:real"
 },
-"Return arctangent of num/den in degrees":{
-"prefix":"atan",
-"body":"${1:num} ${2:den} atan",
+"Return sine of angle degrees":{
+"prefix":"sin",
+"body":"${1:angle} sin",
+"description":"pushed:real"
+},
+"Returns the angle corresponding to a sinusoidal value":{
+"prefix":"arcsin",
+"body":"${1:real} arcsin",
 "description":"pushed:angle"
 },
 "Return cosine of angle degrees":{
@@ -74,10 +79,15 @@
 "body":"${1:angle} cos",
 "description":"pushed:real"
 },
-"Return sine of angle degrees":{
-"prefix":"sin",
-"body":"${1:angle} sin",
-"description":"pushed:real"
+"Returns the angle corresponding to a cosine value":{
+"prefix":"arccos",
+"body":"${1:real} arccos",
+"description":"pushed:angle"
+},
+"Return arctangent of num/den in degrees":{
+"prefix":"atan",
+"body":"${1:num} ${2:den} atan",
+"description":"pushed:angle"
 },
 "Raise base to exponent power":{
 "prefix":"exp",
@@ -111,6 +121,5 @@
 },
 "Arithmetic and Math Operators":{
 "prefix":"OperatorsForArithmetic and Math Operators",
-"body":"${1|add,div,idiv,mod,mul,sub,abs,neg,ceiling,floor,round,truncate,sqrt,atan,cos,sin,exp,ln,log,rand,srand,rrand|}",
-"description":"returns:int"
+"body":"${1|add,div,idiv,mod,mul,sub,abs,neg,ceiling,floor,round,truncate,sqrt,sin,arcsin,cos,arccos,atan,exp,ln,log,rand,srand,rrand|}"
 }}

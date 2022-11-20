@@ -131,6 +131,5 @@
 },
 "Graphics State Operators (Device-Dependent)":{
 "prefix":"OperatorsForGraphics State Operators (Device-Dependent)",
-"body":"${1|sethalftone,currenthalftone,setscreen,setscreen,currentscreen,setcolorscreen,setcolorscreen,setcolorscreen,setcolorscreen,currentcolorscreen,settransfer,currenttransfer,setcolortransfer,currentcolortransfer,setblackgeneration,currentblackgeneration,setundercolorremoval,currentundercolorremoval,setcolorrendering,currentcolorrendering,setflat,currentflat,setoverprint,currentoverprint,setsmoothness,currentsmoothness|}",
-"description":"returns:num"
+"body":"${1|sethalftone,currenthalftone,setscreen,setscreen,currentscreen,setcolorscreen,setcolorscreen,setcolorscreen,setcolorscreen,currentcolorscreen,settransfer,currenttransfer,setcolortransfer,currentcolortransfer,setblackgeneration,currentblackgeneration,setundercolorremoval,currentundercolorremoval,setcolorrendering,currentcolorrendering,setflat,currentflat,setoverprint,currentoverprint,setsmoothness,currentsmoothness|}"
 }}

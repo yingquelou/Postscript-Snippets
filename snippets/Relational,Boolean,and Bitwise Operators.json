@@ -66,6 +66,5 @@
 },
 "Relational,Boolean,and Bitwise Operators":{
 "prefix":"OperatorsForRelational,Boolean,and Bitwise Operators",
-"body":"${1|eq,ne,ge,gt,le,lt,and,not,or,xor,true,false,bitshift|}",
-"description":"returns:int2"
+"body":"${1|eq,ne,ge,gt,le,lt,and,not,or,xor,true,false,bitshift|}"
 }}
