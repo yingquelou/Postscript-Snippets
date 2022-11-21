@@ -381,8 +381,8 @@
 |dx dy|rlineto||Perform relative lineto
 |x y r angle1 angle2|arc||Append counterclockwise arc
 |x y r angle1 angle2|arcn||Append clockwise arc
-|x1 y1 x2 y2 r|arct||Append tangent arc
-|x1 y1 x2 y2 r|arcto|xt1 yt1 xt2 yt2|Append tangent arc
+|x1 y1 x2 y2 r|arct||Append tangent arc(use arct)
+|x1 y1 x2 y2 r|arcto|xt1 yt1 xt2 yt2|Append tangent arc(use arcto)
 |x1 y1 x2 y2 x3 y3|curveto||Append Bézier cubic section
 |dx1 dy1 dx2 dy2 dx3 dy3|rcurveto||Perform relative curveto
 ||closepath||Connect subpath back to its starting point
@@ -390,8 +390,8 @@
 ||flattenpath||Convert curves to sequences of straight lines
 ||reversepath||Reverse direction of current path
 ||strokepath||Compute outline of stroked path
-|userpath|ustrokepath||Compute outline of stroked userpath
-|userpath matrix|ustrokepath||Compute outline of stroked userpath
+|userpath|ustrokepath||Compute outline of stroked userpath 1
+|userpath matrix|ustrokepath||Compute outline of stroked userpath 2
 |string bool|charpath||Append glyph outline to current path
 |userpath|uappend||Interpret userpath and append to current path
 ||clippath||Set current path to clipping path

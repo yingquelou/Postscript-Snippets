@@ -39,12 +39,12 @@
 "body":"${1:x} ${2:y} ${3:r} ${4:angle1} ${5:angle2} arcn",
 "description":"pushed:"
 },
-"Append tangent arc":{
+"Append tangent arc(use arct)":{
 "prefix":"arct",
 "body":"${1:x1} ${2:y1} ${3:x2} ${4:y2} ${5:r} arct",
 "description":"pushed:"
 },
-"Append tangent arc":{
+"Append tangent arc(use arcto)":{
 "prefix":"arcto",
 "body":"${1:x1} ${2:y1} ${3:x2} ${4:y2} ${5:r} arcto",
 "description":"pushed:xt1 yt1 xt2 yt2"
@@ -84,12 +84,12 @@
 "body":"strokepath",
 "description":"pushed:"
 },
-"Compute outline of stroked userpath":{
+"Compute outline of stroked userpath 1":{
 "prefix":"ustrokepath",
 "body":"${1:userpath} ustrokepath",
 "description":"pushed:"
 },
-"Compute outline of stroked userpath":{
+"Compute outline of stroked userpath 2":{
 "prefix":"ustrokepath",
 "body":"${1:userpath} ${2:matrix} ustrokepath",
 "description":"pushed:"
