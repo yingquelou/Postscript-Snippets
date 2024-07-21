@@ -3,3 +3,7 @@
 .gitignore
 vsc-extension-quickstart.md
 Operators/*
+*.txt
+!name.txt
+node_modules
+src

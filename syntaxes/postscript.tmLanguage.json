@@ -1,0 +1,37 @@
+{
+    "$schema": "tmlanguage.json",
+    "scopeName": "source.postscript",
+    "fileTypes": [
+        "ps",
+        "eps"
+    ],
+    "uuid": "grammars.postscript",
+    "name": "grammars.postscript",
+    "patterns": [
+        {
+            "name": "variable",
+            "include": "#dict"
+        },
+        {
+            "name": "keyword",
+            "include": "#function"
+        },
+        {
+            "name": "support.function",
+            "include": "#function"
+        }
+    ],
+    "repository": {
+        "dict": {
+            "begin": "<<",
+            "match": ".*",
+            "end": ">>"
+        },
+        "number": {
+            "match": "\\d+"
+        },
+        "function": {
+            "match": "add|sub"
+        }
+    }
+}

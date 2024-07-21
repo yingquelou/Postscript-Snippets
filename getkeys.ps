@@ -69,6 +69,10 @@
     /forRet dup where {exch undef} {pop} ifelse
 
 } def
-
+/buffer 256 string def
+/out (allname.txt) (w) file def
 % example 1:You can find almost all of the operators defined in the current script interpreter.
-/add where {/operatortype getKeys {=} forall}if
+/add where {/operatortype getKeys {
+buffer cvs out exch writestring
+out 10 write
+} forall} if

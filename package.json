@@ -10,7 +10,44 @@
   "categories": [
     "Snippets"
   ],
+  "activationEvents": [],
+  "main": "dist/extension.js",
+  "dependencies": {
+    "@types/vscode": "^1.66.0",
+    "vsce": "^2.7.0"
+  },
   "contributes": {
+    "semanticTokenTypes": [],
+    "semanticTokenModifiers": [],
+    "semanticTokenScopes": [
+      {
+        "language": "postscript",
+        "scopes": {
+          "ok":["source.postscript"]
+        }
+      }
+    ],
+    "themes": [
+      {
+        "label": "PostScript",
+        "id": "PostScript.vs",
+        "uiTheme": "vs",
+        "path": "./colorthemes/awesome-color-theme.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "postscript",
+        "scopeName": "source.postscript",
+        "path": "./syntaxes/postscript.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      {
+        "title": "postscript.demo",
+        "command": "postscript.demo"
+      }
+    ],
     "languages": [
       {
         "id": "postscript",
@@ -128,5 +165,9 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/yingquelou/Postscript-Snippets.git"
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "package": "vsce package"
   }
 }
