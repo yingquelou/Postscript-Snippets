@@ -2,36 +2,144 @@
     "$schema": "tmlanguage.json",
     "scopeName": "source.postscript",
     "fileTypes": [
-        "ps",
-        "eps"
+        ".ps",
+        ".eps"
     ],
-    "uuid": "grammars.postscript",
-    "name": "grammars.postscript",
+    "uuid": "yingquelou.postscript",
+    "name": "postscript",
     "patterns": [
         {
-            "name": "variable",
-            "include": "#dict"
+            "include": "#operatortype"
         },
         {
-            "name": "keyword",
-            "include": "#function"
-        },
-        {
-            "name": "support.function",
-            "include": "#function"
+            "include": "#obj"
         }
     ],
     "repository": {
-        "dict": {
+        "hexstringtype": {
+            "name": "string.postscript.hexstringtype",
+            "begin": "<",
+            "patterns": [
+                {
+                    "match": "[0-9A-Fa-f]"
+                }
+            ],
+            "end": ">"
+        },
+        "dicttype": {
             "begin": "<<",
-            "match": ".*",
-            "end": ">>"
+            "end": ">>",
+            "patterns": [
+                {
+                    "include": "#obj"
+                }
+            ]
         },
-        "number": {
-            "match": "\\d+"
+        "packedarraytype": {
+            "begin": "{",
+            "end": "}",
+            "patterns": [
+                {
+                    "include": "#obj"
+                }
+            ]
         },
-        "function": {
-            "match": "add|sub"
+        "arraytype": {
+            "begin": "\\[",
+            "end": "\\]",
+            "patterns": [
+                {
+                    "include": "#obj"
+                }
+            ]
+        },
+        "nulltype": {
+            "match": "null",
+            "name": "keyword.postscript.nulltype"
+        },
+        "nametype": {
+            "name": "variable.name.postscript.nametype",
+            "captures": {
+                "1": {
+                    "name": "constant",
+                    "patterns": [
+                        {
+                            "match": "s"
+                        }
+                    ]
+                }
+            },
+            "match": "/[^\\s\\t\\r\\n\\(\\)\\[\\]\\<\\>\\/]+"
+        },
+        "stringtype": {
+            "name": "string.postscript.stringtype",
+            "begin": "\\(",
+            "patterns": [
+                {
+                    "include": "#stringtype"
+                },
+                {
+                    "match": "[^)]"
+                }
+            ],
+            "end": "\\)"
+        },
+        "booleantype": {
+            "name": "constant.numeric.postscript.booleantype",
+            "match": "false|true"
+        },
+        "realtype": {
+            "name": "constant.numeric.postscript.realtype",
+            "match": "[+-]?(\\d+\\.\\d+|\\d+\\.|\\.\\d+)"
+        },
+        "integertype": {
+            "name": "constant.numeric.postscript.integertype",
+            "match": "[+-]?\\d+"
+        },
+        "obj": {
+            "patterns": [
+                {
+                    "include": "#packedarraytype"
+                },
+                {
+                    "include": "#arraytype"
+                },
+                {
+                    "include": "#dicttype"
+                },
+                {
+                    "include": "#nulltype"
+                },
+                {
+                    "include": "#realtype"
+                },
+                {
+                    "include": "#stringtype"
+                },
+                {
+                    "include": "#booleantype"
+                },
+                {
+                    "include": "#nametype"
+                },
+                {
+                    "include": "#operatortyp.def"
+                },
+                {
+                    "include": "#hexstringtype"
+                },
+                {
+                    "include": "#integertype"
+                }
+            ]
+        },
+        "operatortyp.def": {
+            "name": "entity.name.postscript.UserDefined",
+            "match": "\\b[^\\s\\t\\r\\n\\(\\)\\[\\]\\<\\>\\/]+"
+        },
+        "operatortype": {
+            "name": "keyword.control.less",
+            "match": "\\b(cachestatus|execstack|run|cvr|load|setcharwidth|concatmatrix|currentglobal|setsmoothness|currentobjectformat|le|setcmykcolor|closepath|ustrokepath|readhexstring|execuserobject|setfont|vmreclaim|quit|cvn|forall|known|setcachedevice2|dtransform|currentsmoothness|currentmatrix|selectdevice|currentcmykcolor|clip|gt|scalefont|ustroke|read|string|exec|cvlit|initgraphics|ucachestatus|end|setcachedevice|concat|bind|status|setrgbcolor|ge|upath|print|makefont|rsearch|yshow|currentfile|setucacheparams|cvi|dictstack|kshow|renamefile|eq|currentrgbcolor|ufill|writeobject|erasepage|search|currentfont|xyshow|currentmiterlimit|setoverprint|dict|srand|clipsave|image|bitshift|sethsbcolor|restore|ueofill|xshow|countexecstack|=only|token|currentlinewidth|scheck|showpage|charpath|setscreen|cliprestore|currentdict|sqrt|rootfont|currenthsbcolor|and|colorimage|grestoreall|flushfile|anchorsearch|ucache|glyphshow|currentlinejoin|currentoverprint|countdictstack|sin|awidthshow|cshow|setpacking|setgray|stroke|uappend|grestore|flush|setbbox|astore|matrix|currentlinecap|check_r6_password|begin|copypage|ashow|rrand|imagemask|filenameforall|findlibfile|currentgray|fill|packedarray|save|eexec|fileposition|mark|inustroke|setshared|array|rectstroke|currentoverprintmode|cleardictstack|rand|undefineresource|sub|file|currentpacking|eofill|inufill|gsave|counttomark|nulldevice|selectfont|rectfill|aload|currentflat|setoverprintmode|startjob|log|vmstatus|roll|settransfer|inueofill|store|count|rectclip|identmatrix|gcheck|pathbbox|truncate|ln|setuserparams|pop|deletefile|processcolors|translate|instroke|runpdf|resourcestatus|echo|cleartomark|printobject|round|definefont|stopped|setmatrix|xcheck|setmiterlimit|exp|setsystemparams|type|internaldict|currenttransfer|transform|index|devstatus|purgedevicecache|undef|undefinefont|infill|closefile|clear|findcolorrendering|strokepath|setgstate|setlinejoin|wcheck|setlinewidth|neg|cos|setdevparams|setcolorspace|ifelse|>>|ineofill|currentscreen|bytesavailable|rmoveto|setpagedevice|gstate|mul|currentdash|reversepath|shfill|setlinecap|stop|atan|findresource|setdistillerparams|setcolorrendering|setcolor|if|usertime|setcolorscreen|currentcolorscreen|rlineto|currentgstate|mod|filter|writestring|pathforall|repeat|sethalftone|arcsin|defineresource|exch|copyscanlines|scale|setundercolorremoval|currentshared|currentdevparams|rcurveto|copy|floor|writehexstring|flattenpath|arccos|readonly|setflat|currentuserparams|dup|currentcolorrendering|currentcolorspace|rotate|setcolortransfer|devforall|currentpagedevice|flushpage|newpath|xor|<<|setstrokeadjust|currentdistillerparams|idiv|\\]|currenthalftone|rcheck|loop|def|currentsystemparams|diskstatus|currentcolor|itransform|setblackgeneration|uncachedevice|or|moveto|currentstrokeadjust|div|write|clippath|resourceforall|setdevice|noaccess|setvmthreshold|for|putinterval|add|invertmatrix|serialnumber|getsystemparam|currentundercolorremoval|=print|not|lineto|ceiling|\\[|arcto|put|executeonly|realtime|initmatrix|currentcolortransfer|ne|initclip|setpattern|setfileposition|currentcacheparams|arct|undefineuserobject|length|cvx|where|widthshow|idtransform|currentblackgeneration|currentdevice|eoclip|makepattern|abs|resetfile|setcacheparams|arcn|exit|getinterval|cvs|defineuserobject|stringwidth|defaultmatrix|curveto|readstring|setcachelimit|arc|pdfmark|get|cvrs|setdash|maxlength|show|setglobal|setobjectformat|lt|currentpoint|execform|readline|getuserparam)\\b"
         }
     }
 }

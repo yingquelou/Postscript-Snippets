@@ -3,12 +3,13 @@
   "displayName": "PostScript Snippets",
   "publisher": "yingquelou",
   "description": "PostScript GhostScript OptScript",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "engines": {
-    "vscode": "^1.73.0"
+    "vscode": "^1.70.3"
   },
   "categories": [
-    "Snippets"
+    "Snippets",
+    "Programming Languages"
   ],
   "activationEvents": [],
   "main": "dist/extension.js",
@@ -17,35 +18,11 @@
     "vsce": "^2.7.0"
   },
   "contributes": {
-    "semanticTokenTypes": [],
-    "semanticTokenModifiers": [],
-    "semanticTokenScopes": [
-      {
-        "language": "postscript",
-        "scopes": {
-          "ok":["source.postscript"]
-        }
-      }
-    ],
-    "themes": [
-      {
-        "label": "PostScript",
-        "id": "PostScript.vs",
-        "uiTheme": "vs",
-        "path": "./colorthemes/awesome-color-theme.json"
-      }
-    ],
     "grammars": [
       {
         "language": "postscript",
         "scopeName": "source.postscript",
         "path": "./syntaxes/postscript.tmLanguage.json"
-      }
-    ],
-    "commands": [
-      {
-        "title": "postscript.demo",
-        "command": "postscript.demo"
       }
     ],
     "languages": [
@@ -168,6 +145,9 @@
   },
   "scripts": {
     "compile": "tsc -p ./",
-    "package": "vsce package"
+    "package": "vsce package",
+    "help": "vsce -h",
+    "list": "vsce ls",
+    "publish": "vsce publish"
   }
 }

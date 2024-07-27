@@ -5,3 +5,4 @@ settings.json
 !name.txt
 dist
 .vscode
+package-lock.json
