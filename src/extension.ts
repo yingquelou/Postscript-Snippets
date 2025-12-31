@@ -1,35 +1,42 @@
 import * as vscode from 'vscode'
-let gs: vscode.Terminal
-let out: vscode.OutputChannel
+import { DebugConfiguration, DebugConfigurationProvider } from 'vscode'
+const languageId = 'postscript'
 export function activate(context: vscode.ExtensionContext) {
-    out = vscode.window.createOutputChannel("postscript")
-    gs = vscode.window.createTerminal("postscript")
-    let hover = vscode.languages.registerHoverProvider('postscript', new PostScriptHoverProvider)
-    context.subscriptions.push(hover)
-}
-export function deactivate() {
-    // nothing to do
-    out.dispose()
-    gs.dispose()
-}
-class PostScriptHoverProvider implements vscode.HoverProvider {
-    static PName = /\/[^\s()\t\r\n\(\)\[\]<>/\/]+/
-    static PNumber = /[-+]?\d+/
-
-    provideHover(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): vscode.ProviderResult<vscode.Hover> {
-        let buffer: string[] = []
-        let tokenstring = document.getWordRangeAtPosition(position, PostScriptHoverProvider.PName);
-        if (tokenstring?.isEmpty === false) {
-            buffer.push("**Name**")
-            buffer.push(document.getText(tokenstring))
-        }
-        tokenstring = document.getWordRangeAtPosition(position, PostScriptHoverProvider.PNumber);
-        if (tokenstring?.isEmpty === false) {
-            buffer.push("**Integer**")
-            buffer.push(document.getText(tokenstring))
-        }
-        return {
-            contents: buffer
+    let channel = vscode.window.createOutputChannel(languageId, languageId)
+    // gs = vscode.window.createTerminal("postscript")
+    const debugConfigurationProvider: DebugConfigurationProvider = {
+        provideDebugConfigurations(folder, token) {
+            return [
+                {
+                    type: 'postscript',
+                    request: 'launch',
+                    name: 'Launch PostScript (Ghostscript)',
+                    program: '${file}',
+                    ghostscriptPath: 'gswin64c'
+                }
+            ]
+        },
+        resolveDebugConfiguration(folder, config: DebugConfiguration, token) {
+            if (!config || !config.type) {
+                return undefined
+            }
+            return config
         }
     }
+    context.subscriptions.push(channel,
+        vscode.debug.registerDebugConfigurationProvider(languageId, debugConfigurationProvider),
+        vscode.debug.onDidReceiveDebugSessionCustomEvent((e) => {
+            if (e.session.type === languageId)
+                switch (e.event) {
+                    case 'channel':
+                        channel.appendLine(JSON.stringify(e.body))
+                        break;
+                    default:
+                        break;
+                }
+        }))
+}
+
+export function deactivate() {
+    // nothing to do
 }

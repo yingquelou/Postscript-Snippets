@@ -1,5 +1,9 @@
 # Operator Summary
 
+The headers of all tables are consistent so that the `snippetsGenerator` function can generate code snippets for extensions.
+
+Use the title closest to the table as the output file name
+
 ## Operand Stack Manipulation Operators
 
 |param|operator|returns|remarks
@@ -8,11 +12,11 @@
 |any1 any2|exch|any2 any1|Exchange top two elements
 |any|dup|any any|Duplicate top element
 |any1…anyn n|copy|any1…anyn any1…anyn|Duplicate topn elements
-|anyn…any0 n|index|anyn…any0 anyn|Duplicate arbitrary element
+|…anyn…any0 n|index|anyn…any0 anyn|Duplicate arbitrary element
 |any(n-1)…any0 n j|roll|any(j-1)modn…any0 any(n-1)…anyjmodn|Rolln elements up j times
 |any1…anyn|clear||Discard all elements
 |any1…anyn|count|any1…anyn n|Count elements on stack
-|mark|mark||Push mark on stack
+||mark|mark|Push mark on stack
 |mark obj1…objn|cleartomark||Discard elements down through mark
 |mark obj1…objn|counttomark|mark obj1…objn n|Count elements down to mark
 
@@ -66,7 +70,7 @@
 
 |param|operator|returns|remarks
 |-|-|-|-
-|any0…any(n-1) n|packedarray|packedarray|Create packed array consisting ofn elements from stack
+|any0…any(n-1) n|packedarray|-packedarray-|Create packed array consisting ofn elements from stack
 |bool|setpacking||Set array packing mode for {…} syntax (true = packed array)
 ||currentpacking|bool|Return array packing mode
 |packedarray|length|int|Return number of elements in packedarray
@@ -80,9 +84,9 @@
 
 |param|operator|returns|remarks
 |-|-|-|-
-|int|dict|dict|Create dictionary with capacity for int elements
-||<<|mark|Start dictionary construction
-|mark key1 value1…keyn valuen|>>|dict|End dictionary construction
+|int|dict|-dict-|Create dictionary with capacity for int elements
+||<<|-mark-|Start dictionary construction
+|mark key1 value1…keyn valuen|>>|-dict-|End dictionary construction
 |dict|length|int|Return number of entries in dict
 |dict|maxlength|int|Return current capacity of dict
 |dict|begin||Push dict on dictionary stack
@@ -107,7 +111,7 @@
 ||countdictstack|int|Count elements on dictionary stack
 |array|dictstack|subarray|Copy dictionary stack into array
 ||cleardictstack||Pop all nonpermanent dictionaries off dictionary stack
-|int|internaldict|dict|pushes the internal dictionary object on the operand stack
+|1183615869|internaldict|-dict-|pushes the internal dictionary object on the operand stack
 
 ## String Operators
 
@@ -121,9 +125,9 @@
 |string1 index string2|putinterval||Replace substring of string1 starting at index by string2
 |string1 string2|copy|substring2|Copy elements of string1 to initial substring of string2
 |string proc|forall||Execute proc for each element of string
-|string seek|anchorsearch|post match true or string false|Search for seek at start of string
+|string seek|anchorsearch|match true or string false|Search for seek at start of string
 |string seek|search|post match pre true or string false|Search for seek in string
-|string seek|rsearch|post match pre true or string false|Search for seek in string,but the search order is reversed with /search
+|string seek|rsearch|post match pre true or string false|Search for seek in string,but the search order is reversed with search
 |string|token|post any true or false|Read token from start of string
 
 ## Relational,Boolean,and Bitwise Operators
@@ -238,8 +242,8 @@
 
 |param|operator|returns|remarks
 |-|-|-|-
-||save|save|Create VM snapshot
-|save|restore||Restore VM snapshot
+||save|-save-|Create VM snapshot
+|-save-|restore||Restore VM snapshot
 |bool|setglobal||Set VM allocation mode (false = local,true = global)
 |bool|setshared||Equivalent to /setglobal
 ||currentglobal|bool|Return current VM allocation mode

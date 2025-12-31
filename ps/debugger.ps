@@ -1,0 +1,182 @@
+% Ghostscript debug helpers for PostScript debugger
+% Purpose:
+% - Provide helper procedures that emit clearly delimited output for the
+%   debugger adapter to consume. Each helper prints a START and END marker
+%   and emits one semantic item per line so the adapter can reliably parse
+%   and populate the Variables / Stacks views.
+%
+% General rules / requirements for adapter-friendly helpers:
+% - Every helper MUST print a unique start marker and end marker, e.g.
+%     (PS_<NAME>_START) print flush
+%     ... content ...
+%     (PS_<NAME>_END) print flush
+% - Each logical item must be printed on its own line and followed by
+%   `print flush` to avoid buffering issues.
+%
+% Helpers included:
+%  - gs_traverse_route
+%
+% See per-helper comments below for input, output examples, and parsing regex.
+% Note: keep human-readable comments in this file, but avoid printing
+% any non-structured lines during helper execution (they would confuse
+% parsing in the adapter).
+
+% Structurally output information of the specified object
+% Usage: (<array>|<packedarray>|<dict>) gs_format_print
+% Pushed:
+%
+% Standard Output Format:
+% PS_ENTRIES_START
+%   PS_ENTRY_START
+%     PS_PROP_START
+%       PS_NAME_START
+%       PS_NAME_END
+%       PS_VALUE_START
+%       PS_VALUE_END
+%     PS_PROP_END
+%     ...
+%   PS_ENTRY_END
+%   ...
+% PS_ENTRIES_END
+%
+% Note: Required attributes are name,type,value
+% For other recommended attributes, please refer to (DebugProtocol.Variable)
+/gs_format_print {
+<<
+  /ps_types <<
+    /arraytype 1
+    /packedarraytype 1
+    /dicttype 1
+  >>
+>>  begin
+  /range_marker {
+    % Usage: <packedarray> <string> range_marker
+    1 dict begin
+    /marker exch def
+    (PS_) print  marker print  (_START) =
+    exec
+    (PS_) print  marker print  (_END) =
+    end
+  } def
+
+  /ps_append_prop {
+    dup type ps_types exch known {
+      {length} stopped {
+        % failed
+        $error /newerror false put
+        {
+          {
+            (invalidaccess) =
+          } (NAME) range_marker
+          {
+            pop
+          } (VALUE) range_marker
+        } (PROP) range_marker
+      } {
+        {
+          {
+            (length) =
+          } (NAME) range_marker
+          {
+            =
+          } (VALUE) range_marker
+        } (PROP) range_marker
+      } ifelse
+    } {pop} ifelse
+  } def
+
+  /for_array {
+    % Usage: <array> for_array
+    <<>>begin
+    /the_array exch def
+      0 1 /the_array load length 1 sub {
+        /i exch def
+        {
+          {
+            {
+              (name) =
+            } (NAME) range_marker
+            {
+              i =
+            } (VALUE) range_marker
+          } (PROP) range_marker
+          {
+            {
+              (type) =
+            } (NAME) range_marker
+            {
+              /the_array load i get dup type =
+            } (VALUE) range_marker
+          } (PROP) range_marker
+          {
+            {
+              (value) =
+            } (NAME) range_marker
+            {
+              dup ==
+            } (VALUE) range_marker
+          } (PROP) range_marker
+          ps_append_prop
+        } (ENTRY) range_marker
+      } for
+    end
+  } def
+
+  /for_dict {
+    % Usage: <dict> for_dict
+    {
+      {
+        {
+          {
+            (name) =
+          } (NAME) range_marker
+          {
+            exch ==
+          } (VALUE) range_marker
+        } (PROP) range_marker
+        {
+          {
+            (type) =
+          } (NAME) range_marker
+          {
+            dup type =
+          } (VALUE) range_marker
+        } (PROP) range_marker
+        {
+          {
+            (value) =
+          } (NAME) range_marker
+          {
+            dup ==
+          } (VALUE) range_marker
+        } (PROP) range_marker
+        ps_append_prop
+      } (ENTRY) range_marker
+    } forall
+  } def
+
+  {
+    dup type /dicttype eq {
+      for_dict
+    } {
+      for_array
+    } ifelse
+  } (ENTRIES) range_marker
+end
+} def
+
+% Route-based traversal helper
+% Usage: [ (/ostack | /estack | /estack) (<array_index>|<dict_key>)*] gs_traverse_route
+/gs_traverse_route {
+<<
+/select <<
+  /dstack countdictstack array dictstack
+>>
+>>begin
+  /route exch def
+  count /ct exch def
+  ct copy ct packedarray select exch /ostack exch put
+  countexecstack array execstack select exch /estack exch put
+  select route {get} forall gs_format_print
+end
+} bind def

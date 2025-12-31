@@ -1,28 +1,34 @@
 {
   "name": "postscriptsnippets",
-  "displayName": "PostScript Snippets",
+  "displayName": "PostScript Programming Language",
   "publisher": "yingquelou",
   "description": "PostScript GhostScript OptScript",
-  "version": "0.1.2",
+  "version": "1.0.0",
   "engines": {
     "vscode": "^1.70.3"
   },
+  "activationEvents": [],
   "categories": [
     "Snippets",
-    "Programming Languages"
+    "Programming Languages",
+    "Debuggers"
   ],
-  "activationEvents": [],
   "main": "dist/extension.js",
   "dependencies": {
-    "@types/vscode": "^1.66.0",
-    "vsce": "^2.7.0"
+    "@vscode/debugadapter": "^1.68.0",
+    "@vscode/debugprotocol": "^1.68.0"
   },
   "contributes": {
     "grammars": [
       {
         "language": "postscript",
         "scopeName": "source.postscript",
-        "path": "./syntaxes/postscript.tmLanguage.json"
+        "path": "./language/postscript.tmLanguage.json"
+      }
+    ],
+    "breakpoints": [
+      {
+        "language": "postscript"
       }
     ],
     "languages": [
@@ -37,105 +43,142 @@
           "GhostScript",
           "OptScript"
         ],
-        "configuration": "./language-configuration.json"
+        "configuration": "./language/language-configuration.json"
       }
     ],
     "snippets": [
       {
         "language": "postscript",
-        "path": "./Snippets/Arithmetic and Math Operators.json"
+        "path": "snippets/Operand Stack Manipulation Operators.json"
       },
       {
         "language": "postscript",
-        "path": "./Snippets/Array Operators.json"
+        "path": "snippets/Arithmetic and Math Operators.json"
       },
       {
         "language": "postscript",
-        "path": "./Snippets/Control Operators.json"
+        "path": "snippets/Array Operators.json"
       },
       {
         "language": "postscript",
-        "path": "./Snippets/Coordinate System and Matrix Operators.json"
+        "path": "snippets/Packed Array Operators.json"
       },
       {
         "language": "postscript",
-        "path": "./Snippets/Device Setup and Output Operators.json"
+        "path": "snippets/Dictionary Operators.json"
       },
       {
         "language": "postscript",
-        "path": "./Snippets/Dictionary Operators.json"
+        "path": "snippets/String Operators.json"
       },
       {
         "language": "postscript",
-        "path": "./Snippets/Errors.json"
+        "path": "snippets/Relational,Boolean,and Bitwise Operators.json"
       },
       {
         "language": "postscript",
-        "path": "./Snippets/File Operators.json"
+        "path": "snippets/Control Operators.json"
       },
       {
         "language": "postscript",
-        "path": "./Snippets/Form and Pattern Operators.json"
+        "path": "snippets/Type,Attribute,and Conversion Operators.json"
       },
       {
         "language": "postscript",
-        "path": "./Snippets/Glyph and Font Operators.json"
+        "path": "snippets/File Operators.json"
       },
       {
         "language": "postscript",
-        "path": "./Snippets/Graphics State Operators (Device-Dependent).json"
+        "path": "snippets/Resource Operators.json"
       },
       {
         "language": "postscript",
-        "path": "./Snippets/Graphics State Operators (Device-Independent).json"
+        "path": "snippets/Virtual Memory Operators.json"
       },
       {
         "language": "postscript",
-        "path": "./Snippets/Insideness-Testing Operators.json"
+        "path": "snippets/Miscellaneous Operators.json"
       },
       {
         "language": "postscript",
-        "path": "./Snippets/Interpreter Parameter Operators.json"
+        "path": "snippets/Graphics State Operators (Device-Independent).json"
       },
       {
         "language": "postscript",
-        "path": "./Snippets/Miscellaneous Operators.json"
+        "path": "snippets/Graphics State Operators (Device-Dependent).json"
       },
       {
         "language": "postscript",
-        "path": "./Snippets/Operand Stack Manipulation Operators.json"
+        "path": "snippets/Coordinate System and Matrix Operators.json"
       },
       {
         "language": "postscript",
-        "path": "./Snippets/Packed Array Operators.json"
+        "path": "snippets/Path Construction Operators.json"
       },
       {
         "language": "postscript",
-        "path": "./Snippets/Painting Operators.json"
+        "path": "snippets/Painting Operators.json"
       },
       {
         "language": "postscript",
-        "path": "./Snippets/Path Construction Operators.json"
+        "path": "snippets/Insideness-Testing Operators.json"
       },
       {
         "language": "postscript",
-        "path": "./Snippets/Relational,Boolean,and Bitwise Operators.json"
+        "path": "snippets/Form and Pattern Operators.json"
       },
       {
         "language": "postscript",
-        "path": "./Snippets/Resource Operators.json"
+        "path": "snippets/Device Setup and Output Operators.json"
       },
       {
         "language": "postscript",
-        "path": "./Snippets/String Operators.json"
+        "path": "snippets/Glyph and Font Operators.json"
       },
       {
         "language": "postscript",
-        "path": "./Snippets/Type,Attribute,and Conversion Operators.json"
+        "path": "snippets/Interpreter Parameter Operators.json"
       },
       {
         "language": "postscript",
-        "path": "./Snippets/Virtual Memory Operators.json"
+        "path": "snippets/Errors.json"
+      }
+    ],
+    "debuggers": [
+      {
+        "type": "postscript",
+        "label": "PostScript (Ghostscript) Debugger",
+        "program": "./dist/debugAdapter.js",
+        "runtime": "node",
+        "languages": [
+          "postscript"
+        ],
+        "configurationAttributes": {
+          "launch": {
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "PostScript file to run"
+              },
+              "ghostscriptPath": {
+                "type": "string",
+                "description": "Path to Interpreter executable (eg. gs/gswin32c/gswin64c)"
+              }
+            }
+          }
+        },
+        "configurationSnippets": [
+          {
+            "label": "Launch PostScript (Ghostscript)",
+            "body": {
+              "type": "postscript",
+              "request": "launch",
+              "name": "Launch PostScript (Ghostscript)",
+              "program": "${file}",
+              "ghostscriptPath": "gs"
+            }
+          }
+        ]
       }
     ]
   },
@@ -144,10 +187,19 @@
     "url": "https://github.com/yingquelou/Postscript-Snippets.git"
   },
   "scripts": {
+    "prepublish": "npm run package",
+    "prepackage": "npm run compile && npm run snippets",
     "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "publish": "vsce publish",
     "package": "vsce package",
-    "help": "vsce -h",
-    "list": "vsce ls",
-    "publish": "vsce publish"
+    "snippets": "node ./dist/snippetsGenerator.s.js"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@types/vscode": "^1.66.0",
+    "marked": "^17.0.1",
+    "typescript": "^5.9.3",
+    "vsce": "^2.7.0"
   }
 }

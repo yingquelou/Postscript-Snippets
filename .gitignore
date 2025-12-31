@@ -6,3 +6,4 @@ settings.json
 dist
 .vscode
 package-lock.json
+snippets/
