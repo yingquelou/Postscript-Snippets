@@ -9,6 +9,5 @@ dist/*.js.map
 *.md
 *.bat
 tsconfig.json
-ps/*.ps
-!ps/debugger.ps
+ps/*.s.ps
 !README.md

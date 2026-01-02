@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 import { DebugConfiguration, DebugConfigurationProvider } from 'vscode'
 const languageId = 'postscript'
 export function activate(context: vscode.ExtensionContext) {
-    let channel = vscode.window.createOutputChannel(languageId, languageId)
+    let channel = vscode.window.createOutputChannel(languageId)
     // gs = vscode.window.createTerminal("postscript")
     const debugConfigurationProvider: DebugConfigurationProvider = {
         provideDebugConfigurations(folder, token) {

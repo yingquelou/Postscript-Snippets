@@ -1,12 +1,15 @@
-﻿import { DebugSession, InitializedEvent, TerminatedEvent, OutputEvent, Thread, StoppedEvent } from '@vscode/debugadapter'
+﻿import * as debugadapter from '@vscode/debugadapter'
 import { DebugProtocol } from '@vscode/debugprotocol'
 import { spawn, ChildProcessWithoutNullStreams } from 'child_process'
 import * as fs from 'fs'
 import * as path from 'path'
 import { fileURLToPath } from 'url'
-import { arraysEqual, pickVariableWithRoute, VarRefAllocator, VarRefInfo } from './psOutputParsers'
+import * as psOutputParsers from './psOutputParsers'
 
-class GhostscriptDebugSession extends DebugSession {
+const gs_dbg_start = /GS_DBG_START:(\d+)/
+const gs_dbg_end = /GS_DBG_END:(\d+)/
+const gs_eval_end = /GS_EVAL_END:(\d+)/
+class GhostscriptDebugSession extends debugadapter.DebugSession {
   private gsProcesses?: ChildProcessWithoutNullStreams
   private programPath?: string
   private breakpoints: DebugProtocol.Breakpoint[] = []
@@ -14,7 +17,7 @@ class GhostscriptDebugSession extends DebugSession {
   private unitIndex = 0
   private evalCounter = 1
   private varRefCounter = 1
-  private varRefs: Map<number, VarRefInfo> = new Map()
+  private varRefs: Map<number, psOutputParsers.VarRefInfo> = new Map()
 
   public constructor() {
     super()
@@ -49,7 +52,7 @@ class GhostscriptDebugSession extends DebugSession {
     // Advertise that we support terminate (stop) requests
     response.body.supportsTerminateRequest = true
     this.sendResponse(response)
-    this.sendEvent(new InitializedEvent())
+    this.sendEvent(new debugadapter.InitializedEvent())
   }
   protected customRequest(command: string, response: DebugProtocol.Response, args: any, request?: DebugProtocol.Request): void {
     this.sendResponse(response)
@@ -57,9 +60,9 @@ class GhostscriptDebugSession extends DebugSession {
   protected launchRequest(response: DebugProtocol.LaunchResponse, args: any): void {
     const program: string | undefined = args.program
     if (!program) {
-      this.sendEvent(new OutputEvent('No program provided in launch configuration\n', 'stderr'))
+      this.sendEvent(new debugadapter.OutputEvent('No program provided in launch configuration\n', 'stderr'))
       this.sendResponse(response)
-      this.sendEvent(new TerminatedEvent())
+      this.sendEvent(new debugadapter.TerminatedEvent())
       return
     }
     const ghostscriptPath = args.ghostscriptPath || (process.platform === 'win32' ? 'gswin64c' : 'gs')
@@ -70,9 +73,9 @@ class GhostscriptDebugSession extends DebugSession {
     try {
       this.gsProcesses = spawn(ghostscriptPath, gsArgs, { cwd: path.dirname(program), shell: false, stdio: ['pipe', 'pipe', 'pipe'] })
     } catch (err: any) {
-      this.sendEvent(new OutputEvent(`Failed to start Ghostscript: ${err.message || err}\n`, 'stderr'))
+      this.sendEvent(new debugadapter.OutputEvent(`Failed to start Ghostscript: ${err.message || err}\n`, 'stderr'))
       this.sendResponse(response)
-      this.sendEvent(new TerminatedEvent())
+      this.sendEvent(new debugadapter.TerminatedEvent())
       return
     }
 
@@ -83,7 +86,7 @@ class GhostscriptDebugSession extends DebugSession {
       const lines = txt.split(/\r?\n/)
       this.units.push(...lines)
     } catch (err: any) {
-      this.sendEvent(new OutputEvent(`Failed to read program: ${err.message}\n`, 'stderr'))
+      this.sendEvent(new debugadapter.OutputEvent(`Failed to read program: ${err.message}\n`, 'stderr'))
     }
 
     // Attempt to load debug helper PS scripts into GS stdin so helper functions are available
@@ -96,7 +99,7 @@ class GhostscriptDebugSession extends DebugSession {
         try {
           this.gsProcesses!.stdin.write(helperText + '\n')
         } catch (e: any) {
-          this.sendEvent(new OutputEvent(`[PostScript-Debug] failed to load debugger helper ${hp}: ${e.message || e}\n`, 'stderr'))
+          this.sendEvent(new debugadapter.OutputEvent(`[PostScript-Debug] failed to load debugger helper ${hp}: ${e.message || e}\n`, 'stderr'))
         }
       }
     }
@@ -106,12 +109,23 @@ class GhostscriptDebugSession extends DebugSession {
       const text = chunk.toString() as string
       // detect markers
       // unit markers
-      const endMatch = text.match(/GS_DBG_END:(\d+)/)
-      if (endMatch) {
-        this.emit(endMatch[0])
+      const dbgEndMatch = text.match(gs_dbg_end)
+      if (dbgEndMatch) {
+        this.emit(dbgEndMatch[0])
+        const parts = text.split(dbgEndMatch[0], 2)
+        buffer.push(parts[0])
+        this.sendEvent(new debugadapter.OutputEvent(buffer.join('').split(`GS_DBG_START:${dbgEndMatch[1]}`, 2)[1], 'stdout'))
+        buffer = [parts[1]]
       }
+
+      const dbgStartMatch = text.match(gs_dbg_start)
+      if (dbgStartMatch) {
+        const parts = text.split(dbgStartMatch[0], 2)
+        buffer = [parts[1]]
+      }
+
       // eval markers
-      const evalEndMatch = text.match(/GS_EVAL_END:(\d+)/)
+      const evalEndMatch = text.match(gs_eval_end)
       if (evalEndMatch) {
         const parts = text.split(evalEndMatch[0], 2)
         buffer.push(parts[0])
@@ -122,24 +136,24 @@ class GhostscriptDebugSession extends DebugSession {
     })
 
     this.gsProcesses.stderr.on('data', chunk => {
-      this.sendEvent(new OutputEvent(`Ghostscript error: ${chunk.toString()}\n`, 'stderr'))
+      this.sendEvent(new debugadapter.OutputEvent(`Ghostscript error: ${chunk.toString()}\n`, 'stderr'))
     })
     this.gsProcesses.on('error', err => {
-      this.sendEvent(new OutputEvent(`Ghostscript error: ${err.message}\n`, 'stderr'))
-      this.sendEvent(new TerminatedEvent())
+      this.sendEvent(new debugadapter.OutputEvent(`Ghostscript error: ${err.message}\n`, 'stderr'))
+      this.sendEvent(new debugadapter.TerminatedEvent())
     })
 
     this.gsProcesses.on('exit', (code, signal) => {
-      this.sendEvent(new OutputEvent(`Ghostscript exited with code ${code} signal ${signal}\n`, 'console'))
+      this.sendEvent(new debugadapter.OutputEvent(`Ghostscript exited with code ${code} signal ${signal}\n`, 'console'))
       // process exit: notify terminated
-      this.sendEvent(new TerminatedEvent())
+      this.sendEvent(new debugadapter.TerminatedEvent())
     })
 
     // Respond to launch request to finish initialization so the client can continue
     this.sendResponse(response)
 
     // stopOnEntry is true (default), emit a stopped event so the UI can show call stack
-    this.sendEvent(new StoppedEvent('entry', 1))
+    this.sendEvent(new debugadapter.StoppedEvent('entry', 1))
   }
 
   protected terminateRequest(response: DebugProtocol.TerminateResponse, args: any): void {
@@ -148,7 +162,7 @@ class GhostscriptDebugSession extends DebugSession {
       try { this.gsProcesses.kill() } catch { }
     }
     this.sendResponse(response)
-    this.sendEvent(new TerminatedEvent())
+    this.sendEvent(new debugadapter.TerminatedEvent())
   }
 
   protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: any): void {
@@ -161,7 +175,7 @@ class GhostscriptDebugSession extends DebugSession {
 
   protected threadsRequest(response: DebugProtocol.ThreadsResponse): void {
     // single-threaded model
-    response.body = { threads: [new Thread(1, 'Main Thread')] }
+    response.body = { threads: [new debugadapter.Thread(1, 'Main Thread')] }
     this.sendResponse(response)
   }
 
@@ -210,23 +224,21 @@ class GhostscriptDebugSession extends DebugSession {
     const router: string[] = []
     if (entry.router) router.push(...entry.router, entry.name)
     else router.push(entry.name)
-    this.sendEvent(new OutputEvent(`[PostScript-Debug] variablesRequest for [${router.join(' ')}]\n`, 'console'))
-    // response.body = { variables: pickVariableWithRoute(text as string, router, alloc) }
-    const eval_event = this.gs_traverse_route(router)
-    const alloc: VarRefAllocator = (info) => {
+    this.sendEvent(new debugadapter.OutputEvent(`[PostScript-Debug] variablesRequest for [${router.join(' ')}]\n`, 'console'))
+    const alloc: psOutputParsers.VarRefAllocator = (info) => {
       for (const entry of this.varRefs) {
-        if (info.name === entry[1].name && arraysEqual(entry[1].router, info.router))
+        if (info.name === entry[1].name && psOutputParsers.arraysEqual(entry[1].router, info.router))
           return entry[0]
       }
       const r = this.varRefCounter++
       this.varRefs.set(r, info)
       return r
     }
-
+    const eval_event = this.gs_traverse_route(router)
     this.once(eval_event, text => {
       response.body = {
         variables:
-          pickVariableWithRoute(text, router, alloc)
+          psOutputParsers.pickVariableWithRoute(text, router, alloc)
       }
       this.sendResponse(response)
     })
@@ -246,13 +258,13 @@ class GhostscriptDebugSession extends DebugSession {
         this.once(dbg_event, () => {
           if (bp.line)
             this.unitIndex = bp.line - 1
-          this.sendEvent(new StoppedEvent('breakpoint', 1))
+          this.sendEvent(new debugadapter.StoppedEvent('breakpoint', 1))
           this.sendResponse(response)
         })
       }
     } else {
       this.once(this.sendUnit(this.units.slice(this.unitIndex).join('\n')), () => {
-        this.sendEvent(new TerminatedEvent())
+        this.sendEvent(new debugadapter.TerminatedEvent())
         this.sendResponse(response)
       })
     }
@@ -261,14 +273,14 @@ class GhostscriptDebugSession extends DebugSession {
   protected nextRequest(response: DebugProtocol.NextResponse, args: any): void {
     if (this.unitIndex >= this.units.length) {
       this.sendResponse(response)
-      this.sendEvent(new TerminatedEvent())
+      this.sendEvent(new debugadapter.TerminatedEvent())
       return
     }
     const u = this.units[this.unitIndex]
     this.once(this.sendUnit(u), () => {
       this.unitIndex++
       this.sendResponse(response)
-      this.sendEvent(new StoppedEvent('step', args.threadId))
+      this.sendEvent(new debugadapter.StoppedEvent('step', args.threadId))
     })
 
   }
@@ -328,4 +340,4 @@ class GhostscriptDebugSession extends DebugSession {
 }
 
 // Run the session
-DebugSession.run(GhostscriptDebugSession)
+debugadapter.DebugSession.run(GhostscriptDebugSession)

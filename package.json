@@ -3,7 +3,7 @@
   "displayName": "PostScript Programming Language",
   "publisher": "yingquelou",
   "description": "PostScript GhostScript OptScript",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "engines": {
     "vscode": "^1.70.3"
   },
@@ -19,6 +19,21 @@
     "@vscode/debugprotocol": "^1.68.0"
   },
   "contributes": {
+    "configuration": [
+      {
+        "title": "PostScript Configuration",
+        "properties": {
+          "postscript.interpreter.executable": {
+            "description": "PostScript interpreter executable path",
+            "type": "string",
+            "default": "gs"
+          }
+        }
+      }
+    ],
+    "configurationDefaults": {
+      "postscript.interpreter.executable": "gs"
+    },
     "grammars": [
       {
         "language": "postscript",

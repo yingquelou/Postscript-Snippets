@@ -11,8 +11,8 @@
 		"strict": true,
 		
 		"noImplicitAny": false,
-		"removeComments": false,
-		"noUnusedLocals": true,
+		"removeComments": true,
+		"noUnusedLocals": false,
 		"noImplicitThis": true,
 		"inlineSourceMap": false,
 		"preserveConstEnums": true,

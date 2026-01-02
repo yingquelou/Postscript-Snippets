@@ -1,4 +1,4 @@
-# PostScript + Ghostscript
+# PostScript
 
 This Visual Studio Code extension provides `PostScript` language snippets and a lightweight debugger that uses `Ghostscript` to run `PostScript` files.
 
@@ -27,7 +27,7 @@ Example `launch.json`
 		{
 			"type": "postscript",
 			"request": "launch",
-			"name": "REPL PostScript (Ghostscript)",
+			"name": "PostScript (Ghostscript)",
 			"program": "${file}",
 			"ghostscriptPath": "gs"
 		}
