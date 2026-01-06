@@ -17,7 +17,6 @@ function snippetsGenerator(markDownPath: string) {
         const destDir = path.join(__dirname, '..', 'snippets')
         fs.mkdir(destDir, { recursive: true }, err => {
             if (err) throw err
-            // 使用marked从指定markdown文件提取所有表格
             fs.readFile(markDownPath, (err, data) => {
                 if (err === null) {
                     var snippetFileName: string
@@ -82,7 +81,7 @@ snippetsGenerator(path.join(__dirname, '..', 'Operators.md')).then(v => {
     fs.readFile(packageFile, (err, data) => {
         const packageObj = JSON.parse(data.toString())
         packageObj.contributes.snippets = operatorSnippets
-        fs.writeFileSync(packageFile, JSON.stringify(packageObj,null,2))
+        fs.writeFileSync(packageFile, JSON.stringify(packageObj, null, 2))
     })
     console.table(operatorSnippets)
 })

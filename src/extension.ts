@@ -1,9 +1,10 @@
 import * as vscode from 'vscode'
 import { DebugConfiguration, DebugConfigurationProvider } from 'vscode'
+import { PostScriptDocumentSymbolProvider } from './postscriptDocumentSymbolProvider'
+
 const languageId = 'postscript'
 export function activate(context: vscode.ExtensionContext) {
     let channel = vscode.window.createOutputChannel(languageId)
-    // gs = vscode.window.createTerminal("postscript")
     const debugConfigurationProvider: DebugConfigurationProvider = {
         provideDebugConfigurations(folder, token) {
             return [
@@ -23,6 +24,15 @@ export function activate(context: vscode.ExtensionContext) {
             return config
         }
     }
+    
+    const documentSymbolProvider = new PostScriptDocumentSymbolProvider()
+    context.subscriptions.push(
+        vscode.languages.registerDocumentSymbolProvider(
+            { language: languageId },
+            documentSymbolProvider
+        )
+    )
+    
     context.subscriptions.push(channel,
         vscode.debug.registerDebugConfigurationProvider(languageId, debugConfigurationProvider),
         vscode.debug.onDidReceiveDebugSessionCustomEvent((e) => {

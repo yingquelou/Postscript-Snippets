@@ -3,7 +3,7 @@
   "displayName": "PostScript Programming Language",
   "publisher": "yingquelou",
   "description": "PostScript GhostScript OptScript",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "engines": {
     "vscode": "^1.70.3"
   },
@@ -14,10 +14,6 @@
     "Debuggers"
   ],
   "main": "dist/extension.js",
-  "dependencies": {
-    "@vscode/debugadapter": "^1.68.0",
-    "@vscode/debugprotocol": "^1.68.0"
-  },
   "contributes": {
     "configuration": [
       {
@@ -210,11 +206,16 @@
     "package": "vsce package",
     "snippets": "node ./dist/snippetsGenerator.s.js"
   },
+  "dependencies": {
+    "chevrotain": "10.5.0",
+    "@vscode/debugadapter": "^1.68.0",
+    "@vscode/debugprotocol": "^1.68.0"
+  },
   "devDependencies": {
     "@types/node": "^24.10.1",
     "@types/vscode": "^1.66.0",
+    "@vscode/vsce": "^2.32.0",
     "marked": "^17.0.1",
-    "typescript": "^5.9.3",
-    "vsce": "^2.7.0"
+    "typescript": "^5.9.3"
   }
 }
