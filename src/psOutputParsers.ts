@@ -63,3 +63,25 @@ export function arraysEqual(arr1: any[], arr2: any[]) {
     }
     return true;
 }
+const errorMatcher = /PS_ERROR_START([\s\S]*?)PS_ERROR_END/
+export function ps_error(text: string) {
+    var result: {
+        /** error message */
+        message?: string,
+        /**
+         * Filter out the remaining text of the error message
+         */
+        rest: string
+    } = { rest: text }
+    const match = text.match(errorMatcher)
+    if (match) {
+        result.message = match[1]
+            .split(/\r?\n/)
+            .map(v => v.trim())
+            .filter(v => v.length)
+            .join(' ')
+        result.rest = text.replace(match[0], '')
+    }
+    result.rest = result.rest.trim()
+    return result
+}

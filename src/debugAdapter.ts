@@ -8,9 +8,10 @@ import * as psOutputParsers from './psOutputParsers'
 import { psParserHelper } from './postscriptParser'
 import { CstWalker } from './cstWalker'
 
-const gs_dbg_start = /GS_DBG_START\((\d+)\)/
-const gs_dbg_end = /GS_DBG_END\((\d+)\)/
-const gs_eval_end = /GS_EVAL_END\((\d+)\)/
+const ps_dbg = /PS_DBG_START\((\d+)\)([\s\S]*)PS_DBG_END\((\1)\)/
+const ps_dbg_end = /PS_DBG_END\((\d+)\)/
+const ps_eval = /PS_EVAL_START\((\d+)\)([\s\S]*)PS_EVAL_END\((\1)\)/
+const ps_eval_end = /PS_EVAL_END\((\d+)\)/
 class GhostscriptDebugSession extends debugadapter.DebugSession {
   private gsProcesses?: ChildProcessWithoutNullStreams
   private programPath?: string
@@ -50,8 +51,6 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
     response.body.supportsConfigurationDoneRequest = false
     response.body.supportsStepInTargetsRequest = false
     response.body.supportsEvaluateForHovers = false
-    response.body.supportsEvaluateForHovers = false
-    // response.body.supportsClipboardContext = false
     // Advertise that we support terminate (stop) requests
     response.body.supportsTerminateRequest = true
     this.sendResponse(response)
@@ -71,7 +70,7 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
     const ghostscriptPath = args.ghostscriptPath || (process.platform === 'win32' ? 'gswin64c' : 'gs')
     // normalize program path for consistent breakpoint matching
     this.programPath = this.normalizePath(program) || program
-    const gsArgs = ['-q', '-sOutputFile=*', '-dNODISPLAY', '-']
+    const gsArgs = ['-q', '-sOutputFile=*', '-sstderr=%stdout', '-dNODISPLAY', '-']
 
     try {
       this.gsProcesses = spawn(ghostscriptPath, gsArgs, { cwd: path.dirname(program), shell: false, stdio: ['pipe', 'pipe', 'pipe'] })
@@ -85,11 +84,10 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
     // Parse program into syntax tree (token-based stepping)
     try {
       this.programText = fs.readFileSync(this.programPath, 'utf8')
-      const { cst, errors } = psParserHelper(this.programText)
+      const { cst, errors, tokens } = psParserHelper(this.programText)
       if (errors.length > 0) {
         this.sendEvent(new debugadapter.OutputEvent(`Parse errors: ${errors.map(e => e.message).join(', ')}\n`, 'stderr'))
       }
-
       if (cst) {
         this.cstWalker = new CstWalker(cst, this.programText)
       } else {
@@ -118,31 +116,35 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
       buffer = buffer.concat(chunk)
       // detect markers
       // unit markers
-      const dbgEndMatch = buffer.match(gs_dbg_end)
+      const dbgEndMatch = buffer.match(ps_dbg_end)
       if (dbgEndMatch) {
-        const parts = buffer.split(dbgEndMatch[0], 2)
-        this.sendEvent(new debugadapter.OutputEvent(parts[0].replace(`GS_DBG_START(${dbgEndMatch[1]})`, ''), 'stdout'))
-        buffer = parts[1]
-        this.emit(dbgEndMatch[0])
-      }
-
-      const dbgStartMatch = buffer.match(gs_dbg_start)
-      if (dbgStartMatch) {
-        const parts = buffer.split(dbgStartMatch[0], 2)
-        buffer = parts[1]
+        const dbgMatch = buffer.match(ps_dbg)
+        buffer = ''
+        if (dbgMatch) {
+          const { message, rest } = psOutputParsers.ps_error(dbgMatch[2])
+          if (rest) {
+            this.sendEvent(new debugadapter.OutputEvent(rest + '\n', 'stdout'))
+          }
+          this.emit(dbgEndMatch[0], rest)
+          if (message) {
+            this.sendEvent(new debugadapter.StoppedEvent('exception', 1, message))
+          }
+        }
       }
 
       // eval markers
-      const evalEndMatch = buffer.match(gs_eval_end)
+      const evalEndMatch = buffer.match(ps_eval_end)
       if (evalEndMatch) {
-        const parts = buffer.split(evalEndMatch[0], 2)
-        buffer = parts[1]
-        this.emit(evalEndMatch[0], parts[0])
+        const evalMatch = buffer.match(ps_eval)
+        buffer = ''
+        if (evalMatch) {
+          this.emit(evalEndMatch[0], evalMatch[2])
+        }
       }
     })
 
     this.gsProcesses.stderr.on('data', chunk => {
-      this.sendEvent(new debugadapter.OutputEvent(`Ghostscript error: ${chunk.toString()}\n`, 'stderr'))
+      this.sendEvent(new debugadapter.OutputEvent(`${chunk}`, 'stderr'))
     })
     this.gsProcesses.on('error', err => {
       this.sendEvent(new debugadapter.OutputEvent(`Ghostscript error: ${err.message}\n`, 'stderr'))
@@ -251,8 +253,7 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
       this.varRefs.set(r, info)
       return r
     }
-    const eval_event = this.gs_traverse_route(router)
-    this.once(eval_event, text => {
+    this.once(this.ps_traverse_route(router), text => {
       response.body = {
         variables:
           psOutputParsers.pickVariableWithRoute(text, router, alloc)
@@ -267,6 +268,7 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
       this.sendEvent(new debugadapter.TerminatedEvent())
       return
     }
+    // TODO:The coordination between breakpoints, exceptions, and request responses is not handled properly here.
 
     const p = this.normalizePath(this.programPath)
     const bp = this.breakpoints.filter(v => {
@@ -280,7 +282,7 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
     if (bp && bp.line) {
       const buffer: string[] = []
       do {
-        let location = this.cstWalker?.getCurrentLocation()
+        let location = this.cstWalker.getCurrentLocation()
         if (location.startLine && location.startLine < bp.line) {
           const text = this.cstWalker.stepIn()
           if (text) {
@@ -292,77 +294,56 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
           }
         } else break
       } while (1)
-      this.once(this.sendUnit(buffer.join('')), () => {
-        this.sendEvent(new debugadapter.StoppedEvent('breakpoint', 1))
+      this.once(this.sendUnit(buffer.join(' ')), text => {
         this.sendResponse(response)
+        this.sendEvent(new debugadapter.StoppedEvent('breakpoint', 1))
       })
     } else {
       let location = this.cstWalker.getCurrentLocation()
-      this.once(this.sendUnit(this.programText.substring(location.startOffset)), () => {
-        this.sendEvent(new debugadapter.TerminatedEvent())
+      this.once(this.sendUnit(this.programText.substring(location.startOffset)), text => {
         this.sendResponse(response)
+        this.sendEvent(new debugadapter.TerminatedEvent())
       })
     }
   }
 
   protected nextRequest(response: DebugProtocol.NextResponse, args: any): void {
-
-    // Next: 处理一个兄弟节点。当到达当前所在子树的最后兄弟节点，还欲继续Next时，效果与StepOut相同
     const result = this.cstWalker?.next()
     if (result) {
-      this.once(this.sendUnit(result), () => {
+      this.once(this.sendUnit(result), text => {
         this.sendResponse(response)
         this.sendEvent(new debugadapter.StoppedEvent('step', args.threadId))
       })
     } else {
-      // 已到达程序末尾
       this.sendResponse(response)
       this.sendEvent(new debugadapter.TerminatedEvent())
     }
   }
 
   protected stepInRequest(response: DebugProtocol.StepInResponse, args: any): void {
-    const text = this.cstWalker?.stepIn()
-    if (text) {
-      // 成功移动到子节点，停止等待下一次步进
-      this.once(this.sendUnit(text), () => {
+    const result = this.cstWalker?.stepIn()
+    if (result) {
+      this.once(this.sendUnit(result), text => {
         this.sendResponse(response)
         this.sendEvent(new debugadapter.StoppedEvent('step', args.threadId))
       })
     } else {
-      // 无法移动（已到达程序末尾）
       this.sendResponse(response)
-      this.sendEvent(new debugadapter.OutputEvent('stepInRequest', 'console'))
       this.sendEvent(new debugadapter.TerminatedEvent())
     }
-
-    // StepIn: 进入节点的子树处理。不存在子节点时,效果与Next相同
-    // 对于字典和数组，如果有子节点：
-    //   1. 先发送开始标记（<< 或 [）给解释器
-    //   2. 然后移动到第一个子节点
-    // 对于过程或其他没有子节点的节点，stepIn() 会执行 next()
-
-    // 先检查是否有子节点可以进入
   }
 
   protected stepOutRequest(response: DebugProtocol.StepOutResponse, args: any): void {
     const text = this.cstWalker?.stepOut()
     if (text) {
-      // 成功移动到子节点，等待下一次步进
       this.once(this.sendUnit(text), () => {
         this.sendResponse(response)
         this.sendEvent(new debugadapter.StoppedEvent('step', args.threadId))
       })
     } else {
-      // 无法移动（已到达程序末尾）
       this.sendResponse(response)
       this.sendEvent(new debugadapter.TerminatedEvent())
     }
-
-    // StepOut: 处理完当前剩余的兄弟节点后,回到父节点
-    // 1. 发送当前节点的所有剩余兄弟节点的源码
-    // 2. 如果当前在字典/数组内部，发送结束标记
-    // 3. 回到父节点
   }
 
   protected evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): void {
@@ -378,25 +359,38 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
             }
           }
         }
+        this.sendResponse(response)
+        break
+      case 'repl':
+        this.once(
+          this.sendEval(args.expression), text => {
+            response.body = {
+              result: text, variablesReference: 0
+            }
+            this.sendResponse(response)
+          }
+        )
         break
     }
-    this.sendResponse(response)
   }
-
-  private sendEval(expr: string) {
+  /**
+  * @returns {string} eval_eventName
+  **/
+  private sendEval(expr: string): string {
     if (!this.gsProcesses || !this.gsProcesses.stdin) throw 'Ghostscript not running'
     const id = this.evalCounter++
-    const startMarker = `GS_EVAL_START(${id})`
-    const endMarker = `GS_EVAL_END(${id})`
+    const startMarker = `PS_EVAL_START(${id})`
+    const endMarker = `PS_EVAL_END(${id})`
     // Use print markers and then the expression, then end marker
     // Ensure expression ends with newline
-    const wrapper = `(${startMarker}) print flush ${expr} (${endMarker}) print flush\n`
-    this.gsProcesses.stdin.write(wrapper)
+    this.gsProcesses.stdin.write(`(${startMarker}) print flush ${expr} (${endMarker}) print flush\n`)
     return endMarker
   }
-
-  private gs_traverse_route(parentRoute: string[]) {
-    return this.sendEval(`[${parentRoute.join(' ')}] gs_traverse_route\n`)
+  /**
+   * @returns {string} eval_eventName
+   **/
+  private ps_traverse_route(parentRoute: string[]) {
+    return this.sendEval(`[${parentRoute.join(' ')}] ps_traverse_route\n`)
   }
 
   protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): void {
@@ -409,12 +403,15 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
     this.sendResponse(response)
   }
   private unitCounter: number = 0
-  private sendUnit(unit: string) {
-    if (!this.gsProcesses || !this.gsProcesses.stdin) throw 'Ghostscript not running'
+  /**
+   * @returns {string} dbg_eventName
+   */
+  private sendUnit(unit: string): string {
+    if (!this.gsProcesses) throw 'Ghostscript not running'
     const unitCounter = this.unitCounter++
-    const startMarker = `GS_DBG_START(${unitCounter})`
-    const endMarker = `GS_DBG_END(${unitCounter})`
-    const wrapper = `(${startMarker}) print flush ${unit} (${endMarker}) print flush\n`
+    const startMarker = `PS_DBG_START(${unitCounter})`
+    const endMarker = `PS_DBG_END(${unitCounter})`
+    const wrapper = `(${startMarker}) print flush {${unit}} ps_print_if_error (${endMarker}) print flush\n`
     this.gsProcesses.stdin.write(wrapper)
     return endMarker
   }

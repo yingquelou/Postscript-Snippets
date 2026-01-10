@@ -1,5 +1,6 @@
 import { psParserHelper, psParser } from './postscriptParser';
 import * as vscode from 'vscode'
+import * as chevrotain from 'chevrotain';
 const pstypeMap = {
     array: vscode.SymbolKind.Array,
     dictionary: vscode.SymbolKind.Object,
@@ -16,51 +17,42 @@ const view = {
     dictionary: '<<...>>',
     procedure: '{...}'
 }
-class pssp extends psParser.getBaseCstVisitorConstructorWithDefaults<vscode.SymbolInformation[]>() {
-    private readonly document: vscode.TextDocument
-    constructor(document: vscode.TextDocument) {
-        super()
-        this.document = document
-    }
-    expression(ctx: any, ss: vscode.SymbolInformation[], ...args: any[]) {
+class pssp extends psParser.getBaseCstVisitorConstructorWithDefaults<vscode.DocumentSymbol[]>() {
+    expression(ctx: chevrotain.CstNode, ss: vscode.DocumentSymbol[]) {
         for (const key in ctx) {
             const token = ctx[key][0]
+            var location: chevrotain.CstNodeLocation
+            var range: vscode.Range
             switch (key) {
                 case 'array':
                 case 'dictionary':
                 case 'procedure':
-                    const location = token.location
-                    ss.push({
-                        name: view[key],
-                        containerName: '', kind: pstypeMap[key],
-                        location: new vscode.Location(this.document.uri,
-                            new vscode.Range(
-                                this.document.positionAt(location.startOffset),
-                                this.document.positionAt(location.endOffset + 1)))
-                    })
+                    location = token.location as chevrotain.CstNodeLocation
+                    range = new vscode.Range(location.startLine! - 1, location.startColumn! - 1,
+                        location.endLine! - 1, location.endColumn!)
+                    const symbol = new vscode.DocumentSymbol(view[key], key, pstypeMap[key], range, range);
+                    ss.push(symbol)
                     if (token.children.expression)
-                        this.visit(token, ss)
+                        this.visit(token, symbol.children)
                     break;
                 default:
-                    ss.push({
-                        name: token.image, containerName: '',
-                        kind: pstypeMap[key],
-                        location: new vscode.Location(this.document.uri,
-                            new vscode.Range(
-                                this.document.positionAt(token.startOffset),
-                                this.document.positionAt(token.endOffset + 1)))
-                    })
+                    location = token as chevrotain.CstNodeLocation
+                    range = new vscode.Range(location.startLine! - 1, location.startColumn! - 1,
+                        location.endLine! - 1, location.endColumn!)
+                    ss.push(new vscode.DocumentSymbol(token.image, key, pstypeMap[key], range, range))
             }
         }
     }
 }
 export class PostScriptDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
     async provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken) {
-        const ss: vscode.SymbolInformation[] = []
-        const { errors, cst } = psParserHelper(document.getText())
-        if (errors.length > 0) return []
-        const visitor = new pssp(document)
-        if (cst) visitor.visit(cst, ss)
+        const ss: vscode.DocumentSymbol[] = []
+        if (!token.isCancellationRequested) {
+            const { errors, cst } = psParserHelper(document.getText())
+            if (errors.length > 0) return []
+            const visitor = new pssp(document)
+            if (cst) visitor.visit(cst, ss)
+        }
         return ss
     }
 }

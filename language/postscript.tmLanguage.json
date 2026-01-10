@@ -1,206 +1,222 @@
 {
-    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
-    "name": "PostScript",
-    "scopeName": "source.postscript",
-    "fileTypes": [
-        "ps",
-        "eps",
-        "ai"
-    ],
-    "patterns": [
-        {
-            "include": "#comment"
-        },
-        {
-            "include": "#dictionary"
-        },
-        {
-            "include": "#string"
-        },
-        {
-            "include": "#array"
-        },
-        {
-            "include": "#procedure"
-        },
-        {
-            "include": "#number"
-        },
-        {
-            "include": "#name"
-        }
-    ],
-    "repository": {
-        "comment": {
-            "name": "comment.line.percentage.postscript",
-            "begin": "%",
-            "end": "(?=\\r\\n|[\\r\\n\\f])",
-            "patterns": []
-        },
-        "dictionary": {
-            "name": "meta.dictionary.postscript",
-            "begin": "<<",
-            "end": ">>",
-            "patterns": [
-                {
-                    "include": "#comment"
-                },
-                {
-                    "include": "#dictionary"
-                },
-                {
-                    "include": "#string"
-                },
-                {
-                    "include": "#array"
-                },
-                {
-                    "include": "#procedure"
-                },
-                {
-                    "include": "#number"
-                },
-                {
-                    "include": "#name"
-                }
-            ]
-        },
-        "string": {
-            "patterns": [
-                {
-                    "name": "string.quoted.ascii85.postscript",
-                    "begin": "<~",
-                    "end": "~>",
-                    "patterns": [
-                        {
-                            "name": "constant.character.ascii85.postscript",
-                            "match": "[!-u]"
-                        },
-                        {
-                            "name": "invalid.illegal.non-ascii85.postscript",
-                            "match": "[^!-u\\s~>]"
-                        }
-                    ]
-                },
-                {
-                    "name": "string.quoted.literal.postscript",
-                    "begin": "\\(",
-                    "end": "\\)",
-                    "patterns": [
-                        {
-                            "name": "constant.character.escape.postscript",
-                            "match": "\\\\(?:[nrtbf\\\\()]|[0-7]{1,3})"
-                        },
-                        {
-                            "name": "constant.character.escape.line-continuation.postscript",
-                            "match": "\\\\\\s*(?=\\r\\n|[\\r\\n])"
-                        },
-                        {
-                            "name": "constant.character.other.postscript",
-                            "match": "[^\\\\()]+"
-                        }
-                    ]
-                },
-                {
-                    "name": "string.quoted.hexadecimal.postscript",
-                    "begin": "<",
-                    "end": ">",
-                    "patterns": [
-                        {
-                            "name": "constant.character.hex-digit.postscript",
-                            "match": "[0-9A-Fa-f]"
-                        },
-                        {
-                            "name": "invalid.illegal.non-hex-digit.postscript",
-                            "match": "[^0-9A-Fa-f\\s>]"
-                        }
-                    ]
-                }
-            ]
-        },
-        "array": {
-            "name": "meta.array.postscript",
-            "begin": "\\[",
-            "end": "\\]",
-            "patterns": [
-                {
-                    "include": "#comment"
-                },
-                {
-                    "include": "#dictionary"
-                },
-                {
-                    "include": "#string"
-                },
-                {
-                    "include": "#array"
-                },
-                {
-                    "include": "#procedure"
-                },
-                {
-                    "include": "#number"
-                },
-                {
-                    "include": "#name"
-                }
-            ]
-        },
-        "procedure": {
-            "name": "meta.procedure.postscript",
-            "begin": "\\{",
-            "end": "\\}",
-            "patterns": [
-                {
-                    "include": "#comment"
-                },
-                {
-                    "include": "#dictionary"
-                },
-                {
-                    "include": "#string"
-                },
-                {
-                    "include": "#array"
-                },
-                {
-                    "include": "#procedure"
-                },
-                {
-                    "include": "#number"
-                },
-                {
-                    "include": "#name"
-                }
-            ]
-        },
-        "number": {
-            "patterns": [
-                {
-                    "name": "constant.numeric.float.postscript",
-                    "match": "[+-]?(?:\\d+\\.\\d*|\\.\\d+)(?:[eE][+-]?\\d+)?\\b|[+-]?\\d+[eE][+-]?\\d+\\b"
-                },
-                {
-                    "name": "constant.numeric.radix.postscript",
-                    "match": "\\b(?:[2-9]|1[0-9]|2[0-9]|3[0-6])#[0-9A-Za-z]+\\b"
-                },
-                {
-                    "name": "constant.numeric.integer.postscript",
-                    "match": "[+-]?\\d+\\b"
-                }
-            ]
-        },
-        "name": {
-            "patterns": [
-                {
-                    "name": "variable.other.literal-name.postscript",
-                    "match": "/[^\\s\\[\\]{}<>/%()]*"
-                },
-                {
-                    "name": "variable.other.executable-name.postscript",
-                    "match": "[^\\s\\[\\]{}<>/%()#0-9][^\\s\\[\\]{}<>/%()]*|//[^\\s\\[\\]{}<>/%()]*"
-                }
-            ]
-        }
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "PostScript",
+  "scopeName": "source.postscript",
+  "fileTypes": [
+    "ps",
+    "eps",
+    "ai"
+  ],
+  "patterns": [
+    {
+      "include": "#comment"
+    },
+    {
+      "include": "#dictionary"
+    },
+    {
+      "include": "#string"
+    },
+    {
+      "include": "#array"
+    },
+    {
+      "include": "#procedure"
+    },
+    {
+      "include": "#number"
+    },
+    {
+      "include": "#name"
     }
+  ],
+  "repository": {
+    "comment": {
+      "name": "comment.line.percentage.postscript",
+      "begin": "%",
+      "end": "(?=\\r\\n|[\\r\\n\\f])",
+      "patterns": []
+    },
+    "dictionary": {
+      "name": "meta.dictionary.postscript",
+      "begin": "<<",
+      "end": ">>",
+      "patterns": [
+        {
+          "include": "#comment"
+        },
+        {
+          "include": "#dictionary"
+        },
+        {
+          "include": "#string"
+        },
+        {
+          "include": "#array"
+        },
+        {
+          "include": "#procedure"
+        },
+        {
+          "include": "#number"
+        },
+        {
+          "include": "#name"
+        }
+      ]
+    },
+    "string": {
+      "patterns": [
+        {
+          "name": "string.quoted.ascii85.postscript",
+          "begin": "<~",
+          "end": "~>",
+          "patterns": [
+            {
+              "name": "constant.character.ascii85.postscript",
+              "match": "[!-u]"
+            },
+            {
+              "name": "invalid.illegal.non-ascii85.postscript",
+              "match": "[^!-u\\s~>]"
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.literal.postscript",
+          "begin": "\\(",
+          "end": "\\)",
+          "patterns": [
+            {
+              "include": "#string-literal-content"
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.hexadecimal.postscript",
+          "begin": "<",
+          "end": ">",
+          "patterns": [
+            {
+              "name": "constant.character.hex-digit.postscript",
+              "match": "[0-9A-Fa-f]"
+            },
+            {
+              "name": "invalid.illegal.non-hex-digit.postscript",
+              "match": "[^0-9A-Fa-f\\s>]"
+            }
+          ]
+        }
+      ]
+    },
+    "string-literal-content": {
+      "patterns": [
+        {
+          "name": "constant.character.escape.postscript",
+          "match": "\\\\(?:[nrtbf\\\\()]|[0-7]{1,3})"
+        },
+        {
+          "name": "constant.character.escape.line-continuation.postscript",
+          "match": "\\\\\\s*(?=\\r\\n|[\\r\\n])"
+        },
+        {
+          "begin": "\\(",
+          "end": "\\)",
+          "patterns": [
+            {
+              "include": "#string-literal-content"
+            }
+          ]
+        },
+        {
+          "name": "constant.character.other.postscript",
+          "match": "[^\\\\()]+"
+        }
+      ]
+    },
+    "array": {
+      "name": "meta.array.postscript",
+      "begin": "mark|\\[",
+      "end": "\\]",
+      "patterns": [
+        {
+          "include": "#comment"
+        },
+        {
+          "include": "#dictionary"
+        },
+        {
+          "include": "#string"
+        },
+        {
+          "include": "#array"
+        },
+        {
+          "include": "#procedure"
+        },
+        {
+          "include": "#number"
+        },
+        {
+          "include": "#name"
+        }
+      ]
+    },
+    "procedure": {
+      "name": "meta.procedure.postscript",
+      "begin": "\\{",
+      "end": "\\}",
+      "patterns": [
+        {
+          "include": "#comment"
+        },
+        {
+          "include": "#dictionary"
+        },
+        {
+          "include": "#string"
+        },
+        {
+          "include": "#array"
+        },
+        {
+          "include": "#procedure"
+        },
+        {
+          "include": "#number"
+        },
+        {
+          "include": "#name"
+        }
+      ]
+    },
+    "number": {
+      "patterns": [
+        {
+          "name": "constant.numeric.float.postscript",
+          "match": "[+-]?(?:\\d+\\.\\d*|\\.\\d+)(?:[eE][+-]?\\d+)?\\b|[+-]?\\d+[eE][+-]?\\d+\\b"
+        },
+        {
+          "name": "constant.numeric.radix.postscript",
+          "match": "\\b(?:[2-9]|1[0-9]|2[0-9]|3[0-6])#[0-9A-Za-z]+\\b"
+        },
+        {
+          "name": "constant.numeric.integer.postscript",
+          "match": "[+-]?\\d+\\b"
+        }
+      ]
+    },
+    "name": {
+      "patterns": [
+        {
+          "name": "variable.other.executable-name.postscript",
+          "match": "[^\\s\\[\\]{}<>/%()#0-9][^\\s\\[\\]{}<>/%()]*|//[^\\s\\[\\]{}<>/%()]*"
+        },
+        {
+          "name": "variable.other.literal-name.postscript",
+          "match": "/[^\\s\\[\\]{}<>/%()]*|/"
+        }
+      ]
+    }
+  }
 }

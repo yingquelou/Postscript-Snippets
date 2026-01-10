@@ -14,15 +14,35 @@
 %   `print flush` to avoid buffering issues.
 %
 % Helpers included:
-%  - gs_traverse_route
+%  - ps_traverse_route
 %
 % See per-helper comments below for input, output examples, and parsing regex.
 % Note: keep human-readable comments in this file, but avoid printing
 % any non-structured lines during helper execution (they would confuse
 % parsing in the adapter).
+% Usage: <executable> <string>
+/ps_label_wrapper {
+  <<>> begin
+  /marker exch def
+  (PS_) print marker print (_START) =
+  exec
+  (PS_) print marker print (_END) =
+  end
+} def
+% Usage: <executable>
+/ps_print_if_error {
+  stopped {
+    {
+      $error /newerror false put
+      $error /errorname get ==
+      (in) =
+      $error /command get ==
+    } (ERROR) ps_label_wrapper
+  } if
+} def
 
 % Structurally output information of the specified object
-% Usage: (<array>|<packedarray>|<dict>) gs_format_print
+% Usage: (<array>|<packedarray>|<dict>)
 % Pushed:
 %
 % Standard Output Format:
@@ -41,7 +61,7 @@
 %
 % Note: Required attributes are name,type,value
 % For other recommended attributes, please refer to (DebugProtocol.Variable)
-/gs_format_print {
+/ps_struct_print {
 <<
   /ps_types <<
     /arraytype 1
@@ -49,44 +69,43 @@
     /dicttype 1
   >>
 >>  begin
-  /range_marker {
-    % Usage: <packedarray> <string> range_marker
-    1 dict begin
-    /marker exch def
-    (PS_) print  marker print  (_START) =
-    exec
-    (PS_) print  marker print  (_END) =
+  % Usage: any
+  /ps_print {
+    <<
+      /filter_with_type <<
+        /packedarraytype {(-packedarray-) print}
+        /arraytype {(-array-) print}
+      >>
+    >> begin
+      dup type filter_with_type exch known {
+        type filter_with_type exch get exec
+      } {
+        ==
+      } ifelse
     end
   } def
 
-  /ps_append_prop {
+  % Usage: (<array>|<dict>|<packedarray>)
+  % If the `length` operation works, then output this property
+  /ps_length_prop {
     dup type ps_types exch known {
       {length} stopped {
-        % failed
-        $error /newerror false put
-        {
-          {
-            (invalidaccess) =
-          } (NAME) range_marker
-          {
-            pop
-          } (VALUE) range_marker
-        } (PROP) range_marker
+        pop $error /newerror false put
       } {
         {
           {
             (length) =
-          } (NAME) range_marker
+          } (NAME) ps_label_wrapper
           {
             =
-          } (VALUE) range_marker
-        } (PROP) range_marker
+          } (VALUE) ps_label_wrapper
+        } (PROP) ps_label_wrapper
       } ifelse
     } {pop} ifelse
   } def
 
+  % Usage: <array>
   /for_array {
-    % Usage: <array> for_array
     <<>>begin
     /the_array exch def
       0 1 /the_array load length 1 sub {
@@ -95,63 +114,63 @@
           {
             {
               (name) =
-            } (NAME) range_marker
+            } (NAME) ps_label_wrapper
             {
               i =
-            } (VALUE) range_marker
-          } (PROP) range_marker
+            } (VALUE) ps_label_wrapper
+          } (PROP) ps_label_wrapper
           {
             {
               (type) =
-            } (NAME) range_marker
+            } (NAME) ps_label_wrapper
             {
               /the_array load i get dup type =
-            } (VALUE) range_marker
-          } (PROP) range_marker
+            } (VALUE) ps_label_wrapper
+          } (PROP) ps_label_wrapper
           {
             {
               (value) =
-            } (NAME) range_marker
+            } (NAME) ps_label_wrapper
             {
-              dup ==
-            } (VALUE) range_marker
-          } (PROP) range_marker
-          ps_append_prop
-        } (ENTRY) range_marker
+              dup ps_print
+            } (VALUE) ps_label_wrapper
+          } (PROP) ps_label_wrapper
+          ps_length_prop
+        } (ENTRY) ps_label_wrapper
       } for
     end
   } def
 
+  % Usage: <dict>
   /for_dict {
-    % Usage: <dict> for_dict
     {
       {
         {
           {
             (name) =
-          } (NAME) range_marker
+          } (NAME) ps_label_wrapper
           {
             exch ==
-          } (VALUE) range_marker
-        } (PROP) range_marker
+          } (VALUE) ps_label_wrapper
+        } (PROP) ps_label_wrapper
         {
           {
             (type) =
-          } (NAME) range_marker
+          } (NAME) ps_label_wrapper
           {
             dup type =
-          } (VALUE) range_marker
-        } (PROP) range_marker
+          } (VALUE) ps_label_wrapper
+        } (PROP) ps_label_wrapper
         {
           {
             (value) =
-          } (NAME) range_marker
+          } (NAME) ps_label_wrapper
           {
-            dup ==
-          } (VALUE) range_marker
-        } (PROP) range_marker
-        ps_append_prop
-      } (ENTRY) range_marker
+            dup ps_print
+          } (VALUE) ps_label_wrapper
+        } (PROP) ps_label_wrapper
+        ps_length_prop
+      } (ENTRY) ps_label_wrapper
     } forall
   } def
 
@@ -161,13 +180,13 @@
     } {
       for_array
     } ifelse
-  } (ENTRIES) range_marker
+  } (ENTRIES) ps_label_wrapper
 end
 } def
 
 % Route-based traversal helper
-% Usage: [ (/ostack | /estack | /estack) (<array_index>|<dict_key>)*] gs_traverse_route
-/gs_traverse_route {
+% Usage: [ (/ostack | /estack | /estack) (<array_index>|<dict_key>)*]
+/ps_traverse_route {
 <<
 /select <<
   /dstack countdictstack array dictstack
@@ -177,6 +196,6 @@ end
   count /ct exch def
   ct copy ct packedarray select exch /ostack exch put
   countexecstack array execstack select exch /estack exch put
-  select route {get} forall gs_format_print
+  select route {get} forall ps_struct_print
 end
 } bind def

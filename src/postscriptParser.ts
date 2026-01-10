@@ -13,25 +13,9 @@ const Whitespace = createToken({
     group: Lexer.SKIPPED,
 });
 
-const DictionaryStart = createToken({
-    name: 'DictionaryStart',
-    pattern: /<</,
-});
 
-const DictionaryEnd = createToken({
-    name: 'DictionaryEnd',
-    pattern: />>/,
-});
 
-const ArrayStart = createToken({
-    name: 'ArrayStart',
-    pattern: /\[/,
-});
 
-const ArrayEnd = createToken({
-    name: 'ArrayEnd',
-    pattern: /\]/,
-});
 
 const ProcedureStart = createToken({
     name: 'ProcedureStart',
@@ -45,12 +29,12 @@ const ProcedureEnd = createToken({
 
 const LiteralName = createToken({
     name: 'LiteralName',
-    pattern: /\/(?:[^\s\[\]{}<>\/%()]+|\/\/[^\s\[\]{}<>\/%()]*)/,
+    pattern: /\/(?:[^\s\[\]{}<>\/%()]*)/,
 });
 
 const ExecutableName = createToken({
     name: 'ExecutableName',
-    pattern: /(?:[^\s\[\]{}<>\/%()#0-9][^\s\[\]{}<>\/%()]*|\/\/[^\s\[\]{}<>\/%()]*)/,
+    pattern: /(?:\[|>>|<<|\]|[^\s\[\]{}<>\/%()#0-9][^\s\[\]{}<>\/%()]*|\/\/[^\s\[\]{}<>\/%()]*)/,
 });
 
 // PostScript 字符串字面量: (string) 可以包含转义的括号和跨行
@@ -58,6 +42,7 @@ const ExecutableName = createToken({
 const StringLiteral = createToken({
     name: 'StringLiteral',
     pattern: /\([^()]*(?:\([^()]*(?:\([^()]*(?:\([^()]*\)[^()]*)*\)[^()]*)*\)[^()]*)*\)|\([^)]*\)/,
+    line_breaks:true
 });
 
 const StringHex = createToken({
@@ -88,17 +73,13 @@ const psTokens = [
     Comment,
     Whitespace,
     StringAscii85,
-    DictionaryStart,
-    DictionaryEnd,
     StringHex,
-    ArrayStart,
-    ArrayEnd,
+    ExecutableName,
     ProcedureStart,
     ProcedureEnd,
     StringLiteral,
     LiteralName,
-    Number,
-    ExecutableName,
+    Number
 ];
 
 // Create a lexical analyzer
@@ -119,8 +100,6 @@ class PostScriptParser extends CstParser {
 
     public expression = this.RULE('expression', () => {
         this.OR([
-            { ALT: () => this.SUBRULE(this.dictionary) },
-            { ALT: () => this.SUBRULE(this.array) },
             { ALT: () => this.SUBRULE(this.procedure) },
             { ALT: () => this.CONSUME(StringLiteral) },
             { ALT: () => this.CONSUME(StringHex) },
@@ -129,22 +108,6 @@ class PostScriptParser extends CstParser {
             { ALT: () => this.CONSUME(LiteralName) },
             { ALT: () => this.CONSUME(ExecutableName) },
         ]);
-    });
-
-    public dictionary = this.RULE('dictionary', () => {
-        this.CONSUME(DictionaryStart);
-        this.MANY(() => {
-            this.SUBRULE(this.expression);
-        });
-        this.CONSUME(DictionaryEnd);
-    });
-
-    public array = this.RULE('array', () => {
-        this.CONSUME(ArrayStart);
-        this.MANY(() => {
-            this.SUBRULE(this.expression);
-        });
-        this.CONSUME(ArrayEnd);
     });
 
     public procedure = this.RULE('procedure', () => {
