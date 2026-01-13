@@ -46,12 +46,14 @@ export function pickVariableWithRoute(out: string, router: string[], alloc: VarR
         const tmp = { name: obj.name, value: obj.value, type: obj.type }
         const d_var: DebugProtocol.Variable = { ...tmp, variablesReference: 0 }
         if (obj.length) {
-            d_var.variablesReference = alloc({ ...tmp, router })
             const n = Number(obj.length)
-            if (tmp.type === 'dicttype')
-                d_var.namedVariables = n
-            else d_var.indexedVariables = n
-            d_var.evaluateName = `[${[...router, tmp.name].join(' ')}]`
+            if (n > 0) {
+                d_var.variablesReference = alloc({ ...tmp, router })
+                if (tmp.type === 'dicttype')
+                    d_var.namedVariables = n
+                else d_var.indexedVariables = n
+                d_var.evaluateName = `[${[...router, tmp.name].join(' ')}]`
+            }
         }
         return d_var
     })

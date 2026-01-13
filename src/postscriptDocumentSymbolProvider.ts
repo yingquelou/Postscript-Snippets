@@ -1,12 +1,10 @@
-import { psParserHelper, psParser } from './postscriptParser';
+import { psParserHelper, PsParser } from './postscriptParser';
 import * as vscode from 'vscode'
 import * as chevrotain from 'chevrotain';
 const pstypeMap = {
     array: vscode.SymbolKind.Array,
     dictionary: vscode.SymbolKind.Object,
-    StringLiteral: vscode.SymbolKind.String,
-    StringHex: vscode.SymbolKind.String,
-    StringAscii85: vscode.SymbolKind.String,
+    string: vscode.SymbolKind.String,
     Number: vscode.SymbolKind.Number,
     LiteralName: vscode.SymbolKind.Key,
     ExecutableName: vscode.SymbolKind.Function,
@@ -15,9 +13,15 @@ const pstypeMap = {
 const view = {
     array: '[...]',
     dictionary: '<<...>>',
+    string: '(...)',
     procedure: '{...}'
 }
-class pssp extends psParser.getBaseCstVisitorConstructorWithDefaults<vscode.DocumentSymbol[]>() {
+class pssp extends PsParser.getBaseCstVisitorConstructorWithDefaults<vscode.DocumentSymbol[]>() {
+    private document: vscode.TextDocument;
+    constructor(document: vscode.TextDocument) {
+        super()
+        this.document = document
+    }
     expression(ctx: chevrotain.CstNode, ss: vscode.DocumentSymbol[]) {
         for (const key in ctx) {
             const token = ctx[key][0]
@@ -27,12 +31,13 @@ class pssp extends psParser.getBaseCstVisitorConstructorWithDefaults<vscode.Docu
                 case 'array':
                 case 'dictionary':
                 case 'procedure':
+                case 'string':
                     location = token.location as chevrotain.CstNodeLocation
                     range = new vscode.Range(location.startLine! - 1, location.startColumn! - 1,
                         location.endLine! - 1, location.endColumn!)
-                    const symbol = new vscode.DocumentSymbol(view[key], key, pstypeMap[key], range, range);
+                    const symbol = new vscode.DocumentSymbol(key === 'string' ? this.document.getText(range) : view[key], key, pstypeMap[key], range, range);
                     ss.push(symbol)
-                    if (token.children.expression)
+                    if (token.children.expression && key !== 'string')
                         this.visit(token, symbol.children)
                     break;
                 default:
@@ -49,7 +54,7 @@ export class PostScriptDocumentSymbolProvider implements vscode.DocumentSymbolPr
         const ss: vscode.DocumentSymbol[] = []
         if (!token.isCancellationRequested) {
             const { errors, cst } = psParserHelper(document.getText())
-            if (errors.length > 0) return []
+            if (errors.length > 0) { return [] }
             const visitor = new pssp(document)
             if (cst) visitor.visit(cst, ss)
         }

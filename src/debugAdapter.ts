@@ -125,7 +125,7 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
           if (rest) {
             this.sendEvent(new debugadapter.OutputEvent(rest + '\n', 'stdout'))
           }
-          this.emit(dbgEndMatch[0], rest)
+          this.emit(dbgEndMatch[0], { rest, message })
           if (message) {
             this.sendEvent(new debugadapter.StoppedEvent('exception', 1, message))
           }
@@ -144,14 +144,17 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
     })
 
     this.gsProcesses.stderr.on('data', chunk => {
+      this.sendEvent(new debugadapter.OutputEvent(`${buffer}`, 'stderr'))
       this.sendEvent(new debugadapter.OutputEvent(`${chunk}`, 'stderr'))
     })
     this.gsProcesses.on('error', err => {
+      this.sendEvent(new debugadapter.OutputEvent(`${buffer}`, 'stderr'))
       this.sendEvent(new debugadapter.OutputEvent(`Ghostscript error: ${err.message}\n`, 'stderr'))
       this.sendEvent(new debugadapter.TerminatedEvent())
     })
 
     this.gsProcesses.on('exit', (code, signal) => {
+      this.sendEvent(new debugadapter.OutputEvent(`${buffer}\n`, 'stderr'))
       this.sendEvent(new debugadapter.OutputEvent(`Ghostscript exited with code ${code} signal ${signal}\n`, 'console'))
       // process exit: notify terminated
       this.sendEvent(new debugadapter.TerminatedEvent())
@@ -243,7 +246,7 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
     const router: string[] = []
     if (entry.router) router.push(...entry.router, entry.name)
     else router.push(entry.name)
-    this.sendEvent(new debugadapter.OutputEvent(`[PostScript-Debug] variablesRequest for [${router.join(' ')}]\n`, 'console'))
+    // this.sendEvent(new debugadapter.OutputEvent(`[PostScript-Debug] variablesRequest for [${router.join(' ')}]\n`, 'console'))
     const alloc: psOutputParsers.VarRefAllocator = (info) => {
       for (const entry of this.varRefs) {
         if (info.name === entry[1].name && psOutputParsers.arraysEqual(entry[1].router, info.router))
@@ -268,7 +271,7 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
       this.sendEvent(new debugadapter.TerminatedEvent())
       return
     }
-    // TODO:The coordination between breakpoints, exceptions, and request responses is not handled properly here.
+    this.sendResponse(response)
 
     const p = this.normalizePath(this.programPath)
     const bp = this.breakpoints.filter(v => {
@@ -279,32 +282,31 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
       const location = this.cstWalker!.getCurrentLocation()
       return location.startLine && v.line > location.startLine
     })
-    if (bp && bp.line) {
-      const buffer: string[] = []
-      do {
-        let location = this.cstWalker.getCurrentLocation()
-        if (location.startLine && location.startLine < bp.line) {
-          const text = this.cstWalker.stepIn()
-          if (text) {
-            buffer.push(text)
-          } else {
-            this.sendEvent(new debugadapter.TerminatedEvent())
-            this.sendResponse(response)
-            return
+    const text = this.cstWalker.stepIn()
+    if (text) {
+      const func = msg => {
+        if (msg.message) { }
+        else {
+          let ok = true
+          let location = this.cstWalker?.getCurrentLocation()
+          if (location && location.startLine !== undefined) {
+            if (bp && bp.line !== undefined) {
+              if (bp.line <= location.startLine) {
+                this.sendEvent(new debugadapter.StoppedEvent('breakpoint', 1))
+                ok = false
+              }
+            }
           }
-        } else break
-      } while (1)
-      this.once(this.sendUnit(buffer.join(' ')), text => {
-        this.sendResponse(response)
-        this.sendEvent(new debugadapter.StoppedEvent('breakpoint', 1))
-      })
-    } else {
-      let location = this.cstWalker.getCurrentLocation()
-      this.once(this.sendUnit(this.programText.substring(location.startOffset)), text => {
-        this.sendResponse(response)
-        this.sendEvent(new debugadapter.TerminatedEvent())
-      })
-    }
+          if (ok) {
+            const code = this.cstWalker?.stepIn()
+            if (code) {
+              this.once(this.sendUnit(code), func)
+            } else this.sendEvent(new debugadapter.TerminatedEvent())
+          }
+        }
+      }
+      this.once(this.sendUnit(text), func)
+    } else this.sendEvent(new debugadapter.TerminatedEvent())
   }
 
   protected nextRequest(response: DebugProtocol.NextResponse, args: any): void {

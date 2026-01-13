@@ -13,10 +13,6 @@ const Whitespace = createToken({
     group: Lexer.SKIPPED,
 });
 
-
-
-
-
 const ProcedureStart = createToken({
     name: 'ProcedureStart',
     pattern: /\{/,
@@ -35,14 +31,6 @@ const LiteralName = createToken({
 const ExecutableName = createToken({
     name: 'ExecutableName',
     pattern: /(?:\[|>>|<<|\]|[^\s\[\]{}<>\/%()#0-9][^\s\[\]{}<>\/%()]*|\/\/[^\s\[\]{}<>\/%()]*)/,
-});
-
-// PostScript 字符串字面量: (string) 可以包含转义的括号和跨行
-// 使用一个简化的模式，匹配从 ( 到 ) 的内容，处理转义
-const StringLiteral = createToken({
-    name: 'StringLiteral',
-    pattern: /\([^()]*(?:\([^()]*(?:\([^()]*(?:\([^()]*\)[^()]*)*\)[^()]*)*\)[^()]*)*\)|\([^)]*\)/,
-    line_breaks:true
 });
 
 const StringHex = createToken({
@@ -66,29 +54,50 @@ const Number = createToken({
     pattern: /(?:[2-9]|1[0-9]|2[0-9]|3[0-6])#[0-9A-Za-z]+|[+-]?\d+[eE][+-]?\d+|[+-]?(?:\d+\.\d*|\.\d+|\d+\.)(?:[eE][+-]?\d+)?|[+-]?\d+/,
 });
 
+// PostScript 字符串字面量: (string) 可以包含转义的括号和跨行
+// 使用一个简化的模式，匹配从 ( 到 ) 的内容，处理转义
+const StringLs = createToken({
+    name: 'StringLs',
+    pattern: /\(/,
+    push_mode: 'string'
+});
+const StringRs = createToken({
+    name: 'StringRs',
+    pattern: /\)/,
+    pop_mode: true
+});
+const Strings = createToken({
+    name: 'Strings',
+    pattern: /\\(?:[nrtbf\()]|\d{3}|\r?\n)|.|\r?\n/
+});
+
 // 定义所有 token（顺序很重要，更具体的在前）
 // StringAscii85 必须在 DictionaryStart 之前，因为 <~ 可能被误识别为 <<
 // DictionaryStart 必须在 StringHex 之前，因为 << 可能被误识别为 <
-const psTokens = [
-    Comment,
-    Whitespace,
-    StringAscii85,
-    StringHex,
-    ExecutableName,
-    ProcedureStart,
-    ProcedureEnd,
-    StringLiteral,
-    LiteralName,
-    Number
-];
+const PsTokens: chevrotain.IMultiModeLexerDefinition = {
+    modes: {
+        string: [StringLs, StringRs, Strings],
+        default: [Comment,
+            StringLs,
+            Whitespace,
+            StringAscii85,
+            StringHex,
+            ExecutableName,
+            ProcedureStart,
+            ProcedureEnd,
+            LiteralName,
+            Number]
+    },
+    defaultMode: 'default'
+};
 
 // Create a lexical analyzer
-const psLexer = new Lexer(psTokens);
+const PsLexer = new Lexer(PsTokens);
 
 // Define parser
 class PostScriptParser extends CstParser {
     constructor() {
-        super(psTokens, { nodeLocationTracking: 'full' });
+        super(PsTokens, { nodeLocationTracking: 'full' });
         this.performSelfAnalysis();
     }
 
@@ -101,15 +110,32 @@ class PostScriptParser extends CstParser {
     public expression = this.RULE('expression', () => {
         this.OR([
             { ALT: () => this.SUBRULE(this.procedure) },
-            { ALT: () => this.CONSUME(StringLiteral) },
-            { ALT: () => this.CONSUME(StringHex) },
-            { ALT: () => this.CONSUME(StringAscii85) },
+            { ALT: () => this.SUBRULE(this.string) },
             { ALT: () => this.CONSUME(Number) },
             { ALT: () => this.CONSUME(LiteralName) },
             { ALT: () => this.CONSUME(ExecutableName) },
         ]);
     });
-
+    public string = this.RULE('string', () => {
+        this.OR([
+            { ALT: () => this.CONSUME(StringAscii85) },
+            { ALT: () => this.CONSUME(StringHex) },
+            { ALT: () => this.SUBRULE(this.stringLiteral) }
+        ])
+    });
+    public stringLiteral = this.RULE('stringLiteral', () => {
+        this.CONSUME(StringLs);
+        this.MANY(() => {
+            this.SUBRULE(this.substringLiteral)
+        });
+        this.CONSUME(StringRs);
+    });
+    public substringLiteral = this.RULE('substringLiteral', () => {
+        this.OR([
+            { ALT: () => this.SUBRULE(this.stringLiteral) },
+            { ALT: () => this.CONSUME(Strings) }
+        ])
+    });
     public procedure = this.RULE('procedure', () => {
         this.CONSUME(ProcedureStart);
         this.MANY(() => {
@@ -120,18 +146,17 @@ class PostScriptParser extends CstParser {
 }
 
 // Create a parser instance
-const psParser = new PostScriptParser();
+const PsParser = new PostScriptParser();
 
 export function psParserHelper(text: string) {
-    const lexResult = psLexer.tokenize(text);
+    const lexResult = PsLexer.tokenize(text);
     if (lexResult.errors.length > 0) {
         return { errors: lexResult.errors };
     }
-    psParser.input = lexResult.tokens;
-    const cst = psParser.program();
-    const errors = psParser.errors;
+    PsParser.input = lexResult.tokens;
+    const cst = PsParser.program();
+    const errors = PsParser.errors;
     return { errors, cst, tokens: lexResult.tokens };
 }
-
-export { PostScriptParser, psTokens, psParser };
+export { PostScriptParser, PsTokens, PsParser };
 export type { IToken };

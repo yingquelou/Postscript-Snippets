@@ -2,8 +2,8 @@ node_modules
 *.vsix
 *.txt
 settings.json
-!name.txt
 dist
 .vscode
 package-lock.json
 snippets/
+*.s.ps
