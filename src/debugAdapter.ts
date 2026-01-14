@@ -70,12 +70,22 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
     const ghostscriptPath = args.ghostscriptPath || (process.platform === 'win32' ? 'gswin64c' : 'gs')
     // normalize program path for consistent breakpoint matching
     this.programPath = this.normalizePath(program) || program
-    const gsArgs = ['-q', '-sOutputFile=*', '-sstderr=%stdout', '-dNODISPLAY', '-']
-
+    var gsArgs: string[]
+    if (args.args && Array.isArray(args.args)) {
+      gsArgs = args.args
+    } else {
+      gsArgs = []
+    }
+    gsArgs = gsArgs.map(v => v.trim()).filter(v => v !== '-')
+    gsArgs = [...new Set(gsArgs)]
+    const cwd = args.cwd ? args.cwd : path.dirname(this.programPath)
+    const msg = `${this.programPath} at ${cwd} with (${ghostscriptPath} ${gsArgs.join(' ')})\n`
     try {
-      this.gsProcesses = spawn(ghostscriptPath, gsArgs, { cwd: path.dirname(program), shell: false, stdio: ['pipe', 'pipe', 'pipe'] })
+      this.gsProcesses = spawn(ghostscriptPath, [...gsArgs,'-'], { cwd, shell: false, stdio: 'pipe' })
+      this.sendEvent(new debugadapter.OutputEvent(`[PostScript-Debug] debug ${msg}`, 'console'))
     } catch (err: any) {
-      this.sendEvent(new debugadapter.OutputEvent(`Failed to start Ghostscript: ${err.message || err}\n`, 'stderr'))
+      this.sendEvent(new debugadapter.OutputEvent(`[PostScript-Debug] Failed: ${err.message || err}\n`, 'stderr'))
+      this.sendEvent(new debugadapter.OutputEvent(`[PostScript-Debug] Failed to debug: ${msg}\n`, 'stderr'))
       this.sendResponse(response)
       this.sendEvent(new debugadapter.TerminatedEvent())
       return
@@ -105,7 +115,7 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
       if (fs.existsSync(hp)) {
         const helperText = fs.readFileSync(hp, 'utf8')
         try {
-          this.gsProcesses!.stdin.write(helperText + '\n')
+          this.gsProcesses.stdin.write(helperText + '\n')
         } catch (e: any) {
           this.sendEvent(new debugadapter.OutputEvent(`[PostScript-Debug] failed to load debugger helper ${hp}: ${e.message || e}\n`, 'stderr'))
         }
@@ -312,7 +322,7 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
   protected nextRequest(response: DebugProtocol.NextResponse, args: any): void {
     const result = this.cstWalker?.next()
     if (result) {
-      this.once(this.sendUnit(result), text => {
+      this.once(this.sendUnit(result), msg => {
         this.sendResponse(response)
         this.sendEvent(new debugadapter.StoppedEvent('step', args.threadId))
       })
@@ -325,7 +335,7 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
   protected stepInRequest(response: DebugProtocol.StepInResponse, args: any): void {
     const result = this.cstWalker?.stepIn()
     if (result) {
-      this.once(this.sendUnit(result), text => {
+      this.once(this.sendUnit(result), msg => {
         this.sendResponse(response)
         this.sendEvent(new debugadapter.StoppedEvent('step', args.threadId))
       })
@@ -338,7 +348,7 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
   protected stepOutRequest(response: DebugProtocol.StepOutResponse, args: any): void {
     const text = this.cstWalker?.stepOut()
     if (text) {
-      this.once(this.sendUnit(text), () => {
+      this.once(this.sendUnit(text), msg => {
         this.sendResponse(response)
         this.sendEvent(new debugadapter.StoppedEvent('step', args.threadId))
       })
@@ -385,7 +395,7 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
     const endMarker = `PS_EVAL_END(${id})`
     // Use print markers and then the expression, then end marker
     // Ensure expression ends with newline
-    this.gsProcesses.stdin.write(`(${startMarker}) print flush ${expr} (${endMarker}) print flush\n`)
+    this.gsProcesses.stdin.write(`(${startMarker}) = ${expr} (${endMarker}) = flush\n`)
     return endMarker
   }
   /**
@@ -413,7 +423,7 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
     const unitCounter = this.unitCounter++
     const startMarker = `PS_DBG_START(${unitCounter})`
     const endMarker = `PS_DBG_END(${unitCounter})`
-    const wrapper = `(${startMarker}) print flush {${unit}} ps_print_if_error (${endMarker}) print flush\n`
+    const wrapper = `(${startMarker}) = {${unit}} ps_print_if_error (${endMarker}) = flush\n`
     this.gsProcesses.stdin.write(wrapper)
     return endMarker
   }

@@ -1,49 +1,49 @@
-import { createToken, Lexer, CstParser, IToken, CstNode } from 'chevrotain';
+import * as chevrotain from 'chevrotain';
 
 // 定义词法规则
-const Comment = createToken({
+const Comment = chevrotain.createToken({
     name: 'Comment',
     pattern: /%[^\r\n]*/,
-    group: Lexer.SKIPPED,
+    group: chevrotain.Lexer.SKIPPED,
 });
 
-const Whitespace = createToken({
+const Whitespace = chevrotain.createToken({
     name: 'Whitespace',
     pattern: /\s+/,
-    group: Lexer.SKIPPED,
+    group: chevrotain.Lexer.SKIPPED,
 });
 
-const ProcedureStart = createToken({
+const ProcedureStart = chevrotain.createToken({
     name: 'ProcedureStart',
     pattern: /\{/,
 });
 
-const ProcedureEnd = createToken({
+const ProcedureEnd = chevrotain.createToken({
     name: 'ProcedureEnd',
     pattern: /\}/,
 });
 
-const LiteralName = createToken({
+const LiteralName = chevrotain.createToken({
     name: 'LiteralName',
     pattern: /\/(?:[^\s\[\]{}<>\/%()]*)/,
 });
 
-const ExecutableName = createToken({
+const ExecutableName = chevrotain.createToken({
     name: 'ExecutableName',
     pattern: /(?:\[|>>|<<|\]|[^\s\[\]{}<>\/%()#0-9][^\s\[\]{}<>\/%()]*|\/\/[^\s\[\]{}<>\/%()]*)/,
 });
 
-const StringHex = createToken({
+const StringHex = chevrotain.createToken({
     name: 'StringHex',
     pattern: /<[0-9A-Fa-f\s]+>/,
 });
 
-const StringAscii85 = createToken({
+const StringAscii85 = chevrotain.createToken({
     name: 'StringAscii85',
     pattern: /<~[!-u\s]*~>/,
 });
 
-const Number = createToken({
+const Number = chevrotain.createToken({
     name: 'Number',
     // 匹配 PostScript 数字格式（按优先级顺序）：
     // 1. 基数数字: base#number (base 2-36), 例如: 8#1777, 16#FFFE, 2#1000
@@ -56,17 +56,17 @@ const Number = createToken({
 
 // PostScript 字符串字面量: (string) 可以包含转义的括号和跨行
 // 使用一个简化的模式，匹配从 ( 到 ) 的内容，处理转义
-const StringLs = createToken({
+const StringLs = chevrotain.createToken({
     name: 'StringLs',
     pattern: /\(/,
     push_mode: 'string'
 });
-const StringRs = createToken({
+const StringRs = chevrotain.createToken({
     name: 'StringRs',
     pattern: /\)/,
     pop_mode: true
 });
-const Strings = createToken({
+const Strings = chevrotain.createToken({
     name: 'Strings',
     pattern: /\\(?:[nrtbf\()]|\d{3}|\r?\n)|.|\r?\n/
 });
@@ -92,10 +92,10 @@ const PsTokens: chevrotain.IMultiModeLexerDefinition = {
 };
 
 // Create a lexical analyzer
-const PsLexer = new Lexer(PsTokens);
+const PsLexer = new chevrotain.Lexer(PsTokens);
 
 // Define parser
-class PostScriptParser extends CstParser {
+class PostScriptParser extends chevrotain.CstParser {
     constructor() {
         super(PsTokens, { nodeLocationTracking: 'full' });
         this.performSelfAnalysis();
@@ -159,4 +159,3 @@ export function psParserHelper(text: string) {
     return { errors, cst, tokens: lexResult.tokens };
 }
 export { PostScriptParser, PsTokens, PsParser };
-export type { IToken };

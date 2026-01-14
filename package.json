@@ -2,8 +2,8 @@
   "name": "postscriptsnippets",
   "displayName": "PostScript Programming Language",
   "publisher": "yingquelou",
-  "description": "PostScript GhostScript OptScript",
-  "version": "1.0.4",
+  "description": "PostScript GhostScript",
+  "version": "1.0.5",
   "engines": {
     "vscode": "^1.70.3"
   },
@@ -174,18 +174,30 @@
               "ghostscriptPath": {
                 "type": "string",
                 "description": "Path to Interpreter executable (eg. gs/gswin32c/gswin64c)"
+              },
+              "cwd": {
+                "type": "string",
+                "description": "Interpreter working directory"
+              },
+              "args": {
+                "type": "array",
+                "description": "Arguments to Interpreter",
+                "items": {
+                  "type": "string"
+                }
               }
             }
           }
         },
         "configurationSnippets": [
           {
-            "label": "Launch PostScript (Ghostscript)",
+            "label": "Launch PostScript",
             "body": {
               "type": "postscript",
               "request": "launch",
-              "name": "Launch PostScript (Ghostscript)",
+              "name": "Launch PostScript",
               "program": "${file}",
+              "cwd": "${workspaceFolder}",
               "ghostscriptPath": "gs"
             }
           }

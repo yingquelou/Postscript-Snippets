@@ -5,14 +5,6 @@
 %   and emits one semantic item per line so the adapter can reliably parse
 %   and populate the Variables / Stacks views.
 %
-% General rules / requirements for adapter-friendly helpers:
-% - Every helper MUST print a unique start marker and end marker, e.g.
-%     (PS_<NAME>_START) print flush
-%     ... content ...
-%     (PS_<NAME>_END) print flush
-% - Each logical item must be printed on its own line and followed by
-%   `print flush` to avoid buffering issues.
-%
 % Helpers included:
 %  - ps_traverse_route
 %
@@ -20,15 +12,36 @@
 % Note: keep human-readable comments in this file, but avoid printing
 % any non-structured lines during helper execution (they would confuse
 % parsing in the adapter).
+
+% Usage: [<string>...]
+/ps_str_cat {
+  <<>> begin
+    /str_arr exch def
+    0 str_arr {
+      length add
+    } forall
+    /curPos 0 def
+    string str_arr {
+      1 index exch
+      curPos exch
+      dup length curPos
+      add /curPos exch def
+      putinterval
+    } forall
+  end
+} def
+
 % Usage: <executable> <string>
 /ps_label_wrapper {
   <<>> begin
+  [ exch (PS_) exch ] ps_str_cat
   /marker exch def
-  (PS_) print marker print (_START) =
+  [marker (_START)] ps_str_cat =
   exec
-  (PS_) print marker print (_END) =
+  [marker (_END)] ps_str_cat =
   end
 } def
+
 % Usage: <executable>
 /ps_print_if_error {
   stopped {
@@ -73,8 +86,8 @@
   /ps_print {
     <<
       /filter_with_type <<
-        /packedarraytype {(-packedarray-) print}
-        /arraytype {(-array-) print}
+        /packedarraytype {(-packedarray-) =}
+        /arraytype {(-array-) =}
       >>
     >> begin
       dup type filter_with_type exch known {
@@ -185,7 +198,7 @@ end
 } def
 
 % Route-based traversal helper
-% Usage: [ (/ostack | /estack | /estack) (<array_index>|<dict_key>)*]
+% Usage: [ (/ostack | /dstack | /estack) (<array_index>|<dict_key>)*]
 /ps_traverse_route {
 <<
 /select <<
@@ -193,8 +206,8 @@ end
 >>
 >>begin
   /route exch def
-  count /ct exch def
-  ct copy ct packedarray select exch /ostack exch put
+  count array astore select exch /ostack exch put
+  select /ostack get aload pop
   countexecstack array execstack select exch /estack exch put
   select route {get} forall ps_struct_print
 end

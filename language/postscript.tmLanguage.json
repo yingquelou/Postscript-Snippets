@@ -136,7 +136,7 @@
     },
     "array": {
       "name": "meta.array.postscript",
-      "begin": "mark|\\[",
+      "begin": "\\[",
       "end": "\\]",
       "patterns": [
         {

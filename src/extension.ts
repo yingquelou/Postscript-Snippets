@@ -10,9 +10,11 @@ export function activate(context: vscode.ExtensionContext) {
                 {
                     type: 'postscript',
                     request: 'launch',
-                    name: 'Launch PostScript (Ghostscript)',
+                    name: 'Launch PostScript',
                     program: '${file}',
-                    ghostscriptPath: 'gswin64c'
+                    args:[],
+                    cwd:'${workspaceFolder}',
+                    ghostscriptPath: 'gs'
                 }
             ]
         },
