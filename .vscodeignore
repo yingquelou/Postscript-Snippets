@@ -10,4 +10,5 @@ dist/*.js.map
 *.bat
 tsconfig.json
 ps/*.s.ps
+snippets
 !README.md

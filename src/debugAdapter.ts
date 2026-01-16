@@ -79,14 +79,13 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
     gsArgs = gsArgs.map(v => v.trim()).filter(v => v !== '-')
     gsArgs = [...new Set(gsArgs)]
     const cwd = args.cwd ? args.cwd : path.dirname(this.programPath)
-    const msg = `${this.programPath} at ${cwd} with (${ghostscriptPath} ${gsArgs.join(' ')})\n`
+    const msg = `${this.programPath} at ${cwd} with (${[ghostscriptPath, ...gsArgs].join(' ')})\n`
     try {
-      this.gsProcesses = spawn(ghostscriptPath, [...gsArgs,'-'], { cwd, shell: false, stdio: 'pipe' })
+      this.gsProcesses = spawn(ghostscriptPath, [...gsArgs, '-'], { cwd, shell: false, stdio: 'pipe' })
       this.sendEvent(new debugadapter.OutputEvent(`[PostScript-Debug] debug ${msg}`, 'console'))
     } catch (err: any) {
-      this.sendEvent(new debugadapter.OutputEvent(`[PostScript-Debug] Failed: ${err.message || err}\n`, 'stderr'))
-      this.sendEvent(new debugadapter.OutputEvent(`[PostScript-Debug] Failed to debug: ${msg}\n`, 'stderr'))
       this.sendResponse(response)
+      this.sendEvent(new debugadapter.OutputEvent(`[PostScript-Debug] Failed to debug: ${msg}\n`, 'stderr'))
       this.sendEvent(new debugadapter.TerminatedEvent())
       return
     }

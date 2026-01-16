@@ -1,0 +1,46 @@
+{
+    "Push dict on dictionary stack": {
+        "prefix": "begin",
+        "body": [
+            "<<>> begin",
+            "$0",
+            "end"
+        ]
+    },
+    "Create pattern instance from prototype": {
+        "prefix": "makepattern",
+        "body": [
+            "<<",
+            "\t/PatternType 1",
+            "\t/PaintType ${1|1,2|}",
+            "\t/TilingType ${2|1,2,3|}",
+            "\t/BBox [0 0 ${3:72} ${4:72}]",
+            "\t/XStep $3",
+            "\t/YStep $4",
+            "\t/PaintProc {",
+            "\t\tbegin",
+            "\t\t$0",
+            "\t\tend",
+            "\t}",
+            ">>",
+            "${5:matrix}",
+            "makepattern"
+        ],
+        "description": "pushed:pattern'"
+    },
+    "Paint form": {
+        "prefix": "execform",
+        "body": [
+            "<<",
+            "\t/FormType 1",
+            "\t/BBox [0 0 ${1:72} ${2:72}]",
+            "\t/Matrix ${3:matrix}",
+            "\t/PaintProc {",
+            "\t\tbegin",
+            "\t\t$0",
+            "\t\tend",
+            "\t}",
+            ">> execform"
+        ]
+    }
+}

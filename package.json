@@ -3,7 +3,7 @@
   "displayName": "PostScript Programming Language",
   "publisher": "yingquelou",
   "description": "PostScript GhostScript",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "engines": {
     "vscode": "^1.70.3"
   },
@@ -60,99 +60,103 @@
     "snippets": [
       {
         "language": "postscript",
-        "path": "snippets/Operand Stack Manipulation Operators.json"
+        "path": "snippets.gen/Operand Stack Manipulation Operators.json"
       },
       {
         "language": "postscript",
-        "path": "snippets/Arithmetic and Math Operators.json"
+        "path": "snippets.gen/Arithmetic and Math Operators.json"
       },
       {
         "language": "postscript",
-        "path": "snippets/Array Operators.json"
+        "path": "snippets.gen/Array Operators.json"
       },
       {
         "language": "postscript",
-        "path": "snippets/Packed Array Operators.json"
+        "path": "snippets.gen/Packed Array Operators.json"
       },
       {
         "language": "postscript",
-        "path": "snippets/Dictionary Operators.json"
+        "path": "snippets.gen/Dictionary Operators.json"
       },
       {
         "language": "postscript",
-        "path": "snippets/String Operators.json"
+        "path": "snippets.gen/String Operators.json"
       },
       {
         "language": "postscript",
-        "path": "snippets/Relational,Boolean,and Bitwise Operators.json"
+        "path": "snippets.gen/Relational,Boolean,and Bitwise Operators.json"
       },
       {
         "language": "postscript",
-        "path": "snippets/Control Operators.json"
+        "path": "snippets.gen/Control Operators.json"
       },
       {
         "language": "postscript",
-        "path": "snippets/Type,Attribute,and Conversion Operators.json"
+        "path": "snippets.gen/Type,Attribute,and Conversion Operators.json"
       },
       {
         "language": "postscript",
-        "path": "snippets/File Operators.json"
+        "path": "snippets.gen/File Operators.json"
       },
       {
         "language": "postscript",
-        "path": "snippets/Resource Operators.json"
+        "path": "snippets.gen/Resource Operators.json"
       },
       {
         "language": "postscript",
-        "path": "snippets/Virtual Memory Operators.json"
+        "path": "snippets.gen/Virtual Memory Operators.json"
       },
       {
         "language": "postscript",
-        "path": "snippets/Miscellaneous Operators.json"
+        "path": "snippets.gen/Miscellaneous Operators.json"
       },
       {
         "language": "postscript",
-        "path": "snippets/Graphics State Operators (Device-Independent).json"
+        "path": "snippets.gen/Graphics State Operators (Device-Independent).json"
       },
       {
         "language": "postscript",
-        "path": "snippets/Graphics State Operators (Device-Dependent).json"
+        "path": "snippets.gen/Graphics State Operators (Device-Dependent).json"
       },
       {
         "language": "postscript",
-        "path": "snippets/Coordinate System and Matrix Operators.json"
+        "path": "snippets.gen/Coordinate System and Matrix Operators.json"
       },
       {
         "language": "postscript",
-        "path": "snippets/Path Construction Operators.json"
+        "path": "snippets.gen/Path Construction Operators.json"
       },
       {
         "language": "postscript",
-        "path": "snippets/Painting Operators.json"
+        "path": "snippets.gen/Painting Operators.json"
       },
       {
         "language": "postscript",
-        "path": "snippets/Insideness-Testing Operators.json"
+        "path": "snippets.gen/Insideness-Testing Operators.json"
       },
       {
         "language": "postscript",
-        "path": "snippets/Form and Pattern Operators.json"
+        "path": "snippets.gen/Form and Pattern Operators.json"
       },
       {
         "language": "postscript",
-        "path": "snippets/Device Setup and Output Operators.json"
+        "path": "snippets.gen/Device Setup and Output Operators.json"
       },
       {
         "language": "postscript",
-        "path": "snippets/Glyph and Font Operators.json"
+        "path": "snippets.gen/Glyph and Font Operators.json"
       },
       {
         "language": "postscript",
-        "path": "snippets/Interpreter Parameter Operators.json"
+        "path": "snippets.gen/Interpreter Parameter Operators.json"
       },
       {
         "language": "postscript",
-        "path": "snippets/Errors.json"
+        "path": "snippets.gen/Errors.json"
+      },
+      {
+        "language": "postscript",
+        "path": "snippets.gen/postscript.json"
       }
     ],
     "debuggers": [

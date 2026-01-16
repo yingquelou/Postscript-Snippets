@@ -12,15 +12,15 @@ function createBody(params: string) {
  * to generate the PS code snippet files required by the extension.
  * For formatting conventions, please refer to the `operators.md` file.
  */
+const destDir = path.join(__dirname, '..', 'snippets.gen')
 function snippetsGenerator(markDownPath: string) {
     return new Promise((resolve, reject) => {
-        const destDir = path.join(__dirname, '..', 'snippets')
         fs.mkdir(destDir, { recursive: true }, err => {
             if (err) throw err
             fs.readFile(markDownPath, (err, data) => {
                 if (err === null) {
                     var snippetFileName: string
-                    const desc: { [key: string]: string }[] = []
+                    const desc: string[] = []
                     new marked.Lexer().lex(data.toString()).forEach(
                         token => {
                             if (token.type === 'heading') {
@@ -53,7 +53,7 @@ function snippetsGenerator(markDownPath: string) {
                                 })
                                 fs.writeFileSync(snippet_file, JSON.stringify(snippet))
                                 fs.closeSync(snippet_file)
-                                desc.push({ language: 'postscript', path: path.relative(path.join(__dirname, '..'), snippetFileName) })
+                                desc.push(path.relative(path.join(__dirname, '..'), snippetFileName))
                             }
                         }
                     )
@@ -65,17 +65,23 @@ function snippetsGenerator(markDownPath: string) {
 }
 
 snippetsGenerator(path.join(__dirname, '..', 'Operators.md')).then(v => {
-    const operatorSnippets = (v as any[]).map(snippet => {
+    const arr = v as string[]
+    // Add an additional code snippet file
+    arr.push(...fs.readdirSync(path.join(__dirname, '..', 'snippets'), { withFileTypes: true })
+        .filter(v => v.isFile() && path.extname(v.name).toLowerCase() === '.json').map(v => {
+            const snf = path.join(destDir, v.name)
+            fs.writeFileSync(snf, JSON.stringify(
+                JSON.parse(fs.readFileSync(path.join(v.parentPath, v.name)).toString())
+            ))
+            return path.relative(path.join(__dirname, '..'), snf)
+        })
+    )
+    const operatorSnippets = arr.map(snippet => {
         return {
-            ...snippet,
-            path: (snippet.path as string).replace('\\', '/')
+            language: 'postscript',
+            path: (snippet as string).replace('\\', '/')
         }
     })
-    // Add an additional code snippet file
-    // operatorSnippets.push({
-    //     language: "postscript", path: "snippets/....."
-    // })
-
     // Update package.json file
     const packageFile = path.join(__dirname, '..', 'package.json')
     fs.readFile(packageFile, (err, data) => {
