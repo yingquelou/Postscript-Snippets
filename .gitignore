@@ -3,6 +3,7 @@ node_modules
 *.txt
 settings.json
 dist
+scripts/*.js
 .vscode
 package-lock.json
 snippets.gen/

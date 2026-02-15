@@ -282,40 +282,25 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
     }
     this.sendResponse(response)
 
-    const p = this.normalizePath(this.programPath)
-    const bp = this.breakpoints.filter(v => {
-      const p2 = this.normalizePath(v.source?.path)
-      return v.source?.name === p || p2 === p
-    }).find(v => {
-      if (!v.line) return false
-      const location = this.cstWalker!.getCurrentLocation()
-      return location.startLine && v.line > location.startLine
-    })
-    const text = this.cstWalker.stepIn()
-    if (text) {
-      const func = msg => {
-        if (msg.message) { }
-        else {
-          let ok = true
-          let location = this.cstWalker?.getCurrentLocation()
-          if (location && location.startLine !== undefined) {
-            if (bp && bp.line !== undefined) {
-              if (bp.line <= location.startLine) {
-                this.sendEvent(new debugadapter.StoppedEvent('breakpoint', 1))
-                ok = false
-              }
-            }
-          }
-          if (ok) {
-            const code = this.cstWalker?.stepIn()
-            if (code) {
-              this.once(this.sendUnit(code), func)
-            } else this.sendEvent(new debugadapter.TerminatedEvent())
-          }
-        }
+    const runUntilNextBreakpointOrEnd = () => {
+      const text = this.cstWalker!.stepIn()
+      if (!text) {
+        this.sendEvent(new debugadapter.TerminatedEvent())
+        return
       }
-      this.once(this.sendUnit(text), func)
-    } else this.sendEvent(new debugadapter.TerminatedEvent())
+      const onStepDone = (_msg: any) => {
+        if (_msg?.message) return // error from GS, keep stopped
+        const location = this.cstWalker?.getCurrentLocation()
+        if (location && this.isBreakpointHit(location)) {
+          this.sendEvent(new debugadapter.StoppedEvent('breakpoint', 1))
+          return
+        }
+        runUntilNextBreakpointOrEnd()
+      }
+      this.once(this.sendUnit(text), onStepDone)
+    }
+
+    runUntilNextBreakpointOrEnd()
   }
 
   protected nextRequest(response: DebugProtocol.NextResponse, args: any): void {
@@ -404,13 +389,35 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
     return this.sendEval(`[${parentRoute.join(' ')}] ps_traverse_route\n`)
   }
 
+  /** Breakpoints that apply to the current program (normalized path match). */
+  private getBreakpointsForProgram(): DebugProtocol.Breakpoint[] {
+    const programNorm = this.normalizePath(this.programPath)
+    if (!programNorm) return []
+    return this.breakpoints.filter(b => this.normalizePath(b.source?.path) === programNorm)
+  }
+
+  /** Set of line numbers where breakpoints are set for the current program. */
+  private getBreakpointLinesForProgram(): Set<number> {
+    const lines = new Set<number>()
+    for (const b of this.getBreakpointsForProgram()) {
+      if (b.line != null) lines.add(b.line)
+    }
+    return lines
+  }
+
+  /** True if the given location (1-based line) hits any breakpoint for the current program. */
+  private isBreakpointHit(location: { startLine?: number }): boolean {
+    if (location.startLine == null) return false
+    return this.getBreakpointLinesForProgram().has(location.startLine)
+  }
+
   protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): void {
-    this.breakpoints = []
-    const breakpoints = this.breakpoints
-    args.breakpoints?.forEach(v => {
-      breakpoints.push({ verified: true, source: args.source, line: v.line })
-    })
-    response.body = { breakpoints }
+    this.breakpoints = (args.breakpoints ?? []).map(v => ({
+      verified: true,
+      source: args.source,
+      line: v.line,
+    }))
+    response.body = { breakpoints: this.breakpoints }
     this.sendResponse(response)
   }
   private unitCounter: number = 0

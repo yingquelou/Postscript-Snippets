@@ -1,36 +1,35 @@
 import * as vscode from 'vscode'
 import { DebugConfiguration, DebugConfigurationProvider } from 'vscode'
-import { PostScriptDocumentSymbolProvider } from './postscriptDocumentSymbolProvider'
-const languageId = 'postscript'
+import { createLanguageClient, LANGUAGE_ID } from './languageServerClient'
 
 export function activate(context: vscode.ExtensionContext) {
-    const debugConfigurationProvider: DebugConfigurationProvider = {
-        provideDebugConfigurations(folder, token) {
-            return [
-                {
-                    type: 'postscript',
-                    request: 'launch',
-                    name: 'Launch PostScript',
-                    program: '${file}',
-                    args:[],
-                    cwd:'${workspaceFolder}',
-                    ghostscriptPath: 'gs'
-                }
-            ]
+  const client = createLanguageClient()
+  context.subscriptions.push(client)
+
+  const debugConfigurationProvider: DebugConfigurationProvider = {
+    provideDebugConfigurations(_folder, _token) {
+      return [
+        {
+          type: 'postscript',
+          request: 'launch',
+          name: 'Launch PostScript',
+          program: '${file}',
+          args: [],
+          cwd: '${workspaceFolder}',
+          ghostscriptPath: 'gs',
         },
-        resolveDebugConfiguration(folder, config: DebugConfiguration, token) {
-            if (!config.type) {
-                return undefined
-            }
-            return config
-        }
-    }
-    context.subscriptions.push(
-        vscode.languages.registerDocumentSymbolProvider(
-            { language: languageId }, new PostScriptDocumentSymbolProvider()),
-        vscode.debug.registerDebugConfigurationProvider(languageId, debugConfigurationProvider))
+      ]
+    },
+    resolveDebugConfiguration(_folder, config: DebugConfiguration, _token) {
+      if (!config.type) return undefined
+      return config
+    },
+  }
+  context.subscriptions.push(
+    vscode.debug.registerDebugConfigurationProvider(LANGUAGE_ID, debugConfigurationProvider)
+  )
 }
 
 export function deactivate() {
-    // nothing to do
+  // nothing to do
 }

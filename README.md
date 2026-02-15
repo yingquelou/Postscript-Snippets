@@ -1,40 +1,70 @@
-# PostScript
+# PostScript Programming Language
 
-This Visual Studio Code extension provides `PostScript` language snippets and a lightweight debugger that uses `Ghostscript` to run `PostScript` files.
+A Visual Studio Code extension for **PostScript** (Ghostscript): syntax highlighting, language server, code snippets, and a debugger that runs PostScript files with Ghostscript.
 
-Requirements
+## Features
 
-- Ghostscript installed and available in PATH (`gswin64c` 、`gswin32c`、 `gs`).
+- **Language support** — Grammar and language configuration for `.ps` and `.eps` files (aliases: PostScript, GhostScript, OptScript).
+- **Syntax highlighting** — PostScript source highlighting via `source.postscript` scope.
+- **Document outline** — Outline / document symbols (arrays, dictionaries, procedures, strings, names, numbers) provided by the built-in PostScript Language Server.
+- **Code snippets** — Snippets for operators and errors, including:
+  - Operand stack, arithmetic, arrays, dictionaries, strings
+  - Control, type/conversion, file, resource, virtual memory
+  - Graphics state, coordinate system, paths, painting, fonts
+  - And more (see **Snippets** in the extension).
+- **Debugger** — Run and debug PostScript with Ghostscript; breakpoints supported; stdout/stderr in the Debug Console.
 
-Usage
+## Requirements
 
-- Open a `.ps` file.
-- Open the Run and Debug side bar, choose "PostScript (Ghostscript) Debugger" and use the provided "Launch PostScript (Ghostscript)" configuration.
-- The debugger will run Ghostscript against the current file and stream stdout/stderr into the Debug Console.
+- **Ghostscript** installed and on `PATH`, e.g.:
+  - Windows: `gswin64c`, `gswin32c`, or `gs`
+  - macOS/Linux: `gs`
 
-Configuration
+## Usage
 
-- `ghostscriptPath`: optional override for the Ghostscript executable name or full path.
+1. Open a `.ps` or `.eps` file.
+2. Use the **Outline** view for document symbols (from the language server).
+3. To run/debug:
+   - Open **Run and Debug** (Ctrl+Shift+D / Cmd+Shift+D).
+   - Select **PostScript (Ghostscript) Debugger** and the **Launch PostScript** configuration (or add one as below).
+   - Start debugging (F5). The debugger runs Ghostscript on the current file and streams output to the Debug Console.
 
-Additional Debugger Features
+## Configuration
 
-Example `launch.json`
+### Extension setting
+
+| Setting | Description | Default |
+|--------|-------------|---------|
+| `postscript.interpreter.executable` | Ghostscript executable name or full path | `gs` |
+
+### Launch configuration
+
+Example `launch.json`:
 
 ```json
 {
-	"version": "0.2.0",
-	"configurations": [
-		{
-			"type": "postscript",
-			"request": "launch",
-			"name": "PostScript (Ghostscript)",
-			"program": "${file}",
-			"ghostscriptPath": "gs"
-		}
-	]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "postscript",
+      "request": "launch",
+      "name": "Launch PostScript",
+      "program": "${file}",
+      "cwd": "${workspaceFolder}",
+      "ghostscriptPath": "gs",
+      "args": []
+    }
+  ]
 }
 ```
 
-More
+| Property | Description |
+|----------|-------------|
+| `program` | PostScript file to run (e.g. `${file}` for current file). |
+| `ghostscriptPath` | Ghostscript executable (e.g. `gs`, `gswin64c`). |
+| `cwd` | Working directory for the interpreter. |
+| `args` | Additional arguments passed to Ghostscript. |
 
-See Ghostscript docs: https://ghostscript.com/documentation/index.html
+## More
+
+- [Ghostscript documentation](https://ghostscript.com/documentation/index.html)
