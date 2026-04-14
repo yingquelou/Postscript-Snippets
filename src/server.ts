@@ -30,34 +30,47 @@ function setupConnection(connection: any) {
 
   // Track whether a document previously had parse errors to avoid spamming notifications
   const hadParseError: Map<string, boolean> = new Map()
+
+  /**
+   * Check if parse errors are likely caused by binary data in the file.
+   * Heuristic: many "unexpected character" errors with high offsets suggest binary data.
+   */
+  function isBinaryDataError(errors: any[], textLength: number): boolean {
+    if (errors.length < 5) return false
+    const unexpectedCharErrors = errors.filter((e: any) =>
+      e.message && e.message.includes('unexpected character')
+    )
+    // If most errors are unexpected character errors, likely binary data
+    return unexpectedCharErrors.length >= errors.length * 0.8
+  }
+
   async function validateTextDocument(textDocument: TextDocument) {
     const text = textDocument.getText()
     const res: any = psParserHelper(text)
     const diagnostics: Diagnostic[] = []
     if (res && res.errors && res.errors.length) {
-      for (const err of res.errors) {
-        let startOffset = 0
-        let endOffset = 1
-        if (err.token && typeof err.token.startOffset === 'number') {
-          startOffset = err.token.startOffset
-          endOffset = typeof err.token.endOffset === 'number' ? err.token.endOffset : startOffset + 1
+      // Check if this looks like binary data
+      if (isBinaryDataError(res.errors, text.length)) {
+        // Show a single warning about binary data instead of many character errors
+        diagnostics.push({
+          severity: DiagnosticSeverity.Warning,
+          range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
+          message: 'This file appears to contain binary data (e.g., embedded images). Document outline and debugging features are not supported for such files.',
+          source: 'postscript'
+        })
+      } else {
+        // Normal parse errors - show details
+        for (const err of res.errors) {
+          let startOffset = 0
+          let endOffset = 1
+          if (err.token && typeof err.token.startOffset === 'number') {
+            startOffset = err.token.startOffset
+            endOffset = typeof err.token.endOffset === 'number' ? err.token.endOffset : startOffset + 1
+          }
+          const range = { start: textDocument.positionAt(startOffset), end: textDocument.positionAt(endOffset) }
+          diagnostics.push({ severity: DiagnosticSeverity.Error, range, message: err.message || JSON.stringify(err), source: 'postscript' })
         }
-        const range = { start: textDocument.positionAt(startOffset), end: textDocument.positionAt(endOffset) }
-        diagnostics.push({ severity: DiagnosticSeverity.Error, range, message: err.message || JSON.stringify(err), source: 'postscript' })
       }
-    }
-    const hasError = diagnostics.length > 0
-    const prev = hadParseError.get(textDocument.uri) || false
-    if (hasError && !prev) {
-      try {
-        connection.window.showErrorMessage(`PostScript: parse errors - ${diagnostics.length} found; see Problems panel.`)
-      } catch (e) { }
-      hadParseError.set(textDocument.uri, true)
-    } else if (!hasError && prev) {
-      try {
-        connection.window.showInformationMessage('PostScript: parse issues resolved')
-      } catch (e) { }
-      hadParseError.set(textDocument.uri, false)
     }
     connection.sendDiagnostics({ uri: textDocument.uri, diagnostics })
   }

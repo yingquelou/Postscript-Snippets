@@ -3,7 +3,7 @@
   "displayName": "PostScript Programming Language",
   "publisher": "yingquelou",
   "description": "PostScript GhostScript",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "engines": {
     "vscode": "^1.70.3"
   },
@@ -177,7 +177,7 @@
               },
               "ghostscriptPath": {
                 "type": "string",
-                "description": "Path to Interpreter executable (eg. gs/gswin32c/gswin64c)"
+                "description": "Path to Interpreter executable (eg. gs/gswin32c/gswin64c). If not set, uses postscript.interpreter.executable setting or platform default."
               },
               "cwd": {
                 "type": "string",
@@ -201,8 +201,7 @@
               "request": "launch",
               "name": "Launch PostScript",
               "program": "${file}",
-              "cwd": "${workspaceFolder}",
-              "ghostscriptPath": "gs"
+              "cwd": "${workspaceFolder}"
             }
           }
         ]

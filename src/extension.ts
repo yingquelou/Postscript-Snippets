@@ -8,6 +8,8 @@ export function activate(context: vscode.ExtensionContext) {
 
   const debugConfigurationProvider: DebugConfigurationProvider = {
     provideDebugConfigurations(_folder, _token) {
+      // Get the default Ghostscript path based on platform
+      const defaultGsPath = process.platform === 'win32' ? 'gswin64c' : 'gs'
       return [
         {
           type: 'postscript',
@@ -16,12 +18,22 @@ export function activate(context: vscode.ExtensionContext) {
           program: '${file}',
           args: [],
           cwd: '${workspaceFolder}',
-          ghostscriptPath: 'gs',
+          ghostscriptPath: defaultGsPath,
         },
       ]
     },
     resolveDebugConfiguration(_folder, config: DebugConfiguration, _token) {
       if (!config.type) return undefined
+
+      // If ghostscriptPath is not set in launch.json, read from VS Code settings
+      if (!config.ghostscriptPath) {
+        const configSettings = vscode.workspace.getConfiguration('postscript.interpreter')
+        const settingsPath = configSettings.get<string>('executable')
+        if (settingsPath) {
+          config.ghostscriptPath = settingsPath
+        }
+      }
+
       return config
     },
   }

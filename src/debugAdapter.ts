@@ -1,12 +1,85 @@
 import * as debugadapter from '@vscode/debugadapter'
 import { DebugProtocol } from '@vscode/debugprotocol'
-import { spawn, ChildProcessWithoutNullStreams } from 'child_process'
+import { spawn, ChildProcessWithoutNullStreams, execSync } from 'child_process'
 import * as fs from 'fs'
 import * as path from 'path'
 import { fileURLToPath } from 'url'
 import * as psOutputParsers from './psOutputParsers'
 import { psParserHelper } from './postscriptParser'
 import { CstWalker } from './cstWalker'
+
+/**
+ * Check if a command exists in PATH.
+ * Returns the command if found, null otherwise.
+ */
+function checkCommandExists(command: string): string | null {
+  try {
+    // Use 'where' on Windows, 'which' on other platforms
+    const checkCmd = process.platform === 'win32' ? 'where' : 'which'
+    execSync(`${checkCmd} ${command}`, { stdio: 'pipe' })
+    return command
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Get the default Ghostscript executable name based on platform.
+ * Windows: checks gswin64c -> gswin32c -> gs (for MSYS/MSYS2 compatibility)
+ * Other platforms: gs
+ */
+function getDefaultGhostscriptPath(): string {
+  if (process.platform === 'win32') {
+    // On Windows, try gswin64c first, then gswin32c, then gs (for MSYS/MSYS2)
+    return checkCommandExists('gswin64c') || checkCommandExists('gswin32c') || checkCommandExists('gs') || 'gswin64c'
+  }
+  return 'gs'
+}
+
+/**
+ * Check if an executable exists in PATH.
+ * Returns the executable name if found, undefined otherwise.
+ */
+function checkExecutableExists(execName: string): string | undefined {
+  try {
+    // Use 'where' on Windows, 'which' on other platforms
+    const cmd = process.platform === 'win32' ? 'where' : 'which'
+    execSync(`${cmd} ${execName}`, { stdio: 'pipe' })
+    return execName
+  } catch {
+    return undefined
+  }
+}
+
+/**
+ * Find the first available Ghostscript executable on Windows.
+ * Checks in order: gswin64c, gswin32c, gs (for MSYS/MSYS2/Cygwin compatibility)
+ */
+function findWindowsGhostscript(): string {
+  // Check in order of preference
+  return checkExecutableExists('gswin64c')
+    || checkExecutableExists('gswin32c')
+    || checkExecutableExists('gs')
+    || 'gswin64c' // fallback default if none found
+}
+
+/**
+ * Resolve Ghostscript path with the following priority:
+ * 1. launch.json ghostscriptPath (already merged with VS Code setting by extension.ts)
+ * 2. Auto-detect from PATH (Windows: gswin64c/gswin32c/gs, Others: gs)
+ */
+function resolveGhostscriptPath(argsPath?: string): string {
+  // Priority 1: launch.json configuration (already resolved by extension.ts)
+  if (argsPath) {
+    return argsPath
+  }
+
+  // Priority 2: Auto-detect from PATH
+  if (process.platform === 'win32') {
+    return findWindowsGhostscript()
+  }
+  return checkExecutableExists('gs') || 'gs'
+}
 
 const ps_dbg = /PS_DBG_START\((\d+)\)([\s\S]*)PS_DBG_END\((\1)\)/
 const ps_dbg_end = /PS_DBG_END\((\d+)\)/
@@ -67,7 +140,7 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
       this.sendEvent(new debugadapter.TerminatedEvent())
       return
     }
-    const ghostscriptPath = args.ghostscriptPath || (process.platform === 'win32' ? 'gswin64c' : 'gs')
+    const ghostscriptPath = resolveGhostscriptPath(args.ghostscriptPath)
     // normalize program path for consistent breakpoint matching
     this.programPath = this.normalizePath(program) || program
     var gsArgs: string[]
@@ -94,13 +167,10 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
     try {
       this.programText = fs.readFileSync(this.programPath, 'utf8')
       const { cst, errors, tokens } = psParserHelper(this.programText)
-      if (errors.length > 0) {
-        this.sendEvent(new debugadapter.OutputEvent(`Parse errors: ${errors.map(e => e.message).join(', ')}\n`, 'stderr'))
-      }
       if (cst) {
         this.cstWalker = new CstWalker(cst, this.programText)
       } else {
-        this.sendEvent(new debugadapter.OutputEvent(`Failed to parse program\n`, 'stderr'))
+        this.sendEvent(new debugadapter.OutputEvent(`[PostScript-Debug] Warning: Failed to parse program. The debugger requires plain PostScript source code and cannot process files containing binary data (e.g., embedded images).\n`, 'stderr'))
       }
     } catch (err: any) {
       this.sendEvent(new debugadapter.OutputEvent(`Failed to read/parse program: ${err.message}\n`, 'stderr'))
