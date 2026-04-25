@@ -12,7 +12,12 @@ A Visual Studio Code extension for **PostScript** (Ghostscript): syntax highligh
   - Control, type/conversion, file, resource, virtual memory
   - Graphics state, coordinate system, paths, painting, fonts
   - And more (see **Snippets** in the extension).
-- **Debugger** — Run and debug PostScript with Ghostscript; breakpoints supported; stdout/stderr in the Debug Console.
+- **Debugger** — Run and debug PostScript with Ghostscript:
+  - **Breakpoints** — Support for setting breakpoints in PostScript files
+  - **Step operations** — Step in, step out, and step next operations
+  - **Continue operation** — Continue execution until the next breakpoint, exception, or end of file
+  - **Launch configuration** — Support for `stopOnEntry` option to control whether to stop at the entry point
+  - **Output** — stdout/stderr in the Debug Console
 
 Note: Document outline and Debugger are not available for files containing binary data (e.g., embedded images), though these files remain valid PostScript.
 
@@ -62,7 +67,8 @@ Example `launch.json`:
       "program": "${file}",
       "cwd": "${workspaceFolder}",
       "ghostscriptPath": "gs",
-      "args": []
+      "args": [],
+      "stopOnEntry": false
     }
   ]
 }
@@ -74,6 +80,7 @@ Example `launch.json`:
 | `ghostscriptPath` | Ghostscript executable path. If not set, uses the extension setting or platform default. |
 | `cwd` | Working directory for the interpreter. |
 | `args` | Additional arguments passed to Ghostscript. |
+| `stopOnEntry` | Whether to stop at the entry point when starting debugging. Default: false. |
 
 **Note:** The `ghostscriptPath` in `launch.json` takes precedence over the extension setting. If neither is set, the debugger automatically detects from `PATH` in the following order:
 - Windows: `gswin64c` → `gswin32c` → `gs` (MSYS/MSYS2/Cygwin)

@@ -42,5 +42,167 @@
             "\t}",
             ">> execform"
         ]
+    },
+    "image/mask type 1": {
+        "prefix": [
+            "image",
+            "imagemask"
+        ],
+        "body": [
+            "<<",
+            "\t/ImageType 1",
+            "\t/Width ${1:72}",
+            "\t/Height ${2:72}",
+            "\t/ImageMatrix ${3:matrix}",
+            "\t/MultipleDataSources ${4:false}",
+            "\t/DataSource ${5|{},string,file|}",
+            "\t/BitsPerComponent ${6|1,2,4,8,12|}",
+            "\t/Decode [${7|0 1,1 0|}...]",
+            "\t/Interpolate ${8:false}",
+            ">> ${9|image,imagemask|}"
+        ]
+    },
+    "image type 4": {
+        "prefix": "image",
+        "body": [
+            "<<",
+            "\t/ImageType 4",
+            "\t/MaskColor [${1:...}]",
+            "\t/Width ${2:72}",
+            "\t/Height ${3:72}",
+            "\t/ImageMatrix ${4:matrix}",
+            "\t/MultipleDataSources ${5:false}",
+            "\t/DataSource ${6|{},string,file|}",
+            "\t/BitsPerComponent ${7|1,2,4,8,12|}",
+            "\t/Decode [${8|0 1,1 0|}...]",
+            "\t/Interpolate ${9:false}",
+            ">> image"
+        ]
+    },
+    "image type 3": {
+        "prefix": "image",
+        "body": [
+            "<<",
+            "\t/ImageType 3",
+            "\t/DataDict ${1:<<...>>}",
+            "\t/MaskDict ${2:<<...>>}",
+            "\t/InterleaveType ${3|1,2,3|}",
+            ">> image"
+        ]
+    },
+    "decode filter": {
+        "prefix": "filter",
+        "body": "${1:source} ${2|dictionary, |} /${3|ASCIIHexDecode,ASCII85Decode,LZWDecode,FlateDecode,RunLengthDecode|} filter"
+    },
+    "encode filter": {
+        "prefix": "filter",
+        "body": "${1:target} ${2|dictionary, |} /${3|ASCIIHexEncode,ASCII85Encode,NullEncode|} filter"
+    },
+    "RunLengthEncode filter": {
+        "prefix": "filter",
+        "body": "${1:target} ${2|dictionary, |} ${3:recordsize} /${4|RunLengthEncode|} filter"
+    },
+    "LZWEncode filter": {
+        "prefix": "filter",
+        "body": [
+            "${1:target} <<",
+            "\t/EarlyChange ${2:1}",
+            "\t/UnitLength ${3|8,3,4,5,6,7|}",
+            "\t/LowBitFirst ${4|false,true|}",
+            "\t/Predictor ${5|1,2,10,11,12,13,14,15|}",
+            "\t/Columns ${6:1}",
+            "\t/Colors ${7:1}",
+            "\t/BitsPerComponent ${8|8,1,2,4|}",
+            "\t/CloseSource ${9|false,true|}",
+            "\t/CloseTarget ${10|false,true|}",
+            ">>",
+            "/LZWEncode filter"
+        ]
+    },
+    "FlateEncode filter": {
+        "prefix": "filter",
+        "body": [
+            "${1:target} <<",
+            "\t/Effort ${4|-1,0,1,2,3,4,5,6,7,8,9|}",
+            "\t/Predictor ${5|1,2,10,11,12,13,14,15|}",
+            "\t/Columns ${6:1}",
+            "\t/Colors ${7:1}",
+            "\t/BitsPerComponent ${8|8,1,2,4|}",
+            "\t/CloseSource ${9|false,true|}",
+            "\t/CloseTarget ${10|false,true|}",
+            ">>",
+            "/FlateEncode filter"
+        ]
+    },
+    "CCITTFax filter": {
+        "prefix": "filter",
+        "body": [
+            "${1|source,target|} <<",
+            "\t/Uncompressed ${2|false,true|}",
+            "\t/K ${3|<0,0,>0|}",
+            "\t/EndOfLine ${4|false,true|}",
+            "\t/EncodedByteAlign ${5|false,true|}",
+            "\t/Columns ${6:1728}",
+            "\t/Rows ${7:0}",
+            "\t/EndOfBlock ${8|false,true|}",
+            "\t/BlackIs1 ${9|false,true|}",
+            "\t/DamagedRowsBeforeError ${10:0}",
+            "\t/CloseSource ${11|false,true|}",
+            "\t/CloseTarget ${12|false,true|}",
+            ">>",
+            "/${13|CCITTFaxEncode,CCITTFaxDecode|} filter"
+        ]
+    },
+    "DCTEncode filter": {
+        "prefix": "filter",
+        "body": [
+            "${1:target} <<",
+            "\t/Columns ${2:1}",
+            "\t/Rows ${3:1}",
+            "\t/Colors ${4|1,2,3,4|}",
+            "\t/HSamples ${5|array,packedarray,string|}",
+            "\t/VSamples ${6|array,packedarray,string|}",
+            "\t/QuantTables ${7|array,packedarray,string|}",
+            "\t/QFactor ${8:1.0~1.0E6}",
+            "\t/HuffTables ${9|array,packedarray,string|}",
+            "\t/ColorTransform ${10|number|}",
+            "\t/CloseTarget ${11|false,true|}",
+            ">>",
+            "/DCTEncode filter"
+        ]
+    },
+    "SubFileDecode filter": {
+        "prefix": "filter",
+        "body": "${1:source} ${2:EODCount} ${3:EODString} /SubFileDecode filter"
+    },
+    "SubFileDecode filter (dictionary)": {
+        "prefix": "filter",
+        "body": "${1:source} ${2:dictionary} ${3:EODCount} ${4:EODString} /SubFileDecode filter"
+    },
+    "SubFileDecode filter (LanguageLevel 3)": {
+        "prefix": "filter",
+        "body": [
+            "${1:source} <<",
+            "\t${2:EODCount}",
+            "\t${3:EODString}",
+            "\t/CloseSource ${4|false,true|}",
+            ">> /SubFileDecode filter"
+        ]
+    },
+    "ReusableStreamDecode filter": {
+        "prefix": "filter",
+        "body": [
+            "${1:source} <<",
+            "\t/Filter ${2|name,[...]|}",
+            "\t/DecodeParms ${3|array,dictionary|}",
+            "\t/Intent ${4|0,1,2,3|}",
+            "\t/AsyncRead ${5|false,true|}",
+            "\t/CloseSource ${6|false,true|}",
+            ">> /ReusableStreamDecode filter"
+        ]
+    },
+    "Open named file with specified access": {
+        "prefix": "file",
+        "body": "(${1:filename}) (${2|r,w,a,r+,w+,a+|}) file"
     }
 }

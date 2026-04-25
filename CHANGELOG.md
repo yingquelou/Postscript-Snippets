@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.0.9]
+
+### Fixed
+
+- **Debugger continue operation** — Fixed issue where continue operation would not properly skip the current breakpoint and proceed to the next one
+- **Breakpoint handling** — Improved breakpoint detection and handling for lines with multiple tokens
+- **Debugger state management** — Fixed state management issues between different debug operations
+
+### Improved
+
+- **Packaging optimization** — Excluded unnecessary files from the extension package, reducing package size
+- **Cross-platform compatibility** — Ensured scripts work correctly on Windows, macOS, and Linux
+
+## [1.0.8]
+
+### Added
+
+- **Ghostscript auto-detection** — Implemented automatic detection of Ghostscript executable with platform-specific priority (Windows: gswin64c → gswin32c → gs, macOS/Linux: gs)
+- **Interpreter configuration** — Support for reading interpreter path from VS Code settings
+
+### Improved
+
+- **Binary file parsing** — Optimized binary file parsing with heuristic detection, showing only a single warning
+- **Error notifications** — Removed popup notifications for parse errors to reduce user distraction
+
 ## [1.0.7]
 
 ### Added

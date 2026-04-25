@@ -1,10 +1,11 @@
-node_modules
+.*/
+node_modules/
+dist/
+__tests__/
+snippets.gen/
 *.vsix
 *.txt
+test-*.js
+*.log
 settings.json
-dist
-scripts/*.js
-.vscode
 package-lock.json
-snippets.gen/
-*.s.ps

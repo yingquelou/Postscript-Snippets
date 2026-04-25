@@ -1,9 +1,9 @@
-.vscode/**
-.vscode-test/**
-scripts/**
+.*/
+scripts/
 .gitignore
 *.txt
-src
+src/
+snippets/
 *.ps1
 dist/*.s.js
 dist/scripts/**
@@ -13,7 +13,9 @@ dist/*.js.map
 tsconfig.json
 tsconfig.scripts.json
 ps/*.s.ps
-snippets
+test_*.ps
+test-*.js
+debug.log
 !README.md
 !CHANGELOG.md
 node_modules

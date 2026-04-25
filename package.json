@@ -1,243 +1,144 @@
 {
-  "name": "postscriptsnippets",
-  "displayName": "PostScript Programming Language",
-  "publisher": "yingquelou",
-  "description": "PostScript GhostScript",
-  "version": "1.0.8",
-  "engines": {
-    "vscode": "^1.70.3"
-  },
-  "activationEvents": [],
-  "categories": [
-    "Snippets",
-    "Programming Languages",
-    "Debuggers"
-  ],
-  "main": "dist/extension.js",
-  "contributes": {
-    "configuration": [
-      {
-        "title": "PostScript Configuration",
-        "properties": {
-          "postscript.interpreter.executable": {
-            "description": "PostScript interpreter executable path",
-            "type": "string",
-            "default": "gs"
-          }
-        }
-      }
-    ],
-    "configurationDefaults": {
-      "postscript.interpreter.executable": "gs"
-    },
-    "grammars": [
-      {
-        "language": "postscript",
-        "scopeName": "source.postscript",
-        "path": "./language/postscript.tmLanguage.json"
-      }
-    ],
-    "breakpoints": [
-      {
-        "language": "postscript"
-      }
-    ],
-    "languages": [
-      {
-        "id": "postscript",
-        "extensions": [
-          ".ps",
-          ".eps"
-        ],
-        "aliases": [
-          "PostScript",
-          "GhostScript",
-          "OptScript"
-        ],
-        "configuration": "./language/language-configuration.json"
-      }
-    ],
-    "snippets": [
-      {
-        "language": "postscript",
-        "path": "snippets.gen/Operand Stack Manipulation Operators.json"
-      },
-      {
-        "language": "postscript",
-        "path": "snippets.gen/Arithmetic and Math Operators.json"
-      },
-      {
-        "language": "postscript",
-        "path": "snippets.gen/Array Operators.json"
-      },
-      {
-        "language": "postscript",
-        "path": "snippets.gen/Packed Array Operators.json"
-      },
-      {
-        "language": "postscript",
-        "path": "snippets.gen/Dictionary Operators.json"
-      },
-      {
-        "language": "postscript",
-        "path": "snippets.gen/String Operators.json"
-      },
-      {
-        "language": "postscript",
-        "path": "snippets.gen/Relational,Boolean,and Bitwise Operators.json"
-      },
-      {
-        "language": "postscript",
-        "path": "snippets.gen/Control Operators.json"
-      },
-      {
-        "language": "postscript",
-        "path": "snippets.gen/Type,Attribute,and Conversion Operators.json"
-      },
-      {
-        "language": "postscript",
-        "path": "snippets.gen/File Operators.json"
-      },
-      {
-        "language": "postscript",
-        "path": "snippets.gen/Resource Operators.json"
-      },
-      {
-        "language": "postscript",
-        "path": "snippets.gen/Virtual Memory Operators.json"
-      },
-      {
-        "language": "postscript",
-        "path": "snippets.gen/Miscellaneous Operators.json"
-      },
-      {
-        "language": "postscript",
-        "path": "snippets.gen/Graphics State Operators (Device-Independent).json"
-      },
-      {
-        "language": "postscript",
-        "path": "snippets.gen/Graphics State Operators (Device-Dependent).json"
-      },
-      {
-        "language": "postscript",
-        "path": "snippets.gen/Coordinate System and Matrix Operators.json"
-      },
-      {
-        "language": "postscript",
-        "path": "snippets.gen/Path Construction Operators.json"
-      },
-      {
-        "language": "postscript",
-        "path": "snippets.gen/Painting Operators.json"
-      },
-      {
-        "language": "postscript",
-        "path": "snippets.gen/Insideness-Testing Operators.json"
-      },
-      {
-        "language": "postscript",
-        "path": "snippets.gen/Form and Pattern Operators.json"
-      },
-      {
-        "language": "postscript",
-        "path": "snippets.gen/Device Setup and Output Operators.json"
-      },
-      {
-        "language": "postscript",
-        "path": "snippets.gen/Glyph and Font Operators.json"
-      },
-      {
-        "language": "postscript",
-        "path": "snippets.gen/Interpreter Parameter Operators.json"
-      },
-      {
-        "language": "postscript",
-        "path": "snippets.gen/Errors.json"
-      },
-      {
-        "language": "postscript",
-        "path": "snippets.gen/postscript.json"
-      }
-    ],
-    "debuggers": [
-      {
-        "type": "postscript",
-        "label": "PostScript (Ghostscript) Debugger",
-        "program": "./dist/debugAdapter.js",
-        "runtime": "node",
-        "languages": [
-          "postscript"
-        ],
-        "configurationAttributes": {
-          "launch": {
-            "properties": {
-              "program": {
-                "type": "string",
-                "description": "PostScript file to run"
-              },
-              "ghostscriptPath": {
-                "type": "string",
-                "description": "Path to Interpreter executable (eg. gs/gswin32c/gswin64c). If not set, uses postscript.interpreter.executable setting or platform default."
-              },
-              "cwd": {
-                "type": "string",
-                "description": "Interpreter working directory"
-              },
-              "args": {
-                "type": "array",
-                "description": "Arguments to Interpreter",
-                "items": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        },
-        "configurationSnippets": [
-          {
-            "label": "Launch PostScript",
-            "body": {
-              "type": "postscript",
-              "request": "launch",
-              "name": "Launch PostScript",
-              "program": "${file}",
-              "cwd": "${workspaceFolder}"
-            }
-          }
-        ]
-      }
-    ]
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/yingquelou/Postscript-Snippets.git"
-  },
-  "scripts": {
-    "build:scripts": "esbuild scripts/snippetsGenerator.s.ts scripts/esbuild.ts --bundle --platform=node --outdir=dist/scripts --outbase=scripts --format=cjs --external:esbuild",
-    "snippets": "node dist/scripts/snippetsGenerator.s.js",
-    "bundle": "node dist/scripts/esbuild.js",
-    "build": "npm run build:scripts && npm run snippets && npm run bundle",
-    "watch": "npm run build:scripts && node dist/scripts/esbuild.js --watch",
-    "typecheck": "tsc --noEmit -p . && tsc --noEmit -p tsconfig.scripts.json",
-    "prepackage": "npm run build",
-    "prepublish": "npm run package",
-    "package": "vsce package",
-    "publish": "vsce publish"
-  },
-  "dependencies": {
-    "chevrotain": "10.5.0",
-    "@vscode/debugadapter": "^1.68.0",
-    "@vscode/debugprotocol": "^1.68.0",
-    "vscode-languageclient": "^8.0.0",
-    "vscode-languageserver": "^8.0.0",
-    "vscode-languageserver-textdocument": "^1.0.0"
-  },
-  "devDependencies": {
-    "@types/node": "^24.10.1",
-    "@types/vscode": "^1.66.0",
-    "@vscode/vsce": "^2.32.0",
-    "marked": "^17.0.1",
-    "typescript": "^5.9.3",
-    "esbuild": "^0.18.17"
-  }
+	"name": "postscriptsnippets",
+	"displayName": "PostScript Programming Language",
+	"publisher": "yingquelou",
+	"description": "PostScript GhostScript",
+	"version": "1.0.9",
+	"engines": {
+		"vscode": "^1.70.3"
+	},
+	"activationEvents": [],
+	"categories": [
+		"Snippets",
+		"Programming Languages",
+		"Debuggers"
+	],
+	"main": "dist/extension.js",
+	"contributes": {
+		"configuration": [
+			{
+				"title": "PostScript Configuration",
+				"properties": {
+					"postscript.interpreter.executable": {
+						"description": "PostScript interpreter executable path",
+						"type": "string",
+						"default": "gs"
+					}
+				}
+			}
+		],
+		"configurationDefaults": {
+			"postscript.interpreter.executable": "gs"
+		},
+		"grammars": [
+			{
+				"language": "postscript",
+				"scopeName": "source.postscript",
+				"path": "./language/postscript.tmLanguage.json"
+			}
+		],
+		"breakpoints": [
+			{
+				"language": "postscript"
+			}
+		],
+		"languages": [
+			{
+				"id": "postscript",
+				"extensions": [
+					".ps",
+					".eps"
+				],
+				"aliases": [
+					"PostScript",
+					"GhostScript",
+					"OptScript"
+				],
+				"configuration": "./language/language-configuration.json"
+			}
+		],
+		"debuggers": [
+			{
+				"type": "postscript",
+				"label": "PostScript (Ghostscript) Debugger",
+				"program": "./dist/debugAdapter.js",
+				"runtime": "node",
+				"languages": [
+					"postscript"
+				],
+				"configurationAttributes": {
+					"launch": {
+						"properties": {
+							"program": {
+								"type": "string",
+								"description": "PostScript file to run"
+							},
+							"ghostscriptPath": {
+								"type": "string",
+								"description": "Path to Interpreter executable (eg. gs/gswin32c/gswin64c). If not set, uses postscript.interpreter.executable setting or platform default."
+							},
+							"cwd": {
+								"type": "string",
+								"description": "Interpreter working directory"
+							},
+							"args": {
+								"type": "array",
+								"description": "Arguments to Interpreter",
+								"items": {
+									"type": "string"
+								}
+							}
+						}
+					}
+				},
+				"configurationSnippets": [
+					{
+						"label": "Launch PostScript",
+						"body": {
+							"type": "postscript",
+							"request": "launch",
+							"name": "Launch PostScript",
+							"program": "${file}",
+							"cwd": "${workspaceFolder}"
+						}
+					}
+				]
+			}
+		]
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/yingquelou/Postscript-Snippets.git"
+	},
+	"scripts": {
+		"build:scripts": "esbuild scripts/snippetsGenerator.ts scripts/esbuild.ts --bundle --platform=node --outdir=dist/scripts --outbase=scripts --format=cjs --external:esbuild",
+		"snippets": "node dist/scripts/snippetsGenerator.js",
+		"bundle": "node dist/scripts/esbuild.js",
+		"build": "npm run build:scripts && npm run snippets && npm run bundle",
+		"watch": "npm run build:scripts && node dist/scripts/esbuild.js --watch",
+		"typecheck": "tsc --noEmit -p . && tsc --noEmit -p tsconfig.scripts.json",
+		"postpackage": "node scripts/restore.js",
+		"postpublish": "node scripts/restore.js",
+		"clean": "node scripts/clean.js",
+		"prepackage": "npm run build",
+		"prepublish": "npm run build",
+		"package": "vsce package",
+		"publish": "vsce publish"
+	},
+	"dependencies": {
+		"@vscode/debugadapter": "^1.68.0",
+		"@vscode/debugprotocol": "^1.68.0",
+		"chevrotain": "10.5.0",
+		"vscode-languageclient": "^8.0.0",
+		"vscode-languageserver": "^8.0.0",
+		"vscode-languageserver-textdocument": "^1.0.0"
+	},
+	"devDependencies": {
+		"@types/node": "^24.10.1",
+		"@types/vscode": "^1.66.0",
+		"@vscode/vsce": "^3.9.1",
+		"esbuild": "^0.28.0",
+		"marked": "^17.0.1",
+		"typescript": "^6.0.3"
+	}
 }

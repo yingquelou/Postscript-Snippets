@@ -94,6 +94,9 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
   private evalCounter = 1
   private varRefCounter = 1
   private varRefs: Map<number, psOutputParsers.VarRefInfo> = new Map()
+  private _stepping = false
+  private _breakpointHitLocation: any = null
+  private _skipCurrentLocation = false
 
   public constructor() {
     super()
@@ -108,13 +111,17 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
       if (p.startsWith('file://')) p2 = fileURLToPath(p)
       else p2 = path.normalize(path.resolve(p))
       if (process.platform === 'win32') {
-        p2 = p2.toLocaleLowerCase()
+        p2 = p2.toLocaleLowerCase().replace(/\\/g, '/')
       }
       return p2
     } catch (e) {
       try {
         // fallback simple cleanup
-        return path.normalize(p.replace(/^file:\/\//, ''))
+        let p2 = path.normalize(p.replace(/^file:\/\//, ''))
+        if (process.platform === 'win32') {
+          p2 = p2.toLocaleLowerCase().replace(/\\/g, '/')
+        }
+        return p2
       } catch { return p }
     }
   }
@@ -166,7 +173,7 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
     // Parse program into syntax tree (token-based stepping)
     try {
       this.programText = fs.readFileSync(this.programPath, 'utf8')
-      const { cst, errors, tokens } = psParserHelper(this.programText)
+      const { cst } = psParserHelper(this.programText)
       if (cst) {
         this.cstWalker = new CstWalker(cst, this.programText)
       } else {
@@ -227,12 +234,14 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
       this.sendEvent(new debugadapter.OutputEvent(`${chunk}`, 'stderr'))
     })
     this.gsProcesses.on('error', err => {
+      this._stepping = false
       this.sendEvent(new debugadapter.OutputEvent(`${buffer}`, 'stderr'))
       this.sendEvent(new debugadapter.OutputEvent(`Ghostscript error: ${err.message}\n`, 'stderr'))
       this.sendEvent(new debugadapter.TerminatedEvent())
     })
 
     this.gsProcesses.on('exit', (code, signal) => {
+      this._stepping = false
       this.sendEvent(new debugadapter.OutputEvent(`${buffer}\n`, 'stderr'))
       this.sendEvent(new debugadapter.OutputEvent(`Ghostscript exited with code ${code} signal ${signal}\n`, 'console'))
       // process exit: notify terminated
@@ -242,12 +251,51 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
     // Respond to launch request to finish initialization so the client can continue
     this.sendResponse(response)
 
-    // stopOnEntry is true (default), emit a stopped event so the UI can show call stack
-    this.sendEvent(new debugadapter.StoppedEvent('entry', 1))
+    // Only stop on entry if explicitly requested by user
+    if (args.stopOnEntry) {
+      this.sendEvent(new debugadapter.StoppedEvent('entry', 1))
+    } else {
+      // Auto start execution when stopOnEntry is false
+      if (this.cstWalker) {
+        this._stepping = true
+        
+        const doStep = () => {
+          if (!this._stepping) return
+          
+          const location = this.cstWalker!.getCurrentLocation()
+          const bpHit = this.isBreakpointHit(location)
+          if (location && bpHit) {
+            this._skipCurrentLocation = true
+            this._stepping = false
+            this.sendEvent(new debugadapter.StoppedEvent('breakpoint', 1))
+            return
+          }
+          
+          const text = this.cstWalker!.stepIn()
+          if (!text) {
+            this._stepping = false
+            this.sendEvent(new debugadapter.TerminatedEvent())
+            return
+          }
+          
+          const eventName = this.sendUnit(text)
+          this.once(eventName, (_msg: any) => {
+            if (!this._stepping) return
+            if (_msg?.message) {
+              this._stepping = false
+              return
+            }
+            setImmediate(doStep)
+          })
+        }
+        
+        setImmediate(doStep)
+      }
+    }
   }
 
   protected terminateRequest(response: DebugProtocol.TerminateResponse, args: any): void {
-
+    this._stepping = false
     if (this.gsProcesses && !this.gsProcesses.killed) {
       try { this.gsProcesses.kill() } catch { }
     }
@@ -256,7 +304,7 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
   }
 
   protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: any): void {
-
+    this._stepping = false
     if (this.gsProcesses && !this.gsProcesses.killed) {
       try { this.gsProcesses.kill() } catch { }
     }
@@ -264,7 +312,6 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
   }
 
   protected threadsRequest(response: DebugProtocol.ThreadsResponse): void {
-    // single-threaded model
     response.body = { threads: [new debugadapter.Thread(1, 'Main Thread')] }
     this.sendResponse(response)
   }
@@ -272,7 +319,7 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
   protected stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments): void {
     const frames: DebugProtocol.StackFrame[] = []
     if (this.programPath && this.cstWalker) {
-      const location = this.cstWalker.getCurrentLocation()
+      const location = this._breakpointHitLocation || this.cstWalker.getCurrentLocation()
       if (location.startLine && location.startColumn) {
         frames.push({
           id: 1,
@@ -287,6 +334,10 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
       } else {
         this.sendEvent(new debugadapter.TerminatedEvent())
       }
+      this._breakpointHitLocation = null
+      this.sendResponse(response)
+    } else {
+      this.sendEvent(new debugadapter.TerminatedEvent())
       this.sendResponse(response)
     }
   }
@@ -321,11 +372,6 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
       return
     }
 
-    // default behavior: prefer route-based entries when routePsLiteral exists
-    const router: string[] = []
-    if (entry.router) router.push(...entry.router, entry.name)
-    else router.push(entry.name)
-    // this.sendEvent(new debugadapter.OutputEvent(`[PostScript-Debug] variablesRequest for [${router.join(' ')}]\n`, 'console'))
     const alloc: psOutputParsers.VarRefAllocator = (info) => {
       for (const entry of this.varRefs) {
         if (info.name === entry[1].name && psOutputParsers.arraysEqual(entry[1].router, info.router))
@@ -335,6 +381,9 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
       this.varRefs.set(r, info)
       return r
     }
+    const router: string[] = []
+    if (entry.router) router.push(...entry.router, entry.name)
+    else router.push(entry.name)
     this.once(this.ps_traverse_route(router), text => {
       response.body = {
         variables:
@@ -350,66 +399,179 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
       this.sendEvent(new debugadapter.TerminatedEvent())
       return
     }
+    if (this._stepping) {
+      this.sendResponse(response)
+      return
+    }
     this.sendResponse(response)
+    this._stepping = true
 
-    const runUntilNextBreakpointOrEnd = () => {
+    const doStep = () => {
+      if (!this._stepping) return
+      
+      const location = this.cstWalker!.getCurrentLocation()
+      
+      let bpHit = false
+      if (!this._skipCurrentLocation) {
+        bpHit = this.isBreakpointHit(location)
+      } else {
+        this._skipCurrentLocation = false
+      }
+      
+      if (location && bpHit) {
+        this._skipCurrentLocation = true
+        this._stepping = false
+        this.sendEvent(new debugadapter.StoppedEvent('breakpoint', 1))
+        return
+      }
+      
       const text = this.cstWalker!.stepIn()
       if (!text) {
+        this._stepping = false
         this.sendEvent(new debugadapter.TerminatedEvent())
         return
       }
-      const onStepDone = (_msg: any) => {
-        if (_msg?.message) return // error from GS, keep stopped
-        const location = this.cstWalker?.getCurrentLocation()
-        if (location && this.isBreakpointHit(location)) {
-          this.sendEvent(new debugadapter.StoppedEvent('breakpoint', 1))
+      
+      const eventName = this.sendUnit(text)
+      this.once(eventName, (_msg: any) => {
+        if (!this._stepping) return
+        if (_msg?.message) {
+          this._stepping = false
           return
         }
-        runUntilNextBreakpointOrEnd()
-      }
-      this.once(this.sendUnit(text), onStepDone)
+        setImmediate(doStep)
+      })
     }
 
-    runUntilNextBreakpointOrEnd()
+    if (this._skipCurrentLocation) {
+      const currentLocation = this.cstWalker!.getCurrentLocation()
+      const currentLine = currentLocation.startLine
+      
+      const tokensToSkip: string[] = []
+      let sameLine = true
+      
+      while (sameLine) {
+        const text = this.cstWalker!.stepIn()
+        if (!text) {
+          sameLine = false
+        } else {
+          tokensToSkip.push(text)
+          const nextLocation = this.cstWalker!.getCurrentLocation()
+          sameLine = nextLocation.startLine === currentLine
+        }
+      }
+      
+      if (tokensToSkip.length > 0) {
+        const executeTokens = (index: number) => {
+          if (index >= tokensToSkip.length || !this._stepping) {
+            this._skipCurrentLocation = false
+            setImmediate(doStep)
+            return
+          }
+          
+          const text = tokensToSkip[index]
+          const eventName = this.sendUnit(text)
+          
+          this.once(eventName, (_msg: any) => {
+            if (!this._stepping) return
+            if (_msg?.message) {
+              this._stepping = false
+              return
+            }
+            executeTokens(index + 1)
+          })
+        }
+        
+        executeTokens(0)
+      } else {
+        this._stepping = false
+        this.sendEvent(new debugadapter.TerminatedEvent())
+      }
+    } else {
+      // Normal continue operation
+      setImmediate(doStep)
+    }
   }
 
   protected nextRequest(response: DebugProtocol.NextResponse, args: any): void {
-    const result = this.cstWalker?.next()
-    if (result) {
-      this.once(this.sendUnit(result), msg => {
-        this.sendResponse(response)
-        this.sendEvent(new debugadapter.StoppedEvent('step', args.threadId))
-      })
-    } else {
+    if (this._stepping) {
       this.sendResponse(response)
-      this.sendEvent(new debugadapter.TerminatedEvent())
+      return
     }
+    
+    this._stepping = true
+    
+    const doStep = () => {
+      // Step to next token regardless of breakpoints
+      const result = this.cstWalker?.next()
+      if (result) {
+        this.once(this.sendUnit(result), () => {
+          this._stepping = false
+          this.sendResponse(response)
+          this.sendEvent(new debugadapter.StoppedEvent('step', args.threadId))
+        })
+      } else {
+        this._stepping = false
+        this.sendResponse(response)
+        this.sendEvent(new debugadapter.TerminatedEvent())
+      }
+    }
+    
+    setImmediate(doStep)
   }
 
   protected stepInRequest(response: DebugProtocol.StepInResponse, args: any): void {
-    const result = this.cstWalker?.stepIn()
-    if (result) {
-      this.once(this.sendUnit(result), msg => {
-        this.sendResponse(response)
-        this.sendEvent(new debugadapter.StoppedEvent('step', args.threadId))
-      })
-    } else {
+    if (this._stepping) {
       this.sendResponse(response)
-      this.sendEvent(new debugadapter.TerminatedEvent())
+      return
     }
+    
+    this._stepping = true
+    
+    const doStep = () => {
+      // Step to next token regardless of breakpoints
+      const result = this.cstWalker?.stepIn()
+      if (result) {
+        this.once(this.sendUnit(result), () => {
+          this._stepping = false
+          this.sendResponse(response)
+          this.sendEvent(new debugadapter.StoppedEvent('step', args.threadId))
+        })
+      } else {
+        this._stepping = false
+        this.sendResponse(response)
+        this.sendEvent(new debugadapter.TerminatedEvent())
+      }
+    }
+    
+    setImmediate(doStep)
   }
 
   protected stepOutRequest(response: DebugProtocol.StepOutResponse, args: any): void {
-    const text = this.cstWalker?.stepOut()
-    if (text) {
-      this.once(this.sendUnit(text), msg => {
-        this.sendResponse(response)
-        this.sendEvent(new debugadapter.StoppedEvent('step', args.threadId))
-      })
-    } else {
+    if (this._stepping) {
       this.sendResponse(response)
-      this.sendEvent(new debugadapter.TerminatedEvent())
+      return
     }
+    
+    this._stepping = true
+    
+    const doStep = () => {
+      // Step to next token regardless of breakpoints
+      const text = this.cstWalker?.stepOut()
+      if (text) {
+        this.once(this.sendUnit(text), () => {
+          this._stepping = false
+          this.sendResponse(response)
+          this.sendEvent(new debugadapter.StoppedEvent('step', args.threadId))
+        })
+      } else {
+        this._stepping = false
+        this.sendResponse(response)
+        this.sendEvent(new debugadapter.TerminatedEvent())
+      }
+    }
+    
+    setImmediate(doStep)
   }
 
   protected evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): void {
@@ -463,13 +625,18 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
   private getBreakpointsForProgram(): DebugProtocol.Breakpoint[] {
     const programNorm = this.normalizePath(this.programPath)
     if (!programNorm) return []
-    return this.breakpoints.filter(b => this.normalizePath(b.source?.path) === programNorm)
+    const filtered = this.breakpoints.filter(b => {
+      const bpNorm = this.normalizePath(b.source?.path)
+      return bpNorm === programNorm
+    })
+    return filtered
   }
 
   /** Set of line numbers where breakpoints are set for the current program. */
   private getBreakpointLinesForProgram(): Set<number> {
     const lines = new Set<number>()
-    for (const b of this.getBreakpointsForProgram()) {
+    const bps = this.getBreakpointsForProgram()
+    for (const b of bps) {
       if (b.line != null) lines.add(b.line)
     }
     return lines
@@ -477,17 +644,34 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
 
   /** True if the given location (1-based line) hits any breakpoint for the current program. */
   private isBreakpointHit(location: { startLine?: number }): boolean {
-    if (location.startLine == null) return false
-    return this.getBreakpointLinesForProgram().has(location.startLine)
+    if (location.startLine == null) {
+      return false
+    }
+    const bpLines = this.getBreakpointLinesForProgram()
+    const hit = bpLines.has(location.startLine)
+    return hit
   }
 
   protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): void {
-    this.breakpoints = (args.breakpoints ?? []).map(v => ({
-      verified: true,
-      source: args.source,
-      line: v.line,
-    }))
-    response.body = { breakpoints: this.breakpoints }
+    const sourcePath = args.source?.path
+    if (sourcePath) {
+      const newBreakpoints = (args.breakpoints ?? []).map(v => ({
+        verified: true,
+        source: args.source,
+        line: v.line,
+      }))
+      
+      this.breakpoints = this.breakpoints.filter(b => b.source?.path !== sourcePath)
+      this.breakpoints = [...this.breakpoints, ...newBreakpoints]
+    } else {
+      this.breakpoints = (args.breakpoints ?? []).map(v => ({
+        verified: true,
+        source: args.source,
+        line: v.line,
+      }))
+    }
+    
+    response.body = { breakpoints: this.breakpoints.filter(b => b.source?.path === args.source?.path) }
     this.sendResponse(response)
   }
   private unitCounter: number = 0

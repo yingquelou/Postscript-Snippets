@@ -91,6 +91,8 @@ export class CstWalker {
                         return (node.children.DictionaryStart[0] as chevrotain.IToken).image
                     case 'array':
                         return (node.children.ArrayStart[0] as chevrotain.IToken).image
+                    case 'procedure':
+                        return (node.children.ProcedureStart[0] as chevrotain.IToken).image
                 }
             }
         }
@@ -135,12 +137,16 @@ export class CstWalker {
         return ''
     }
     /**
-     * StepIn: Enter the first child node of the current node.
-     * If there are no child nodes, execute Next. 
-     * Note: `procedure` nodes do not allow StepIn and will directly execute Next.
+     * StepIn: For PostScript, this behaves the same as Next - steps one atomic token.
+     * Does not enter procedure bodies, treats them as single tokens.
      */
     stepIn(): string {
         if (this.currentPath) {
+            const node = this.currentPath.node
+            if (isCstNode(node) && node.name === 'procedure') {
+                // Treat procedure as atomic token, execute Next
+                return this.next()
+            }
             const children = this.currentPath.children
             if (children) {
                 const text = this.getStartToken()

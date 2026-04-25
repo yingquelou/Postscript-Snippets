@@ -254,6 +254,7 @@ Use the title closest to the table as the output file name
 |index any|defineuserobject||Define user object associated with index
 |index|execuserobject||Execute user object associated with index
 |index|undefineuserobject||Remove user object associated with index
+||UserObjects|array|Return current UserObjects array defined in userdict
 
 ## Miscellaneous Operators
 
