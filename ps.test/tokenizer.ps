@@ -1,0 +1,29 @@
+(main.ps) (r) file
+/currentfile exch def
+{
+    currentfile status {
+    currentfile fileposition =only (|) print
+    } if
+    currentfile token {
+            dup type =only (|) print
+            dup =only (|) print
+                            currentfile status {
+    currentfile fileposition =only (|) print
+    } if
+            dup xcheck
+            {
+                dup type dup /arraytype ne exch
+                /packedarraytype ne
+                and
+                {
+                 exec
+                } if
+            } if
+
+            (\t) print count =
+            % exec
+    } {
+        exit
+    } ifelse
+} loop
+currentfile closefile

@@ -3,17 +3,19 @@
 	"displayName": "PostScript Programming Language",
 	"publisher": "yingquelou",
 	"description": "PostScript GhostScript",
-	"version": "1.0.9",
+	"version": "1.1.0",
 	"engines": {
 		"vscode": "^1.70.3"
 	},
-	"activationEvents": [],
+	"activationEvents": [
+		"onDebugResolve:postscript"
+	],
 	"categories": [
 		"Snippets",
 		"Programming Languages",
 		"Debuggers"
 	],
-	"main": "dist/extension.js",
+	"main": "out/extension.js",
 	"contributes": {
 		"configuration": [
 			{
@@ -51,8 +53,7 @@
 				],
 				"aliases": [
 					"PostScript",
-					"GhostScript",
-					"OptScript"
+					"GhostScript"
 				],
 				"configuration": "./language/language-configuration.json"
 			}
@@ -61,7 +62,7 @@
 			{
 				"type": "postscript",
 				"label": "PostScript (Ghostscript) Debugger",
-				"program": "./dist/debugAdapter.js",
+				"program": "./out/debugger/debugAdapter.js",
 				"runtime": "node",
 				"languages": [
 					"postscript"
@@ -75,15 +76,21 @@
 							},
 							"ghostscriptPath": {
 								"type": "string",
-								"description": "Path to Interpreter executable (eg. gs/gswin32c/gswin64c). If not set, uses postscript.interpreter.executable setting or platform default."
+								"description": "Ghostscript executable path. If not set, uses the extension setting or platform default."
 							},
 							"cwd": {
 								"type": "string",
-								"description": "Interpreter working directory"
+								"description": "Working directory for the interpreter.",
+								"default": "${workspaceFolder}"
+							},
+							"stopOnEntry": {
+								"type": "boolean",
+								"default": false,
+								"description": "Whether to stop at the entry point when starting debugging. Default: false."
 							},
 							"args": {
 								"type": "array",
-								"description": "Arguments to Interpreter",
+								"description": "Additional arguments passed to Ghostscript.",
 								"items": {
 									"type": "string"
 								}
@@ -111,29 +118,33 @@
 		"url": "https://github.com/yingquelou/Postscript-Snippets.git"
 	},
 	"scripts": {
-		"build:scripts": "esbuild scripts/snippetsGenerator.ts scripts/esbuild.ts --bundle --platform=node --outdir=dist/scripts --outbase=scripts --format=cjs --external:esbuild",
-		"snippets": "node dist/scripts/snippetsGenerator.js",
-		"bundle": "node dist/scripts/esbuild.js",
-		"build": "npm run build:scripts && npm run snippets && npm run bundle",
-		"watch": "npm run build:scripts && node dist/scripts/esbuild.js --watch",
-		"typecheck": "tsc --noEmit -p . && tsc --noEmit -p tsconfig.scripts.json",
-		"postpackage": "node scripts/restore.js",
-		"postpublish": "node scripts/restore.js",
-		"clean": "node scripts/clean.js",
+		"test": "node .tests/debugAdapter.test.js",
+		"pretest": "tsc -b tests",
+		"build:scripts": "tsc -b scripts",
+		"build:snippets": "node .scripts/snippetsGenerator.js",
+		"prebuild": "npm run build:scripts",
+		"build": "node .scripts/esbuild.js",
+		"postbuild": "npm run build:snippets",
 		"prepackage": "npm run build",
 		"prepublish": "npm run build",
+		"postpackage": "node .scripts/restore.js",
+		"postpublish": "node .scripts/restore.js",
+		"preclean": "npm run build:scripts",
+		"clean": "node .scripts/clean.js out .snippets .tests .scripts",
+		"watch:scripts": "tsc -b scripts --watch",
+		"prewatch": "npm run build",
+		"watch": "node .scripts/esbuild.js --watch",
+		"typecheck": "tsc --noEmit -p . && tsc --noEmit -p scripts",
 		"package": "vsce package",
 		"publish": "vsce publish"
 	},
-	"dependencies": {
+	"devDependencies": {
 		"@vscode/debugadapter": "^1.68.0",
 		"@vscode/debugprotocol": "^1.68.0",
 		"chevrotain": "10.5.0",
 		"vscode-languageclient": "^8.0.0",
 		"vscode-languageserver": "^8.0.0",
-		"vscode-languageserver-textdocument": "^1.0.0"
-	},
-	"devDependencies": {
+		"vscode-languageserver-textdocument": "^1.0.0",
 		"@types/node": "^24.10.1",
 		"@types/vscode": "^1.66.0",
 		"@vscode/vsce": "^3.9.1",

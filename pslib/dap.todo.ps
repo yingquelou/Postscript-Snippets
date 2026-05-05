@@ -1,0 +1,212 @@
+% dap中对variables请求的响应中关于namedVariables字段问题——
+% 当存在大量命名子变量时,即对象属性过多时,10k?100k...:
+% vscode 客户端命名子变量分页显示功能并未真正意义上实现;
+% 而对存在大量索引子变量时:
+% vscode 客户端索引子变量分页显示支持良好。
+% TODO: 如果vscode客户端完善了命名子变量分页界面显示,将在当前文件实现上继续跟进
+% 现行采用dap.ps方案,即命名子变量索引化
+true setglobal
+/ps_incremental_id {
+  ps_debugger /next_id
+  2 copy get dup
+  4 1 roll 1 add put
+} bind executeonly def
+
+/ps_set_obj {
+  ps_debugger /table get 3 1 roll put
+} bind executeonly def
+
+/ps_get_obj {
+  ps_debugger /table get exch get
+} bind executeonly def
+
+% dap: scopes
+/ps_scopes {
+  % Unused: frameId
+  pop
+  /ps_debugger <<
+    /next_id 1
+    /table <<>>
+  >> store
+  ([) =
+  ({"name":"Operand Stack","expensive":true) =
+  (,"variablesReference":) =
+  count dup 0 gt {
+    1 dict begin
+      dup /ct exch def
+      copy ct array astore
+      ps_incremental_id dup =
+      exch ps_set_obj
+      (,"indexedVariables":) = ct =
+    end
+  } {=} ifelse
+  (},{"name":"Execution Stack","expensive":true) =
+  ps_incremental_id (,"variablesReference":) = dup =
+  countexecstack (,"indexedVariables":) = dup =
+  array execstack ps_set_obj
+  (},{"name":"Dictionary Stack","expensive":true) =
+  ps_incremental_id (,"variablesReference":) = dup =
+  countdictstack (,"indexedVariables":) = dup =
+  array dictstack ps_set_obj
+  (}]) =
+} bind executeonly def
+
+% dap: variables
+/ps_variables {
+  <<>> begin
+    /arg_dict exch def
+    /out (%stdout) (w) file def
+    /buffer 256 string def
+    /knownGet  {
+        % <dict> <key>
+        2 copy known {
+            get true
+        } bind  {
+            pop pop false
+        } bind  ifelse
+    } bind def
+    /quotationEnclosed {
+      (")=only exec (")=only 
+    } def
+
+    /leading_zero {
+      dup length 3 exch sub
+      {
+          (0) print
+      } repeat print
+    } def
+    /escape_tring {
+        {
+            dup StandardEncoding exch get /.notdef eq
+            {
+                (\\\\) print
+                8 3 string cvrs leading_zero
+            } {
+                out exch write
+            } ifelse
+        } forall
+    } def
+    /preview {
+      <<
+        /arraytype {pop ("-array-") =}
+        /dicttype {{==only} quotationEnclosed}
+        /packedarraytype {pop ("-packedarray-") =}
+        /operatortype {{
+          buffer cvs escape_tring
+        } quotationEnclosed}
+        /stringtype {
+          dup rcheck {
+            {
+              escape_tring
+            } quotationEnclosed
+          } { pop ("-string-") =} ifelse
+        }
+        /nametype {
+          dup length string cvs {
+            escape_tring
+          } quotationEnclosed
+        }
+        /nulltype {{==only} quotationEnclosed}
+        dup /devicetype exch
+        dup /marktype exch
+        dup /gstatetype exch
+        % filetype 
+        % booleantype
+        % fontIDtype
+        % realtype
+        % savetype
+        % integertype
+      >> 
+      1 index type knownGet {exec} {
+        {=only} quotationEnclosed
+      } ifelse
+    } def
+
+    /extractName {("name":) = preview} def
+
+    /extractValue {("value":) = preview} def
+
+    /extractType {("type":) = type {=only} quotationEnclosed} def
+
+    /compositeKey <<
+      /dicttype 1
+      /arraytype 1
+      /packedarraytype 1
+    >> def
+
+    /extractVariablesReference {
+      <<>> begin
+        dup type cvlit /theType exch def
+        compositeKey theType known {
+          dup rcheck {
+            dup length dup 0 gt {
+              theType /dicttype eq {
+                ("namedVariables":) = = (,) =
+              } {
+                ("indexedVariables":) = = (,) =
+              } ifelse
+              ps_incremental_id dup 3 -1 roll ps_set_obj
+            } {exch pop} ifelse
+          } {pop 0} ifelse
+        } {pop 0} ifelse
+      end ("variablesReference":) = =
+    } def
+
+    <<>> begin
+      % 不同复合类型遍历
+      /dicttype {
+        % 键为复合类型时需要区别对待
+        <<>> begin
+          /comma false def
+          {
+            comma {(,) =} {/comma true def} ifelse
+            ({)=
+            1 index extractName (,)=
+            dup extractType (,)=
+            dup extractValue (,)=
+            1 index type compositeKey exch known {
+               2 array astore extractVariablesReference
+            } {
+              extractVariablesReference pop
+            } ifelse
+            (})=
+          } forall
+        end
+      } def
+      /arraytype {
+        <<>> begin
+          dup length /sz exch def
+          arg_dict /start get
+          arg_dict /count get dup 0 eq {
+            pop [
+              exch dup sz add 1 sub
+            ] /idx exch def
+          } {
+            1 index add 1 sub
+            [3 1 roll]
+            /idx exch def
+          } ifelse
+          /comma false def
+          idx aload pop 1 exch {
+            comma {(,)=} {/comma true def} ifelse
+            ({)=
+            dup extractName (,)=
+            1 index exch get
+            dup extractValue (,)=
+            dup extractType (,)=
+            extractVariablesReference
+            (}) =
+          } for pop
+        end
+      } def
+      /packedarraytype {iterator /arraytype get exec} def
+      currentdict
+    end /iterator exch def
+    ([) =
+    arg_dict /variablesReference get ps_get_obj
+    dup type iterator exch get exec
+    (]) =
+    out closefile
+  end
+} bind executeonly def
+false setglobal

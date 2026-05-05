@@ -101,7 +101,7 @@ class PostScriptParser extends chevrotain.CstParser {
         this.performSelfAnalysis();
     }
 
-    public program = this.RULE('program', () => {
+    public document = this.RULE('program', () => {
         this.MANY(() => {
             this.SUBRULE(this.expression);
         });
@@ -145,17 +145,36 @@ class PostScriptParser extends chevrotain.CstParser {
     });
 }
 
-// Create a parser instance
-const PsParser = new PostScriptParser();
-
 export function psParserHelper(text: string) {
     const lexResult = PsLexer.tokenize(text);
     if (lexResult.errors.length > 0) {
         return { errors: lexResult.errors };
     }
-    PsParser.input = lexResult.tokens;
-    const cst = PsParser.program();
-    const errors = PsParser.errors;
+    
+    // Create fresh parser instance for each parse operation for thread safety
+    const parser = new PostScriptParser();
+    parser.input = lexResult.tokens;
+    const cst = parser.document();
+    const errors = parser.errors;
+    
     return { errors, cst, tokens: lexResult.tokens };
 }
-export { PostScriptParser, PsTokens, PsParser };
+
+/**
+ * 验证 PostScript 表达式的合法性
+ * @param expression PostScript 表达式字符串
+ * @returns 是否合法，如果不合法返回错误信息
+ */
+export function validatePostScriptExpression(expression: string): { isValid: boolean; error?: string } {
+    const result = psParserHelper(expression);
+    if (result.errors && result.errors.length > 0) {
+        // 提取第一个错误信息
+        const firstError = result.errors[0] as any;
+        return {
+            isValid: false,
+            error: firstError.message || 'Invalid PostScript expression'
+        };
+    }
+    return { isValid: true };
+}
+export { PostScriptParser, PsLexer };

@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 import { LanguageClient, LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node'
 import { StreamMessageReader, StreamMessageWriter } from 'vscode-jsonrpc/node'
 import { PassThrough } from 'stream'
-import { startServer } from './server'
+import { startServer } from './languageServer'
 
 const LANGUAGE_ID = 'postscript'
 

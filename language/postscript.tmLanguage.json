@@ -2,10 +2,9 @@
   "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
   "name": "PostScript",
   "scopeName": "source.postscript",
-  "fileTypes": [
+  "fileType": [
     "ps",
-    "eps",
-    "ai"
+    "eps"
   ],
   "patterns": [
     {

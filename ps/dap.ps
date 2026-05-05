@@ -1,0 +1,300 @@
+%%
+% Naming Subvariable Indexing Scheme
+%%
+true setglobal
+/dap_init {
+  <<>> begin
+    /next_id 1 def
+    /table <<>> def
+    /stdout (%stdout) (w) file def
+    /stderr (%stderr) (w) file def
+    /buffer 256 string def
+    /compositeKey <<
+      /dicttype 1
+      /arraytype 1
+      /packedarraytype 1
+    >> def
+    /knownGet  {
+      % <dict> <key>
+      2 copy known {
+          get true
+      } bind  {
+          pop pop false
+      } bind  ifelse
+    } bind executeonly def
+    /quotationEnclosed {
+      (")print exec (")print
+    } bind executeonly def
+    /ascii_escape {
+      <<
+          /map_table <<>>
+          /radix 16
+          /format (\\u0000)
+          dup length /len exch
+          /buffer 256 string
+      >> begin
+        /put_entry {
+            map_table exch
+            format len string copy dup
+            2 index radix buffer cvrs
+            dup length len exch sub
+            exch putinterval put
+        } def
+        /switch <<
+            /integertype {put_entry}
+            /arraytype {
+                aload pop 2 copy gt {exch} if
+                1 exch {put_entry} for
+            }
+            /dicttype {
+                {
+                    map_table begin
+                    def
+                    end
+                } forall
+            }
+        >> def
+        [
+            [16#0 16#1f] 16#22 16#5c [16#80 16#ff]
+            <<
+                34 (\\")
+                92 (\\\\)
+                47 (\\/)
+                8 (\\b)
+                12 (\\f)
+                10 (\\n)
+                13 (\\r)
+                9 (\\t)
+            >>
+        ] 
+        {
+            dup type switch exch 2 copy known {
+                get exec
+            } {3 {pop} repeat} ifelse
+        } forall map_table
+      end
+    } executeonly exec def
+    /escape_tring {
+      <<[/ascii_escape /stdout] {dup dap_get_global}forall>> begin
+        {
+          dup ascii_escape exch knownGet
+          {print pop} {
+              stdout exch write
+          } ifelse
+        } forall
+      end
+    } bind executeonly def
+    /preview {
+      <<
+        /arraytype {pop ("-array-") print}
+        /dicttype {{==only} quotationEnclosed}
+        /packedarraytype {pop ("-packedarray-") print}
+        /operatortype {{
+          buffer cvs escape_tring
+        } quotationEnclosed}
+        /stringtype {
+          dup rcheck {
+            {
+              escape_tring
+            } quotationEnclosed
+          } { pop ("-string-") print} ifelse
+        }
+        /nametype {
+          dup length string cvs {
+            escape_tring
+          } quotationEnclosed
+        }
+        /nulltype {{==only} quotationEnclosed}
+        dup /devicetype exch
+        dup /marktype exch
+        dup /gstatetype exch
+        % filetype 
+        % booleantype
+        % fontIDtype
+        % realtype
+        % savetype
+        % integertype
+      >> 
+      1 index type knownGet {exec} {
+        {=only} quotationEnclosed
+      } ifelse
+    } bind executeonly def
+    /extractName {("name":) print preview} bind executeonly def
+    /extractValue {("value":) print preview} bind executeonly def
+    /extractType {("type":) print type {=only} quotationEnclosed} bind executeonly def
+    /extractVariablesReference {
+      <<>> begin
+        dup type cvlit /theType exch def
+        compositeKey theType known {
+          dup rcheck {
+            dup length dup 0 gt {
+              dup ("indexedVariables":) print = (,) print
+              theType /dicttype eq {
+                array /idx 0 def
+                exch dup {
+                  pop 2 index 
+                  exch idx exch put
+                  /idx 1 idx add def
+                } forall 1 dict begin
+                exch def currentdict end
+              } {pop} ifelse
+              dap_incremental_id dup 2 index
+              dap_set_obj exch pop
+            } {exch pop} ifelse
+          } {pop 0} ifelse
+        } {pop 0} ifelse
+      end ("variablesReference":) print =
+    } bind executeonly def
+    /getStartEnd {
+      % <total> <start> <count>
+      dup 0 eq {
+        pop exch 1 sub
+      } {
+        1 index add 1 sub
+        3 -1 roll pop
+      } ifelse
+      % <start> <end>
+    } bind executeonly def
+    <<>> begin
+      /dicttype {
+        {
+          <<>> begin
+            % <dict> <array>
+            dup length
+            arg_dict /start get
+            arg_dict /count get 
+            getStartEnd
+            /comma false def
+            1 exch {
+              comma {(,) print} {/comma true def} ifelse
+              ({)print
+              1 index exch get dup extractName (,)print
+              dup 3 index exch get dup extractType (,)print
+              dup extractValue (,)print
+              1 index type compositeKey exch known {
+                  2 array astore extractVariablesReference
+              } {extractVariablesReference pop} ifelse
+              (})print
+            } for pop pop
+          end
+        } forall
+      } def
+      /arraytype {
+        <<>> begin
+          dup length
+          arg_dict /start get
+          arg_dict /count get 
+          getStartEnd
+          /comma false def
+          1 exch {
+            comma {(,)print} {/comma true def} ifelse
+            ({)print
+            dup extractName (,)print
+            1 index exch get
+            dup extractValue (,)print
+            dup extractType (,)print
+            extractVariablesReference
+            (}) print
+          } for pop
+        end
+      } def
+      /packedarraytype {iterator /arraytype get exec} def
+      currentdict
+    end /iterator exch def
+    currentdict
+  end /dap_global exch store
+  errordict /handleerror {
+    $error dup /newerror false put
+    (ERROR_START(0){"error":") print
+    dup /errorname get =only
+    ( in ) print
+    /command get =only
+    ("}ERROR_END(0)) print flush
+  } bind executeonly put
+  $error /recordstacks false put
+} def
+/dap_get_global {dap_global exch get} bind executeonly def
+/dap_set_global {dap_global begin def end} bind executeonly def
+/dap_incremental_id {
+  /next_id dap_get_global
+  dup 1 add /next_id exch dap_set_global
+} bind executeonly def
+/dap_set_obj {
+  /table dap_get_global 3 1 roll put
+} bind executeonly def
+/dap_get_obj {
+  /table dap_get_global exch get
+} bind executeonly def
+/dap_if_error {
+  stopped {handleerror} if
+} bind executeonly def
+/dap_stackTrace {
+% Unused: <arg_dict>
+pop } bind executeonly def
+/dap_scopes {
+  % Unused: frameId
+  pop<<[/extractVariablesReference /compositeKey]
+  {dup dap_get_global} forall
+  /dstack countdictstack array dictstack>> begin 
+  ([{"name":"Operand Stack","expensive":true,) print
+  count array astore aload extractVariablesReference
+  (},{"name":"Execution Stack","expensive":true,) print
+  countexecstack array execstack extractVariablesReference
+  (},{"name":"Dictionary Stack","expensive":true,) print
+  dstack extractVariablesReference
+  (}]) print end
+} bind executeonly def
+/dap_variables {
+  <<
+    [
+      /knownGet
+      /quotationEnclosed
+      /preview
+      /compositeKey
+      /escape_tring
+      /buffer
+      /iterator
+      /getStartEnd
+      /extractName
+      /extractValue
+      /extractType
+      /extractVariablesReference
+    ] {dup dap_get_global} forall
+  >> begin
+    /arg_dict exch def
+    ([) print
+    arg_dict /variablesReference get dap_get_obj
+    dup type iterator exch get exec
+    (]) print
+  end
+} bind executeonly def
+/dap_evaluate {
+  % {...} no empty
+  <<
+    /xnload {
+      dup type /nametype eq 
+      1 index xcheck and {
+        dup where {
+          exch get true
+        } {pop false} ifelse
+      } {pop false} ifelse
+    }
+    [/knownGet /preview /extractVariablesReference
+    /quotationEnclosed /extractType /compositeKey /buffer
+    /escape_tring]
+    {dup dap_get_global} forall
+  >> begin
+    dup length 1 sub
+    0 exch 1 exch {
+      2 copy get xnload {
+          2 index 3 1 roll put
+      } {pop} ifelse
+    } for
+    ({)print
+    dup length 1 eq {
+      0 get dup ("result":) print preview (,) print
+      dup extractType (,) print
+    } if extractVariablesReference (})print
+  end 
+} bind executeonly def
+false setglobal

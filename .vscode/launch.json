@@ -10,11 +10,13 @@
 			"type": "extensionHost",
 			"request": "launch",
 			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}"
+				"--extensionDevelopmentPath=${workspaceFolder}",
+				"--disable-extensions","${workspaceFolder}\\ps.test"
 			],
 			"outFiles": [
 				"${workspaceFolder}/out/**/*.js"
-			]
+			],
+			"preLaunchTask": "${defaultBuildTask}"
 		}
 	]
 }

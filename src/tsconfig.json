@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "module": "commonjs",
+    "target": "es2015",
+    "outDir": "../out",
+    "lib": [
+      "ES2015"
+    ],
+    "skipLibCheck": true,
+    "strict": true,
+    "declaration": true,
+    "sourceMap": true,
+    "declarationMap": true,
+    "noImplicitAny": true,
+    "removeComments": true,
+    "noUnusedLocals": true,
+    "noImplicitThis": true,
+    "inlineSourceMap": false,
+    "preserveConstEnums": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictPropertyInitialization": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "types": [
+      "node",
+      "vscode"
+    ],
+    "noUnusedParameters": false
+  },
+  "exclude": [
+    "node_modules"
+  ]
+}

@@ -9,7 +9,7 @@ import {
   SymbolKind
 } from 'vscode-languageserver/node'
 import { TextDocument } from 'vscode-languageserver-textdocument'
-import { psParserHelper, PsParser } from './postscriptParser'
+import { psParserHelper } from '../parser/postscriptParser'
 import * as chevrotain from 'chevrotain'
 
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument)
@@ -28,14 +28,13 @@ function setupConnection(connection: any) {
     validateTextDocument(change.document)
   })
 
-  // Track whether a document previously had parse errors to avoid spamming notifications
-  const hadParseError: Map<string, boolean> = new Map()
+  
 
   /**
    * Check if parse errors are likely caused by binary data in the file.
    * Heuristic: many "unexpected character" errors with high offsets suggest binary data.
    */
-  function isBinaryDataError(errors: any[], textLength: number): boolean {
+  function isBinaryDataError(errors: any[], _textLength: number): boolean {
     if (errors.length < 5) return false
     const unexpectedCharErrors = errors.filter((e: any) =>
       e.message && e.message.includes('unexpected character')
@@ -100,7 +99,9 @@ function setupConnection(connection: any) {
 
     const symbols: DocumentSymbol[] = []
 
-    const VisitorCtor = PsParser.getBaseCstVisitorConstructorWithDefaults<DocumentSymbol[]>()
+    // Create temporary parser instance to access CST visitor constructor
+    const tempParser = new (require('../parser/postscriptParser').PostScriptParser)();
+    const VisitorCtor = tempParser.getBaseCstVisitorConstructorWithDefaults()
     class PSSP extends VisitorCtor {
       private document: TextDocument
       constructor(document: TextDocument) {

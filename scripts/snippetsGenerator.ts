@@ -2,9 +2,8 @@ import * as fs from 'fs'
 import * as marked from 'marked'
 import * as path from 'path'
 
-// Script runs as dist/scripts/snippetsGenerator.s.js → project root is two levels up
-const rootDir = path.join(__dirname, '..', '..')
-const destDir = path.join(rootDir, 'snippets.gen')
+const rootDir = path.join(__dirname, '..')
+const destDir = path.join(rootDir, '.snippets')
 
 function createBody(params: string) {
   return params.split(/\s+/).filter(v => v.trim().length).map((v, i) => {
@@ -175,7 +174,7 @@ const main = async () => {
       packageObj.contributes = packageObj.contributes || {}
       packageObj.contributes.snippets = operatorSnippets
 
-      fs.writeFileSync(packageFile, JSON.stringify(packageObj, null, 2))
+      fs.writeFileSync(packageFile, JSON.stringify(packageObj))
       console.log('成功更新package.json')
     } catch (error) {
       console.error('更新package.json时出错:', error)
