@@ -225,9 +225,6 @@ true setglobal
 /dap_get_obj {
   /table dap_get_global exch get
 } bind executeonly def
-/dap_if_error {
-  stopped {handleerror} if
-} bind executeonly def
 /dap_stackTrace {
 % Unused: <arg_dict>
 pop } bind executeonly def

@@ -691,7 +691,7 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
     if (!this.gsProcesses) throw 'Ghostscript not running'
     const unitCounter = this.unitCounter++
     const eventName = `${ps_stepping_end_mark}(${unitCounter})`
-    this.gsProcesses.stdin.write(`(${ps_stepping_start_mark}(${unitCounter})) = {${unit}} dap_if_error (${eventName}) = flush\n`)
+    this.gsProcesses.stdin.write(`(${ps_stepping_start_mark}(${unitCounter})) = ${unit} (${eventName}) = flush\n`)
     return eventName
   }
 
