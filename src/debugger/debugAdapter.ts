@@ -123,14 +123,20 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
   private parseProgramSource(): void {
     try {
       this.programText = fs.readFileSync(this.programPath!, 'utf8')
-      const { cst } = psParserHelper(this.programText)
+      const { cst, errors } = psParserHelper(this.programText)
       if (cst) {
         this.cstWalker = new CstWalker(cst, this.programText)
       } else {
-        this.sendEvent(new debugadapter.OutputEvent(`Warning: Failed to parse program. The debugger requires plain PostScript source code and cannot process files containing binary data (e.g., embedded images).\n`, 'stderr'))
+        const errorMessage = errors && errors.length > 0 
+          ? `Parse errors: ${errors.map((e: any) => e.message).join('; ')}`
+          : 'Unknown parse error'
+        this.sendEvent(new debugadapter.OutputEvent(`Warning: Failed to parse program. The debugger requires plain PostScript source code.\n`, 'stderr'))
+        this.sendEvent(new debugadapter.OutputEvent(`Reason: ${errorMessage}\n`, 'stderr'))
+        this.sendEvent(new debugadapter.OutputEvent(`Note: Debugging features such as stepping and breakpoints will be limited or unavailable.\n`, 'stderr'))
       }
     } catch (err: any) {
       this.sendEvent(new debugadapter.OutputEvent(`Failed to read/parse program: ${err.message}\n`, 'stderr'))
+      this.sendEvent(new debugadapter.OutputEvent(`Debugging features may be limited.\n`, 'stderr'))
     }
   }
 
@@ -142,7 +148,11 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
   }
 
   private setupStdoutHandler(): void {
-    this.gsProcesses!.stdout.on('data', chunk => {
+    if (!this.gsProcesses) {
+      this.sendEvent(new debugadapter.OutputEvent('Ghostscript process not initialized\n', 'stderr'))
+      return
+    }
+    this.gsProcesses.stdout.on('data', chunk => {
       streamingBlockParser.write(chunk)
 
       let block: Block | null
@@ -225,7 +235,11 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
   }
 
   private setupStderrHandler(): void {
-    this.gsProcesses!.stderr.on('data', chunk => {
+    if (!this.gsProcesses) {
+      this.sendEvent(new debugadapter.OutputEvent('Ghostscript process not initialized\n', 'stderr'))
+      return
+    }
+    this.gsProcesses.stderr.on('data', chunk => {
       try {
         const obj = JSON.parse(chunk)
         this.sendEvent(new debugadapter.StoppedEvent('exception', 1, obj.error))
@@ -236,7 +250,10 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
   }
 
   private setupProcessErrorHandler(): void {
-    this.gsProcesses!.on('error', err => {
+    if (!this.gsProcesses) {
+      return
+    }
+    this.gsProcesses.on('error', err => {
       this._stepping = false
       this.sendEvent(new debugadapter.OutputEvent(`Ghostscript error: ${err.message}\n`, 'stderr'))
       this.sendEvent(new debugadapter.TerminatedEvent())
@@ -244,7 +261,10 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
   }
 
   private setupProcessCloseHandler(): void {
-    this.gsProcesses!.on('close', (code, signal) => {
+    if (!this.gsProcesses) {
+      return
+    }
+    this.gsProcesses.on('close', (code, signal) => {
       this._stepping = false
       this.sendEvent(new debugadapter.OutputEvent(`Ghostscript exited with code ${code} signal ${signal}\n`, 'console'))
       this.sendEvent(new debugadapter.ThreadEvent('exited', 1))

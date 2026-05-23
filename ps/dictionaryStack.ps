@@ -1,0 +1,48 @@
+% Dictionary Stack Dump Utility for PostScript
+% Usage: gs -dNOPAUSE -dNOPROMPT -dBATCH -sDEVICE=nullpage dictionaryStack.ps
+%
+% Output Format:
+% Each line contains a dictionary entry in the format: name[typename]
+% The type is always at the end, enclosed in square brackets
+% The type name includes the 'type' suffix from PostScript's type operator
+% Example output:
+%   show[operatortype]
+%   myVar[packedarraytype]
+%   myDict[dicttype]
+% 
+% Note: TypeScript layer automatically strips the 'type' suffix
+%
+% Supported types (matching PostScript type system):
+%   - array      : Array type
+%   - boolean    : Boolean type (true/false)
+%   - dict       : Dictionary type
+%   - file       : File object
+%   - fontID     : Font ID
+%   - gstate     : Graphics state
+%   - integer    : Integer number
+%   - mark       : Mark type
+%   - name       : Name type
+%   - null       : Null value
+%   - operator   : PostScript operator
+%   - packedarray: Packed array (compiled procedure)
+%   - real       : Real number (floating point)
+%   - save       : Save object
+%   - string     : String type
+%   ...
+%
+% The output is parsed by TypeScript layer to provide code completion suggestions.
+<<
+  /dstack countdictstack array dictstack
+  /result <<>>
+>> begin
+result dstack {
+  {
+    type put result
+  } forall
+} forall
+{
+  exch =only ([) print
+  =only
+  (]) =
+} forall
+end quit

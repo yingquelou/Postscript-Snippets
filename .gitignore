@@ -9,3 +9,5 @@ test-*.js
 *.log
 settings.json
 package-lock.json
+pnpm-lock.yaml
+ps.test/

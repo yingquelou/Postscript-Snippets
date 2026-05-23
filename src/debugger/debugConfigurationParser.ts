@@ -1,6 +1,6 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import { validateGhostscriptPath, resolveGhostscriptPath } from './debugHelper'
+import { validateGhostscriptPath, resolveGhostscript } from '../ghostscriptHelper'
 
 export interface DebugConfiguration {
   program?: string
@@ -65,22 +65,20 @@ export class DebugConfigurationParser {
       parsed.program = config.program
     }
 
-    let gsPath = config.ghostscriptPath
-    if (!gsPath) {
-      gsPath = this.getGhostscriptPathFromSettings()
-    }
-    if (!gsPath) {
-      gsPath = resolveGhostscriptPath()
-    }
+    const configPath = this.getGhostscriptPathFromSettings()
+    const result = resolveGhostscript({
+      explicitPath: config.ghostscriptPath,
+      configPath
+    })
     
-    if (!gsPath) {
+    if (!result.path) {
       errors.push({
         field: 'ghostscriptPath',
         message: 'Ghostscript executable not found',
         suggestion: 'Please install Ghostscript and ensure it is in your PATH, or specify the path in launch.json or VS Code settings.'
       })
     } else {
-      parsed.ghostscriptPath = gsPath
+      parsed.ghostscriptPath = result.path
     }
 
     let cwd = config.cwd

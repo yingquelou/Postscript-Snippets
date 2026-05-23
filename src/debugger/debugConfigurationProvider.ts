@@ -6,7 +6,8 @@ import { resolveGhostscriptPath } from './debugHelper'
 export const createPostscriptDebugConfigurationProvider = (): DebugConfigurationProvider => {
   return {
     provideDebugConfigurations(_folder, _token) {
-      const defaultGsPath = resolveGhostscriptPath()
+      const configPath = vscode.workspace.getConfiguration('postscript.interpreter').get<string>('executable')
+      const defaultGsPath = resolveGhostscriptPath(configPath || undefined)
       return [
         {
           type: 'postscript',

@@ -17,7 +17,10 @@ tests/
 debug.log
 node_modules
 package-lock.json
+pnpm-lock.yaml
 *.vsix
+log
+pnpm-workspace.yaml
 snippets/
 !.snippets/
 !README.md

@@ -4,6 +4,17 @@ import * as path from 'path'
 
 const rootDir = path.join(__dirname, '..')
 const destDir = path.join(rootDir, '.snippets')
+const snippetIndexFileName = 'snippet-index.json'
+
+export interface SnippetIndexEntry {
+  body: string
+  description: string
+}
+
+function normalizeSnippetPrefix(prefix: string): string {
+  if (typeof prefix !== 'string') return ''
+  return prefix.replace(/^\//, '').toLowerCase()
+}
 
 function createBody(params: string) {
   return params.split(/\s+/).filter(v => v.trim().length).map((v, i) => {
@@ -140,6 +151,42 @@ const processCustomSnippets = (): string[] => {
   }
 }
 
+/** Build a single prefix index from all snippet JSON files in .snippets/ */
+function buildSnippetIndex(snippetFilePaths: string[]): void {
+  const index: Record<string, SnippetIndexEntry> = {}
+
+  for (const relativePath of snippetFilePaths) {
+    const filePath = path.join(rootDir, relativePath)
+    if (!fs.existsSync(filePath)) continue
+    if (path.basename(filePath) === snippetIndexFileName) continue
+
+    try {
+      const content = fs.readFileSync(filePath, 'utf8')
+      const snippets = JSON.parse(content) as Record<string, { prefix?: string | string[]; body?: string; description?: string }>
+      for (const value of Object.values(snippets)) {
+        if (!value?.prefix) continue
+        
+        const prefixes = Array.isArray(value.prefix) ? value.prefix : [value.prefix]
+        
+        for (const prefix of prefixes) {
+          const key = normalizeSnippetPrefix(prefix)
+          if (!key) continue
+          index[key] = {
+            body: value.body ?? (Array.isArray(value.prefix) ? value.prefix[0] : value.prefix),
+            description: value.description ?? ''
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`构建片段索引时跳过无效文件: ${filePath}`, error)
+    }
+  }
+
+  const indexPath = path.join(destDir, snippetIndexFileName)
+  fs.writeFileSync(indexPath, JSON.stringify(index))
+  console.log(`生成片段索引: ${path.relative(rootDir, indexPath)} (${Object.keys(index).length} 个 prefix)`)
+}
+
 // 主处理函数
 const main = async () => {
   try {
@@ -154,6 +201,8 @@ const main = async () => {
       console.warn('没有找到任何片段文件')
       process.exit(0)
     }
+
+    buildSnippetIndex(allSnippets)
 
     // 转换为package.json需要的格式
     const operatorSnippets = allSnippets.map(snippet => ({
@@ -170,11 +219,15 @@ const main = async () => {
 
       const packageContent = fs.readFileSync(packageFile, 'utf8')
       const packageObj = JSON.parse(packageContent)
+      const existingScripts = packageObj.scripts
+      const existingDevDependencies = packageObj.devDependencies
 
       packageObj.contributes = packageObj.contributes || {}
       packageObj.contributes.snippets = operatorSnippets
+      packageObj.scripts = existingScripts
+      packageObj.devDependencies = existingDevDependencies
 
-      fs.writeFileSync(packageFile, JSON.stringify(packageObj))
+      fs.writeFileSync(packageFile, JSON.stringify(packageObj, null, '\t') + '\n')
       console.log('成功更新package.json')
     } catch (error) {
       console.error('更新package.json时出错:', error)
@@ -186,8 +239,6 @@ const main = async () => {
     console.log(`总共处理了 ${allSnippets.length} 个片段:`)
     console.log(`- 从Operators.md生成: ${operatorsSnippets.length} 个`)
     console.log(`- 自定义片段: ${customSnippets.length} 个`)
-    console.table(operatorSnippets)
-
     console.log('\n=== 处理完成 ===')
   } catch (error) {
     console.error('处理过程中发生错误:', error)

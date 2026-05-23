@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PostScript Project Configuration",
+  "type": "object",
+  "properties": {
+    "dependencies": {
+      "description": "Per-file dependency and build configuration.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string"
+          },
+          "inputs": {
+            "description": "Dependency files for this source file.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "buildArgs": {
+            "description": "Ghostscript CLI arguments for this source file.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "executable": {
+            "description": "Ghostscript executable path for this source file.",
+            "type": "string"
+          },
+          "workingDirectory": {
+            "description": "Working directory for this file's Ghostscript invocation.",
+            "type": "string"
+          }
+        },
+        "required": ["file", "inputs"],
+        "additionalProperties": false
+      }
+    },
+    "workspaceDependencies": {
+      "description": "Workspace-level dependency files for completion.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "globalDependencies": {
+      "description": "Global dependency files for completion.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": true
+}
