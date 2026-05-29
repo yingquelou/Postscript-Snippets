@@ -3,7 +3,7 @@ import * as chevrotain from 'chevrotain';
 // 定义词法规则
 const Comment = chevrotain.createToken({
     name: 'Comment',
-    pattern: /%[^\r\n]*/,
+    pattern: /%.*/,
     group: chevrotain.Lexer.SKIPPED,
 });
 
@@ -13,24 +13,41 @@ const Whitespace = chevrotain.createToken({
     group: chevrotain.Lexer.SKIPPED,
 });
 
+const DictStart = chevrotain.createToken({
+    name: 'DictStart',
+    pattern: '<<', label: '<<'
+});
+const DictEnd = chevrotain.createToken({
+    name: 'DictEnd',
+    pattern: '>>', label: '>>'
+});
+const ArrayStart = chevrotain.createToken({
+    name: 'ArrayStart',
+    pattern: '[', label: '['
+});
+
+const ArrayEnd = chevrotain.createToken({
+    name: 'ArrayEnd',
+    pattern: ']', label: ']'
+});
 const ProcedureStart = chevrotain.createToken({
     name: 'ProcedureStart',
-    pattern: /\{/,
+    pattern: '{', label: '{'
 });
 
 const ProcedureEnd = chevrotain.createToken({
     name: 'ProcedureEnd',
-    pattern: /\}/,
+    pattern: '}', label: '}'
 });
 
 const LiteralName = chevrotain.createToken({
     name: 'LiteralName',
-    pattern: /\/(?:[^\s\[\]{}<>\/%()]*)/,
+    pattern: /\/[^\s\[\]{}<>/%()]*/,
 });
 
 const ExecutableName = chevrotain.createToken({
     name: 'ExecutableName',
-    pattern: /(?:\[|>>|<<|\]|[^\s\[\]{}<>\/%()#0-9][^\s\[\]{}<>\/%()]*|\/\/[^\s\[\]{}<>\/%()]*)/,
+    pattern: /(?:\[|>>|<<|\]|(?:\/\/)?[^\s\[\]{}<>/%()]+|\/\/)/,
 });
 
 const StringHex = chevrotain.createToken({
@@ -58,17 +75,25 @@ const Number = chevrotain.createToken({
 // 使用一个简化的模式，匹配从 ( 到 ) 的内容，处理转义
 const StringLs = chevrotain.createToken({
     name: 'StringLs',
-    pattern: /\(/,
+    pattern: '(',
+    label: '(',
     push_mode: 'string'
 });
 const StringRs = chevrotain.createToken({
     name: 'StringRs',
-    pattern: /\)/,
+    pattern: ')',
+    label: ')',
     pop_mode: true
 });
 const Strings = chevrotain.createToken({
     name: 'Strings',
-    pattern: /\\(?:[nrtbf\()]|\d{3}|\r?\n)|.|\r?\n/
+    // \ ] - ^
+    pattern: /\\(?:[nrtbf()\\]|\d{3})|.|\r?\n/
+});
+const StringSkip = chevrotain.createToken({
+    name: 'StringSkip',
+    pattern: /\\\r?\n/,
+    group: chevrotain.Lexer.SKIPPED
 });
 
 // 定义所有 token（顺序很重要，更具体的在前）
@@ -76,17 +101,17 @@ const Strings = chevrotain.createToken({
 // DictionaryStart 必须在 StringHex 之前，因为 << 可能被误识别为 <
 const PsTokens: chevrotain.IMultiModeLexerDefinition = {
     modes: {
-        string: [StringLs, StringRs, Strings],
+        string: [StringLs, StringSkip, StringRs, Strings],
         default: [Comment,
             StringLs,
             Whitespace,
             StringAscii85,
-            StringHex,
+            StringHex, Number,
             ExecutableName,
             ProcedureStart,
             ProcedureEnd,
-            LiteralName,
-            Number]
+            LiteralName
+        ]
     },
     defaultMode: 'default'
 };
@@ -94,7 +119,9 @@ const PsTokens: chevrotain.IMultiModeLexerDefinition = {
 // Create a lexical analyzer
 const PsLexer = new chevrotain.Lexer(PsTokens);
 
-// Define parser
+/**
+ * 主要为调试器使用
+ */
 class PostScriptParser extends chevrotain.CstParser {
     constructor() {
         super(PsTokens, { nodeLocationTracking: 'full' });
@@ -116,6 +143,41 @@ class PostScriptParser extends chevrotain.CstParser {
             { ALT: () => this.CONSUME(ExecutableName) },
         ]);
     });
+    /**
+     * 由于`PostScript`的`mark`操作符的影响
+     * @deprecated 当前行为已经不可用
+     */
+    public obj = this.RULE('obj', () => {
+        this.OR([
+            { ALT: () => this.SUBRULE(this.procedure) },
+            { ALT: () => this.SUBRULE(this.dictionary) },
+            { ALT: () => this.SUBRULE(this.array) },
+            { ALT: () => this.SUBRULE(this.string) },
+            { ALT: () => this.CONSUME(Number) },
+            { ALT: () => this.CONSUME(LiteralName) },
+            { ALT: () => this.CONSUME(ExecutableName) },
+        ]);
+    });
+
+    public dictionary = this.RULE('dictionary', () => {
+        this.CONSUME(DictStart)
+        this.MANY(() => {
+            this.SUBRULE(this.obj)
+        })
+        this.CONSUME(DictEnd)
+    });
+
+    public array = this.RULE('array', () => {
+        this.CONSUME(ArrayStart)
+        this.MANY(() => {
+            this.SUBRULE(this.obj)
+        })
+        this.CONSUME(ArrayEnd)
+    });
+
+    /**
+     * `PostScript`有三种形式的字符串
+     */
     public string = this.RULE('string', () => {
         this.OR([
             { ALT: () => this.CONSUME(StringAscii85) },
@@ -144,19 +206,41 @@ class PostScriptParser extends chevrotain.CstParser {
         this.CONSUME(ProcedureEnd);
     });
 }
+const Mark = chevrotain.createToken({
+    name: 'Mark', pattern: /\bmark\b/
+})
+export const PsStrictTokens: chevrotain.IMultiModeLexerDefinition = {
+    modes: {
+        string: [StringLs, StringRs, StringSkip, Strings],
+        default: [Comment,
+            StringLs,
+            Whitespace,
+            StringAscii85,
+            StringHex, Number,
+            ArrayStart,
+            ArrayEnd,
+            DictStart,
+            DictEnd,
+            Mark,
+            ExecutableName,
+            ProcedureStart,
+            ProcedureEnd,
+            LiteralName
+        ]
+    },
+    defaultMode: 'default'
+};
+export const PsStrictLexer = new chevrotain.Lexer(PsStrictTokens);
 
 export function psParserHelper(text: string) {
     const lexResult = PsLexer.tokenize(text);
     if (lexResult.errors.length > 0) {
         return { errors: lexResult.errors };
     }
-    
-    // Create fresh parser instance for each parse operation for thread safety
     const parser = new PostScriptParser();
     parser.input = lexResult.tokens;
     const cst = parser.document();
     const errors = parser.errors;
-    
     return { errors, cst, tokens: lexResult.tokens };
 }
 

@@ -7,22 +7,27 @@ import {
   DiagnosticSeverity,
   DocumentSymbol,
   DocumentSymbolParams,
-  SymbolKind,
-  Range,
   Connection,
   CompletionItem,
-  CompletionItemKind,
   CompletionList,
   CompletionParams
 } from 'vscode-languageserver/node'
 import { TextDocument } from 'vscode-languageserver-textdocument'
-import type { CstNode } from 'chevrotain'
 import { fileURLToPath } from 'url'
 import * as path from 'path'
 import * as fs from 'fs'
-import { psParserHelper, PostScriptParser } from '../parser/postscriptParser'
+import { PsStrictLexer } from '../parser/postscriptParser'
+import { containsBinaryData } from '../binaryDetector'
+import { PostScriptSymbolBuilder } from './symbolBuilder'
+
 import { DictionaryStackManager, PreloadError } from './dictionaryStackManager'
-import { PreloadConfig } from './completionTypes'
+import { PreloadConfig, DICTIONARY_TYPE_KIND_MAP } from './completionTypes'
+import {
+  PROJECT_CONFIG_FILENAME,
+  getProjectConfig,
+  invalidateConfigCache,
+  resolvePreloadConfig
+} from './configUtils'
 import {
   getCompletionPrefix,
   MAX_COMPLETION_ITEMS,
@@ -39,6 +44,9 @@ let globalPsScriptsPath: string | undefined
 let globalSnippetsPath: string | undefined
 let snippetPrefixSet: ReadonlySet<string> = new Set()
 let snippetIndexLoadPromise: Promise<void> | undefined
+
+let lastPreloadConfig: PreloadConfig | undefined
+let lastPreloadConfigKey: string = ''
 
 function fileUriToFsPath(uri: string): string | undefined {
   try {
@@ -82,177 +90,7 @@ async function getWorkspaceRoot(connection: Connection, preferredUri?: string): 
   }
 }
 
-const PROJECT_CONFIG_FILENAME = 'postscript.config.json'
 
-interface ProjectCompletionConfig {
-  rawConfig: any
-  configDir?: string
-}
-
-let projectConfigCache: { rawConfig: any; configDir: string; mtime: number } | null = null
-
-async function getProjectCompletionConfig(workspaceRoot?: string): Promise<ProjectCompletionConfig> {
-  if (!workspaceRoot) {
-    return { rawConfig: {} }
-  }
-
-  const configPath = path.join(workspaceRoot, PROJECT_CONFIG_FILENAME)
-  
-  try {
-    const stats = await fs.promises.stat(configPath)
-    const currentMtime = stats.mtime.getTime()
-    
-    if (projectConfigCache && projectConfigCache.mtime === currentMtime) {
-      return {
-        rawConfig: projectConfigCache.rawConfig,
-        configDir: projectConfigCache.configDir
-      }
-    }
-    
-    const raw = await fs.promises.readFile(configPath, 'utf8')
-    const parsed = JSON.parse(raw)
-    projectConfigCache = {
-      rawConfig: parsed && typeof parsed === 'object' ? parsed : {},
-      configDir: path.dirname(configPath),
-      mtime: currentMtime
-    }
-    
-    return {
-      rawConfig: projectConfigCache.rawConfig,
-      configDir: projectConfigCache.configDir
-    }
-  } catch {
-    return { rawConfig: {} }
-  }
-}
-
-function normalizeConfigKey(key: string): string {
-  if (!key) return ''
-  let normalized = key.replace(/\\/g, '/')
-  normalized = normalized.replace(/^\.+\//, '')
-  normalized = normalized.replace(/^\//, '')
-  normalized = path.normalize(normalized).replace(/\\/g, '/')
-  return normalized
-}
-
-function resolvePreloadPath(
-  filePath: string,
-  currentFilePath?: string,
-  configDir?: string,
-  workspaceRoot?: string
-): string {
-  if (path.isAbsolute(filePath)) {
-    return filePath
-  }
-  if (configDir) {
-    return path.join(configDir, filePath)
-  }
-  if (currentFilePath) {
-    return path.join(path.dirname(currentFilePath), filePath)
-  }
-  if (workspaceRoot) {
-    return path.join(workspaceRoot, filePath)
-  }
-  return path.resolve(filePath)
-}
-
-export function parseFileLevelPreloadConfig(rawValue: any): Record<string, { inputs: string[], executable?: string, workingDirectory?: string, buildArgs?: string[] }> {
-  const mapping: Record<string, { inputs: string[], executable?: string, workingDirectory?: string, buildArgs?: string[] }> = {}
-
-  if (!Array.isArray(rawValue)) {
-    return mapping
-  }
-
-  for (const item of rawValue as Array<unknown>) {
-    if (!item || typeof item !== 'object') continue
-    const file = typeof (item as any).file === 'string' ? (item as any).file : undefined
-    const pathList = Array.isArray((item as any).inputs)
-      ? (item as any).inputs.filter((p: unknown): p is string => typeof p === 'string')
-      : []
-    const executable = typeof (item as any).executable === 'string' ? (item as any).executable : undefined
-    const workingDirectory = typeof (item as any).workingDirectory === 'string' ? (item as any).workingDirectory : undefined
-    const buildArgs = Array.isArray((item as any).buildArgs)
-      ? (item as any).buildArgs.filter((p: unknown): p is string => typeof p === 'string')
-      : undefined
-    if (file) {
-      mapping[normalizeConfigKey(file)] = {
-        inputs: pathList,
-        executable,
-        workingDirectory,
-        buildArgs
-      }
-    }
-  }
-  return mapping
-}
-
-export function resolveFileLevelPreloadPaths(
-  rawValue: any,
-  currentFilePath: string | undefined,
-  workspaceRoot: string | undefined
-): { inputs: string[], executable?: string, workingDirectory?: string, buildArgs?: string[] } {
-  const mapping = parseFileLevelPreloadConfig(rawValue)
-  if (!currentFilePath) {
-    return mapping['*'] || { inputs: [] }
-  }
-
-  const resolvedKeys: string[] = []
-  const absoluteKey = normalizeConfigKey(currentFilePath)
-  resolvedKeys.push(absoluteKey)
-  if (workspaceRoot) {
-    const relativeKey = normalizeConfigKey(path.relative(workspaceRoot, currentFilePath))
-    if (relativeKey && relativeKey !== absoluteKey) {
-      resolvedKeys.push(relativeKey)
-    }
-  }
-  const basenameKey = normalizeConfigKey(path.basename(currentFilePath))
-  if (basenameKey && !resolvedKeys.includes(basenameKey)) {
-    resolvedKeys.push(basenameKey)
-  }
-
-  for (const key of resolvedKeys) {
-    if (mapping[key]) {
-      return mapping[key]
-    }
-  }
-  return mapping['*'] || { inputs: [] }
-}
-
-function resolvePreloadConfig(
-  rawConfig: any,
-  currentFilePath: string | undefined,
-  configDir: string | undefined,
-  workspaceRoot: string | undefined
-): PreloadConfig {
-  const fileLevelRaw = rawConfig?.dependencies
-  const workspaceLevelRaw = rawConfig?.workspaceDependencies
-  const globalLevelRaw = rawConfig?.globalDependencies
-
-  const fileLevelConfig = resolveFileLevelPreloadPaths(fileLevelRaw, currentFilePath, workspaceRoot)
-
-  return {
-    fileLevel: fileLevelConfig.inputs.map(file =>
-      resolvePreloadPath(file, currentFilePath, configDir, workspaceRoot)
-    ),
-    workspaceLevel: Array.isArray(workspaceLevelRaw)
-      ? workspaceLevelRaw
-          .filter((p): p is string => typeof p === 'string')
-          .map(file => resolvePreloadPath(file, currentFilePath, configDir, workspaceRoot))
-      : [],
-    globalLevel: Array.isArray(globalLevelRaw)
-      ? globalLevelRaw
-          .filter((p): p is string => typeof p === 'string')
-          .map(file => resolvePreloadPath(file, currentFilePath, configDir, workspaceRoot))
-      : [],
-    executable: fileLevelConfig.executable
-      ? resolvePreloadPath(fileLevelConfig.executable, currentFilePath, configDir, workspaceRoot)
-      : undefined,
-    workingDirectory: fileLevelConfig.workingDirectory
-      ? resolvePreloadPath(fileLevelConfig.workingDirectory, currentFilePath, configDir, workspaceRoot)
-      : undefined,
-    buildArgs: fileLevelConfig.buildArgs
-  }
-}
 
 async function getGsPath(connection: Connection): Promise<string | undefined> {
   const config = await connection.workspace.getConfiguration('postscript.interpreter')
@@ -260,10 +98,15 @@ async function getGsPath(connection: Connection): Promise<string | undefined> {
 }
 
 function setupConnection(connection: Connection) {
-  function resetDictionaryStackManager(): void {
-    dictionaryStackManager = undefined
-    managerGsPath = undefined
-    systemEntriesLoadPromise = undefined
+  function resetDictionaryStackManager(soft: boolean = false): void {
+    if (!soft) {
+      dictionaryStackManager = undefined
+      managerGsPath = undefined
+      systemEntriesLoadPromise = undefined
+    }
+    invalidateConfigCache()
+    lastPreloadConfig = undefined
+    lastPreloadConfigKey = ''
   }
 
   function startSystemEntriesLoad(manager: DictionaryStackManager): Promise<void> {
@@ -305,7 +148,6 @@ function setupConnection(connection: Connection) {
         documentSymbolProvider: true,
         completionProvider: {
           resolveProvider: true,
-          triggerCharacters: ['/', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
         }
       }
     }
@@ -324,12 +166,16 @@ function setupConnection(connection: Connection) {
     
     const manager = await ensureDictionaryStackManager()
     const preloadConfig = await getPreloadConfig()
-    await manager.loadPreloadedEntries(preloadConfig)
+    await manager.loadPreloadedEntries(preloadConfig, undefined)
     
     if (workspaceRoot) {
       const configPath = path.join(workspaceRoot, PROJECT_CONFIG_FILENAME)
       const configUri = `file:///${configPath.replace(/\\/g, '/')}`
       await sendPreloadDiagnostics(manager, configUri, true)
+    }
+    
+    for (const doc of documents.all()) {
+      void getOrParseDocument(doc)
     }
   })
 
@@ -346,12 +192,12 @@ function setupConnection(connection: Connection) {
 
     if (!configChanged) return
 
-    resetDictionaryStackManager()
+    resetDictionaryStackManager(true)
     await validateConfigFile(workspaceRoot)
 
     const manager = await ensureDictionaryStackManager()
     const preloadConfig = await getPreloadConfig()
-    await manager.loadPreloadedEntries(preloadConfig)
+    await manager.loadPreloadedEntries(preloadConfig, undefined)
 
     const configUri = `file:///${configPath.replace(/\\/g, '/')}`
     await sendPreloadDiagnostics(manager, configUri, false)
@@ -359,15 +205,25 @@ function setupConnection(connection: Connection) {
 
   async function getPreloadConfig(currentFilePath?: string): Promise<PreloadConfig> {
     const workspaceRoot = await getWorkspaceRoot(connection, currentFilePath)
-    const projectConfig = await getProjectCompletionConfig(workspaceRoot)
-    return resolvePreloadConfig(projectConfig.rawConfig, currentFilePath, projectConfig.configDir, workspaceRoot)
+    const projectConfig = await getProjectConfig(workspaceRoot)
+
+    const rawConfigKey = JSON.stringify(projectConfig.rawConfig)
+    const configKey = `${rawConfigKey}|${currentFilePath || ''}|${projectConfig.configDir || ''}|${workspaceRoot || ''}`
+
+    if (configKey === lastPreloadConfigKey && lastPreloadConfig) {
+      return lastPreloadConfig
+    }
+
+    lastPreloadConfigKey = configKey
+    lastPreloadConfig = resolvePreloadConfig(projectConfig.rawConfig, currentFilePath, projectConfig.configDir, workspaceRoot)
+    return lastPreloadConfig
   }
 
   async function handleDictionaryStackInfo(): Promise<any> {
     await ensureDictionaryStackManager()
     const preloadConfig = await getPreloadConfig()
-    await dictionaryStackManager?.loadPreloadedEntries(preloadConfig)
-    return dictionaryStackManager?.getDictionaryStackInfo() || { entries: [], stackDepth: 0 }
+    await dictionaryStackManager?.loadPreloadedEntries(preloadConfig, undefined)
+    return dictionaryStackManager?.getDictionaryStackInfo(preloadConfig) || { entries: [], stackDepth: 0 }
   }
 
   connection.onRequest('getDictionaryStackInfo', handleDictionaryStackInfo)
@@ -438,18 +294,34 @@ function setupConnection(connection: Connection) {
     const configPath = path.join(workspaceRoot, PROJECT_CONFIG_FILENAME)
     if (!fs.existsSync(configPath)) return
     
+    let raw = ''
     try {
-      const raw = await fs.promises.readFile(configPath, 'utf8')
+      raw = await fs.promises.readFile(configPath, 'utf8')
       JSON.parse(raw)
       lastConfigValidationMessage = ''
-    } catch (error) {
+    } catch (error: any) {
       const configUri = `file:///${configPath.replace(/\\/g, '/')}`
       const message = `Invalid JSON in ${PROJECT_CONFIG_FILENAME}: ${error instanceof Error ? error.message : String(error)}`
+      
+      let line = 0
+      let column = 0
+      if (error instanceof SyntaxError && raw) {
+        const posMatch = error.message.match(/at position (\d+)/)
+        if (posMatch && posMatch[1]) {
+          const pos = parseInt(posMatch[1])
+          const before = raw.substring(0, pos)
+          line = before.split('\n').length - 1
+          const lastNewline = before.lastIndexOf('\n')
+          column = lastNewline >= 0 ? pos - lastNewline - 1 : pos
+        }
+      }
+      
       const diagnostics: Diagnostic[] = [{
         severity: DiagnosticSeverity.Error,
-        range: { start: { line: 0, character: 0 }, end: { line: 0, character: 1 } },
+        range: { start: { line, character: column }, end: { line, character: column + 1 } },
         message,
-        source: 'postscript'
+        source: 'postscript',
+        code: 'PS005'
       }]
       connection.sendDiagnostics({ uri: configUri, diagnostics })
       if (message !== lastConfigValidationMessage) {
@@ -472,37 +344,18 @@ function setupConnection(connection: Connection) {
 
     const currentFilePath = fileUriToFsPath(params.textDocument.uri)
     const preloadConfig = await getPreloadConfig(currentFilePath)
-    await manager.loadPreloadedEntries(preloadConfig)
+    await manager.loadPreloadedEntries(preloadConfig, currentFilePath)
 
-    const stackInfo = manager.getDictionaryStackInfo()
+    const stackInfo = await manager.getDictionaryStackInfo(preloadConfig, currentFilePath)
 
     const line = text.split('\n')[position.line] ?? ''
     const prefix = getCompletionPrefix(line, position.character)
 
     const sortedResults = filterSortAndLimitEntries(stackInfo.entries, prefix, snippetPrefixSet)
 
-    const kindMap: Record<string, CompletionItemKind> = {
-      operator: CompletionItemKind.Function,
-      array: CompletionItemKind.Value,
-      packedarray: CompletionItemKind.Value,
-      string: CompletionItemKind.Value,
-      integer: CompletionItemKind.Value,
-      real: CompletionItemKind.Value,
-      boolean: CompletionItemKind.Constant,
-      dict: CompletionItemKind.Module,
-      name: CompletionItemKind.Variable,
-      file: CompletionItemKind.File,
-      fontID: CompletionItemKind.Field,
-      gstate: CompletionItemKind.Field,
-      mark: CompletionItemKind.Constant,
-      null: CompletionItemKind.Constant,
-      save: CompletionItemKind.Constant,
-      any: CompletionItemKind.Property
-    }
-
     const items = sortedResults.slice(0, MAX_COMPLETION_ITEMS).map(result => ({
       label: result.entry.name,
-      kind: kindMap[result.entry.type] || CompletionItemKind.Property,
+      kind: DICTIONARY_TYPE_KIND_MAP[result.entry.type],
       detail: result.entry.type,
       sortText: result.sortText
     })) as CompletionItem[]
@@ -517,8 +370,12 @@ function setupConnection(connection: Connection) {
     return item
   })
 
-  documents.onDidChangeContent(change => {
-    validateTextDocument(change.document)
+  documents.onDidChangeContent(async change => {
+    await validateTextDocument(change.document)
+  })
+
+  documents.onDidClose(event => {
+    void parseCache.delete(event.document.uri)
   })
 
 
@@ -535,162 +392,280 @@ function setupConnection(connection: Connection) {
   }
 
   async function validateTextDocument(textDocument: TextDocument) {
-    const text = textDocument.getText()
-    const res: any = psParserHelper(text)
+    const { errors, isBinary } = await getOrParseDocument(textDocument)
+    
+    if (isBinary) {
+      connection.sendDiagnostics({ 
+        uri: textDocument.uri, 
+        diagnostics: [{
+          severity: DiagnosticSeverity.Warning,
+          range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
+          message: 'This file appears to contain binary data (e.g., embedded images). Document outline and debugging features are not supported for such files.',
+          source: 'postscript',
+          code: 'PS008'
+        }]
+      })
+      return
+    }
     const diagnostics: Diagnostic[] = []
-    if (res && res.errors && res.errors.length) {
-      if (isBinaryDataError(res.errors, text.length)) {
+    
+    if (errors && errors.length > 0) {
+      if (isBinaryDataError(errors, textDocument.getText().length)) {
         diagnostics.push({
           severity: DiagnosticSeverity.Warning,
           range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
           message: 'This file appears to contain binary data (e.g., embedded images). Document outline and debugging features are not supported for such files.',
-          source: 'postscript'
+          source: 'postscript',
+          code: 'PS008'
         })
       } else {
-        for (const err of res.errors) {
-          let startOffset = 0
-          let endOffset = 1
-          if (err.token && typeof err.token.startOffset === 'number') {
-            startOffset = err.token.startOffset
-            endOffset = typeof err.token.endOffset === 'number' ? err.token.endOffset : startOffset + 1
+        for (const err of errors) {
+          const range = { 
+            start: { line: (err.line ?? 1) - 1, character: (err.column ?? 1) - 1 }, 
+            end: textDocument.positionAt((err.endOffset > 0 ? err.endOffset : (err.startOffset ?? 0)) + 1) 
           }
-          const range = { start: textDocument.positionAt(startOffset), end: textDocument.positionAt(endOffset) }
-          diagnostics.push({ severity: DiagnosticSeverity.Error, range, message: err.message || JSON.stringify(err), source: 'postscript' })
+          const severity = (err as any).isWarning ? DiagnosticSeverity.Warning : DiagnosticSeverity.Error;
+          diagnostics.push({ 
+            severity, 
+            range, 
+            message: err.message || 'Parse error', 
+            source: 'postscript',
+            code: severity === DiagnosticSeverity.Warning ? 'PS009' : 'PS001'
+          })
         }
       }
     }
+    
     connection.sendDiagnostics({ uri: textDocument.uri, diagnostics })
 }
 
-// === Document Symbol 相关的常量和辅助函数 ===
-const POSTSCRIPT_SYMBOL_TYPE_MAP: Record<string, SymbolKind> = {
-  array: SymbolKind.Array,
-  dictionary: SymbolKind.Object,
-  string: SymbolKind.String,
-  Number: SymbolKind.Number,
-  LiteralName: SymbolKind.Key,
-  ExecutableName: SymbolKind.Function,
-  procedure: SymbolKind.Array
-}
+// === 线程安全的异步 LRU 缓存 ===
+const MAX_CACHE_SIZE = 100
 
-const POSTSCRIPT_SYMBOL_VIEW: Record<string, string> = {
-  array: '[...]',
-  dictionary: '<<...>>',
-  string: '(...)',
-  procedure: '{...}'
-}
-
-function getPostScriptLocationRange(location: any): Range {
-  const startLine = (location.startLine || 1) - 1
-  const startCol = (location.startColumn || 1) - 1
-  const endLine = (location.endLine || 1) - 1
-  const endCol = location.endColumn || startCol
-  return { 
-    start: { line: startLine, character: startCol }, 
-    end: { line: endLine, character: endCol } 
-  }
-}
-
-// 缓存 VisitorConstructor（不需要每次都重新生成）
-let cachedPostScriptVisitorConstructor: any = null
-
-function getPostScriptVisitorConstructor() {
-  if (!cachedPostScriptVisitorConstructor) {
-    const parser = new PostScriptParser()
-    cachedPostScriptVisitorConstructor = parser.getBaseCstVisitorConstructorWithDefaults()
-  }
-  return cachedPostScriptVisitorConstructor
-}
-
-// 符号树缓存（使用文档版本号控制失效）
-interface SymbolCacheEntry {
-  symbols: DocumentSymbol[]
+interface ParseCacheEntry {
   version: number
+  tokens: any[]
+  symbols: DocumentSymbol[]
+  errors: any[]
+  timestamp: number
+  isBinary: boolean
 }
-const symbolCache = new Map<string, SymbolCacheEntry>()
 
-/**
- * 构建 PostScript 文档符号的辅助函数
- */
-function buildPostScriptSymbols(doc: TextDocument, cst: CstNode): DocumentSymbol[] {
-  const symbols: DocumentSymbol[] = []
-  const VisitorCtor = getPostScriptVisitorConstructor()
-  
-  class PostScriptSymbolVisitor extends VisitorCtor {
-    private document: TextDocument
-    constructor(document: TextDocument) {
-      super()
-      this.document = document
+class AsyncMutex {
+  private queue: (() => void)[] = []
+  private locked = false
+
+  async acquire(): Promise<() => void> {
+    return new Promise(resolve => {
+      if (!this.locked) {
+        this.locked = true
+        resolve(() => this.release())
+      } else {
+        this.queue.push(() => {
+          this.locked = true
+          resolve(() => this.release())
+        })
+      }
+    })
+  }
+
+  private release(): void {
+    if (this.queue.length > 0) {
+      const next = this.queue.shift()!
+      setImmediate(next)
+    } else {
+      this.locked = false
     }
-    expression(ctx: CstNode, ss: DocumentSymbol[]) {
-      for (const key in ctx) {
-        const token: any = (ctx as any)[key][0]
-        switch (key) {
-          case 'array':
-          case 'dictionary':
-          case 'procedure':
-          case 'string':
-            const range = getPostScriptLocationRange(token.location)
-            const name = key === 'string' ? this.document.getText(range) : POSTSCRIPT_SYMBOL_VIEW[key]
-            const sym: DocumentSymbol = { name, kind: POSTSCRIPT_SYMBOL_TYPE_MAP[key] || SymbolKind.String, range, selectionRange: range, children: [] }
-            ss.push(sym)
-            if (token.children && token.children.expression && key !== 'string') {
-              this.visit(token, sym.children)
-            }
-            break
-          case 'LiteralName':
-            let literalLocation = token as any
-            if (literalLocation.location) literalLocation = literalLocation.location
-            const lr = getPostScriptLocationRange(literalLocation)
-            const literalLabel = token.image?.replace(/^\//, '') || key
-            ss.push({ name: literalLabel, kind: POSTSCRIPT_SYMBOL_TYPE_MAP[key] || SymbolKind.Key, range: lr, selectionRange: lr, children: [] })
-            break
-          default:
-            let defaultLocation = token as any
-            if (defaultLocation.location) defaultLocation = defaultLocation.location
-            const r = getPostScriptLocationRange(defaultLocation)
-            const label = token.image || key
-            ss.push({ name: label, kind: POSTSCRIPT_SYMBOL_TYPE_MAP[key] || SymbolKind.String, range: r, selectionRange: r, children: [] })
-            break
+  }
+}
+
+class ThreadSafeLRUCache<K, V> {
+  private cache = new Map<K, V>()
+  private maxSize: number
+  private maxMemoryBytes: number = 50 * 1024 * 1024
+  private currentMemoryBytes = 0
+  private mutex = new AsyncMutex()
+  private hits = 0
+  private misses = 0
+
+  constructor(maxSize: number) {
+    this.maxSize = maxSize
+  }
+
+  private estimateSize(obj: any): number {
+    try {
+      return JSON.stringify(obj).length * 2
+    } catch {
+      return 1024
+    }
+  }
+
+  async get(key: K): Promise<V | undefined> {
+    const release = await this.mutex.acquire()
+    try {
+      const value = this.cache.get(key)
+      if (value !== undefined) {
+        this.hits++
+        this.cache.delete(key)
+        this.cache.set(key, value)
+      } else {
+        this.misses++
+      }
+      return value
+    } finally {
+      release()
+    }
+  }
+
+  async set(key: K, value: V): Promise<void> {
+    const release = await this.mutex.acquire()
+    try {
+      const oldValue = this.cache.get(key)
+      if (oldValue) {
+        this.currentMemoryBytes -= this.estimateSize(oldValue)
+      }
+
+      const newValueSize = this.estimateSize(value)
+      while (this.cache.size >= this.maxSize || 
+             (this.currentMemoryBytes + newValueSize) > this.maxMemoryBytes) {
+        const firstKey = this.cache.keys().next().value
+        if (firstKey !== undefined) {
+          const removedValue = this.cache.get(firstKey)
+          if (removedValue) {
+            this.currentMemoryBytes -= this.estimateSize(removedValue)
+          }
+          this.cache.delete(firstKey)
+        } else {
+          break
         }
       }
+
+      this.cache.set(key, value)
+      this.currentMemoryBytes += newValueSize
+    } finally {
+      release()
     }
   }
 
-  const visitor = new PostScriptSymbolVisitor(doc)
-  visitor.visit(cst, symbols)
-  return symbols
+  async has(key: K): Promise<boolean> {
+    const release = await this.mutex.acquire()
+    try {
+      return this.cache.has(key)
+    } finally {
+      release()
+    }
+  }
+
+  async delete(key: K): Promise<boolean> {
+    const release = await this.mutex.acquire()
+    try {
+      const value = this.cache.get(key)
+      if (value) {
+        this.currentMemoryBytes -= this.estimateSize(value)
+      }
+      return this.cache.delete(key)
+    } finally {
+      release()
+    }
+  }
+
+  get size(): number {
+    return this.cache.size
+  }
+
+  get hitRate(): number {
+    const total = this.hits + this.misses
+    return total === 0 ? 0 : (this.hits / total) * 100
+  }
+
+  get memoryUsage(): number {
+    return this.currentMemoryBytes
+  }
 }
 
-  connection.onDocumentSymbol((params: DocumentSymbolParams) => {
+const parseCache = new ThreadSafeLRUCache<string, ParseCacheEntry>(MAX_CACHE_SIZE)
+
+const MAX_CACHE_AGE = 5 * 60 * 1000
+
+async function getOrParseDocument(textDocument: TextDocument): Promise<ParseCacheEntry> {
+  const uri = textDocument.uri
+  const text = textDocument.getText()
+  const version = textDocument.version
+  const now = Date.now()
+  
+  const cached = await parseCache.get(uri)
+  const isCacheValid = cached && 
+    cached.version === version && 
+    now - cached.timestamp < MAX_CACHE_AGE
+  
+  if (isCacheValid) {
+    return cached
+  }
+  
+  const isBinary = containsBinaryData(text)
+  
+  if (isBinary) {
+    const entry: ParseCacheEntry = {
+      version,
+      tokens: [],
+      symbols: [],
+      errors: [],
+      timestamp: Date.now(),
+      isBinary: true
+    }
+    await parseCache.set(uri, entry)
+    return entry
+  }
+  
+  const lexResult = (PsStrictLexer as any).tokenize(text)
+  const builder = new PostScriptSymbolBuilder()
+  
+  let symbols: DocumentSymbol[] = []
+  let errors: any[] = []
+  
+  if (lexResult.errors.length > 0) {
+    errors = lexResult.errors
+  } else {
+    const result = builder.parseFromTokens(lexResult.tokens, text)
+    symbols = result.symbols
+    errors = result.errors
+  }
+  
+  const entry: ParseCacheEntry = {
+    version,
+    tokens: lexResult.tokens,
+    symbols,
+    errors,
+    timestamp: Date.now(),
+    isBinary: false
+  }
+  
+  await parseCache.set(uri, entry)
+  return entry
+}
+
+  connection.onDocumentSymbol(async (params: DocumentSymbolParams) => {
     const doc = documents.get(params.textDocument.uri)
     if (!doc) return []
     
-    // 检查缓存
-    const cached = symbolCache.get(params.textDocument.uri)
-    if (cached && cached.version === doc.version) {
-      return cached.symbols
-    }
-    
-    const text = doc.getText()
-    const { errors, cst } = psParserHelper(text)
-    if (errors && errors.length) {
-      console.error('[DocumentSymbol] Parse errors:', errors)
+    try {
+      const { symbols, isBinary } = await getOrParseDocument(doc)
+      return isBinary ? [] : symbols
+    } catch (error) {
+      console.error(
+        '[LanguageServer] Error building document symbols:',
+        `URI: ${params.textDocument.uri}`,
+        `Error: ${error instanceof Error ? error.message : String(error)}`,
+        error instanceof Error ? error.stack : undefined
+      )
       return []
     }
-    if (!cst) return []
-
-    const symbols = buildPostScriptSymbols(doc, cst)
-    
-    // 更新缓存
-    symbolCache.set(params.textDocument.uri, {
-      symbols,
-      version: doc.version
-    })
-    
-    return symbols
   })
-
+  
+  connection.onShutdown(async () => {
+    resetDictionaryStackManager()
+  })
+  
   documents.listen(connection)
 }
 

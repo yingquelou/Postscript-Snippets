@@ -271,10 +271,20 @@ export class StreamingBlockParser {
   /** 释放已消费的范围块 */
   private _releaseRangeBlock(block: RangeBlock) {
     const idx = this.pendingBlocks.indexOf(block);
-    if (idx !== 0) throw new Error('必须按顺序释放块。');
+    if (idx !== 0) {
+      console.warn('StreamingBlockParser: Blocks must be released in order. Skipping invalid release.');
+      return;
+    }
     this.pendingBlocks.shift();
 
-    const frame = this.frameByBlock.get(block)!;
+    const frame = this.frameByBlock.get(block);
+    if (!frame) {
+      console.warn('StreamingBlockParser: Frame not found for block');
+      this._compactMemory();
+      if (this.pendingBlocks.length === 0) this._parse();
+      return;
+    }
+    
     if (frame.parent) {
       frame.parent.pendingChildren--;
       if (frame.parent.rawEnd !== null && frame.parent.pendingChildren === 0) {
@@ -289,7 +299,10 @@ export class StreamingBlockParser {
   /** 释放游离块 */
   private _releaseFreeBlock(block: FreeBlock) {
     const idx = this.pendingBlocks.indexOf(block);
-    if (idx !== 0) throw new Error('必须按顺序释放块。');
+    if (idx !== 0) {
+      console.warn('StreamingBlockParser: Blocks must be released in order. Skipping invalid release.');
+      return;
+    }
     this.pendingBlocks.shift();
     this.freePending = false;
     this.buffer = '';
@@ -325,20 +338,21 @@ export class StreamingBlockParser {
       if (f.rawStart < minRaw) minRaw = f.rawStart;
     }
     const keepFrom = Math.min(minRaw, this.scanPos);
-    if (keepFrom > 0) {
+    if (keepFrom > 0 && keepFrom < this.buffer.length) {
       this.buffer = this.buffer.slice(keepFrom);
-      this.scanPos -= keepFrom;
+      this.scanPos = Math.max(0, this.scanPos - keepFrom);
       for (const f of this.stack) {
-        f.rawStart -= keepFrom;
-        f.contentStart -= keepFrom;
-        if (f.contentEnd !== null) f.contentEnd -= keepFrom;
-        if (f.rawEnd !== null) f.rawEnd -= keepFrom;
+        f.rawStart = Math.max(0, f.rawStart - keepFrom);
+        f.contentStart = Math.max(0, f.contentStart - keepFrom);
+        if (f.contentEnd !== null) f.contentEnd = Math.max(0, f.contentEnd - keepFrom);
+        if (f.rawEnd !== null) f.rawEnd = Math.max(0, f.rawEnd - keepFrom);
       }
     }
   }
 }
 
-export const streamingBlockParser = new StreamingBlockParser([
+// 默认配置，用于向后兼容或快速创建实例
+export const defaultStreamingBlockParserConfig: RangeDefinition[] = [
   {
     name: 'pause', startTemplate: 'PS_EVAL_START({id})',
     endTemplate: 'PS_EVAL_END({id})'
@@ -351,4 +365,7 @@ export const streamingBlockParser = new StreamingBlockParser([
     name: 'error', startTemplate: 'ERROR_START({id})',
     endTemplate: 'ERROR_END({id})'
   }
-])
+]
+
+// 保持向后兼容
+export const streamingBlockParser = new StreamingBlockParser(defaultStreamingBlockParserConfig)

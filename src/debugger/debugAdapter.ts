@@ -6,8 +6,9 @@ import * as path from 'path'
 import { normalizePath, parseLaunchArguments } from './debugHelper'
 import { psParserHelper, validatePostScriptExpression } from '../parser/postscriptParser'
 import { CstWalker, CstWalkerState } from '../parser/syntaxTreeWalker'
-import { streamingBlockParser, Block, FreeBlock } from './StreamingBlockParser'
+import { StreamingBlockParser, Block, FreeBlock, defaultStreamingBlockParserConfig } from './StreamingBlockParser'
 import { ParsedConfiguration } from './debugConfigurationParser'
+import { containsBinaryData } from '../binaryDetector'
 
 const ps_stopped_start_mark = 'PS_EVAL_START'
 const ps_stopped_end_mark = 'PS_EVAL_END'
@@ -22,15 +23,18 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
   private cstWalker?: CstWalker
   private evalCounter = 1
   private _stepping = false
-  private _breakpointHitLocation: any = null
+  private _breakpointHitLocation: { startLine?: number; startColumn?: number } | null = null
   private _skipCurrentLocation = false
   private _breakpointsReceived = false
   private _pendingAutoStart = false
+  private _processCleanupHandlers: (() => void)[] = []
+  private readonly streamingBlockParser: StreamingBlockParser
 
   public constructor() {
     super()
     this.setDebuggerLinesStartAt1(true)
     this.setDebuggerColumnsStartAt1(true)
+    this.streamingBlockParser = new StreamingBlockParser(defaultStreamingBlockParserConfig)
   }
 
   protected initializeRequest(response: DebugProtocol.InitializeResponse, _args: DebugProtocol.InitializeRequestArguments): void {
@@ -67,8 +71,9 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
 
     const { program, ghostscriptPath, cwd, args: gsArgs } = config.config!
 
-    if (!this.initializeProgramConfiguration(program, gsArgs)) {
-      this.sendResponse(response)
+    this.programPath = program
+
+    if (!this.checkBinaryFile(program, response)) {
       return
     }
 
@@ -83,6 +88,22 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
     this.handleStopOnEntry(args)
   }
 
+  private checkBinaryFile(program: string, response: DebugProtocol.LaunchResponse): boolean {
+    try {
+      const content = fs.readFileSync(program, 'utf8')
+      if (containsBinaryData(content)) {
+        this.sendEvent(new debugadapter.OutputEvent(`Error: The file '${path.basename(program)}' appears to contain binary data.\n`, 'stderr'))
+        this.sendEvent(new debugadapter.OutputEvent(`Debugging is not supported for files containing binary data (e.g., embedded images).\n`, 'stderr'))
+        this.sendResponse(response)
+        this.sendEvent(new debugadapter.TerminatedEvent())
+        return false
+      }
+    } catch (err: any) {
+      this.sendEvent(new debugadapter.OutputEvent(`Warning: Failed to check file content: ${err.message}\n`, 'stderr'))
+    }
+    return true
+  }
+
   private handleLaunchConfigValidation(response: DebugProtocol.LaunchResponse, config: { success: boolean; config?: ParsedConfiguration; errors?: Array<{ field: string; message: string; suggestion: string }> }): boolean {
     if (!config.success) {
       config.errors?.forEach(error => {
@@ -95,21 +116,21 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
     return true
   }
 
-  private initializeProgramConfiguration(program: string, gsArgs: string[]): boolean {
-    this.programPath = program
-
-    // normalize program path for consistent breakpoint matching
-    gsArgs.push('-dNOPROMPT', '-dNOPAUSE', '-sstdout=-', '-sstderr=-')
-
-    return true
+  private buildGhostscriptArgs(userArgs: string[]): string[] {
+    const args: string[] = []
+    args.push('-dNOPROMPT', '-dNOPAUSE', '-sstdout=-', '-sstderr=-')
+    const helperCandidates = ['dap.ps'].map(v => path.join(__dirname, '..', '..', 'ps', v))
+    args.push(...helperCandidates)
+    args.push(...userArgs)
+    return args
   }
 
   private startGhostscriptProcess(ghostscriptPath: string, gsArgs: string[], cwd: string): boolean {
-    const msg = `Using ${ghostscriptPath} with the parameters [${gsArgs}] to debug ${this.programPath} in ${cwd}`
-    const helperCandidates = ['dap.ps'].map(v => path.join(__dirname, '..', '..', 'ps', v))
-    gsArgs.push(...helperCandidates)
+    const finalArgs = this.buildGhostscriptArgs(gsArgs)
+    const displayArgs = finalArgs.filter(arg => !arg.endsWith('dap.ps'))
+    const msg = `Using ${ghostscriptPath} with the parameters [${displayArgs}] to debug ${this.programPath} in ${cwd}`
     try {
-      this.gsProcesses = spawn(ghostscriptPath, gsArgs, { cwd, shell: false, stdio: 'pipe' })
+      this.gsProcesses = spawn(ghostscriptPath, finalArgs, { cwd, shell: false, stdio: 'pipe' })
       this.gsProcesses.stdin.write('dap_init\n')
       this.sendEvent(new debugadapter.OutputEvent(msg, 'console'))
       return true
@@ -127,7 +148,7 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
       if (cst) {
         this.cstWalker = new CstWalker(cst, this.programText)
       } else {
-        const errorMessage = errors && errors.length > 0 
+        const errorMessage = errors && errors.length > 0
           ? `Parse errors: ${errors.map((e: any) => e.message).join('; ')}`
           : 'Unknown parse error'
         this.sendEvent(new debugadapter.OutputEvent(`Warning: Failed to parse program. The debugger requires plain PostScript source code.\n`, 'stderr'))
@@ -140,7 +161,7 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
     }
   }
 
-  private setupProcessEventHandlers(args: any): void {
+  private setupProcessEventHandlers(args: unknown): void {
     this.setupStdoutHandler()
     this.setupStderrHandler()
     this.setupProcessErrorHandler()
@@ -152,22 +173,26 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
       this.sendEvent(new debugadapter.OutputEvent('Ghostscript process not initialized\n', 'stderr'))
       return
     }
-    this.gsProcesses.stdout.on('data', chunk => {
-      streamingBlockParser.write(chunk)
+    const handler = (chunk: Buffer | string) => {
+      this.streamingBlockParser.write(chunk)
 
       let block: Block | null
-      while ((block = streamingBlockParser.getNextBlock())) {
+      while ((block = this.streamingBlockParser.getNextBlock())) {
         this.handleStreamingBlock(block)
       }
 
       let freeData: FreeBlock | null
-      while ((freeData = streamingBlockParser.fetchFreeData())) {
+      while ((freeData = this.streamingBlockParser.fetchFreeData())) {
         const content = freeData.data.toString()
         if (content.trim()) {
           this.sendEvent(new debugadapter.OutputEvent(content, 'stdout'))
         }
         freeData.release()
       }
+    }
+    this.gsProcesses.stdout.on('data', handler)
+    this._processCleanupHandlers.push(() => {
+      this.gsProcesses?.stdout.removeListener('data', handler)
     })
   }
 
@@ -239,13 +264,17 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
       this.sendEvent(new debugadapter.OutputEvent('Ghostscript process not initialized\n', 'stderr'))
       return
     }
-    this.gsProcesses.stderr.on('data', chunk => {
+    const handler = (chunk: Buffer | string) => {
       try {
-        const obj = JSON.parse(chunk)
+        const obj = JSON.parse(chunk.toString())
         this.sendEvent(new debugadapter.StoppedEvent('exception', 1, obj.error))
       } catch (error) {
         this.sendEvent(new debugadapter.OutputEvent(`Ghostscript error: ${error}\n`, 'stderr'))
       }
+    }
+    this.gsProcesses.stderr.on('data', handler)
+    this._processCleanupHandlers.push(() => {
+      this.gsProcesses?.stderr.removeListener('data', handler)
     })
   }
 
@@ -253,10 +282,14 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
     if (!this.gsProcesses) {
       return
     }
-    this.gsProcesses.on('error', err => {
+    const handler = (err: Error) => {
       this._stepping = false
       this.sendEvent(new debugadapter.OutputEvent(`Ghostscript error: ${err.message}\n`, 'stderr'))
       this.sendEvent(new debugadapter.TerminatedEvent())
+    }
+    this.gsProcesses.on('error', handler)
+    this._processCleanupHandlers.push(() => {
+      this.gsProcesses?.removeListener('error', handler)
     })
   }
 
@@ -264,12 +297,16 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
     if (!this.gsProcesses) {
       return
     }
-    this.gsProcesses.on('close', (code, signal) => {
+    const handler = (code: number | null, signal: NodeJS.Signals | null) => {
       this._stepping = false
       this.sendEvent(new debugadapter.OutputEvent(`Ghostscript exited with code ${code} signal ${signal}\n`, 'console'))
       this.sendEvent(new debugadapter.ThreadEvent('exited', 1))
       this.sendEvent(new debugadapter.ExitedEvent(code ?? 0))
       this.sendEvent(new debugadapter.TerminatedEvent())
+    }
+    this.gsProcesses.on('close', handler)
+    this._processCleanupHandlers.push(() => {
+      this.gsProcesses?.removeListener('close', handler)
     })
   }
 
@@ -378,29 +415,77 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
     setImmediate(() => this.executeStep())
   }
 
-  protected terminateRequest(response: DebugProtocol.TerminateResponse, args: any): void {
+  protected terminateRequest(response: DebugProtocol.TerminateResponse, args: unknown): void {
     this._stepping = false
-    if (this.gsProcesses && !this.gsProcesses.killed) {
-      try { this.gsProcesses.kill() } catch { }
-    }
+    this.terminateGhostscriptProcess()
     this.sendResponse(response)
-    // 发送 ExitedEvent（exitCode 为 0 表示正常终止）
     this.sendEvent(new debugadapter.ExitedEvent(0))
-    this.sendEvent(new debugadapter.TerminatedEvent(args?.restart))
+    this.sendEvent(new debugadapter.TerminatedEvent((args as { restart?: boolean })?.restart))
   }
 
-  protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: any): void {
+  protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: unknown): void {
     this._stepping = false
-    // 处理 terminateDebuggee 参数
-    if (args?.terminateDebuggee !== false && this.gsProcesses && !this.gsProcesses.killed) {
-      try { this.gsProcesses.kill() } catch { }
+    const argsTyped = args as { terminateDebuggee?: boolean, restart?: boolean }
+    if (argsTyped?.terminateDebuggee !== false) {
+      this.terminateGhostscriptProcess()
+      this.sendEvent(new debugadapter.ExitedEvent(0))
+      this.sendEvent(new debugadapter.TerminatedEvent(argsTyped?.restart))
     }
     this.sendResponse(response)
-    // 如果终止了调试目标，发送相应事件
-    if (args?.terminateDebuggee !== false) {
-      this.sendEvent(new debugadapter.ExitedEvent(0))
-      this.sendEvent(new debugadapter.TerminatedEvent(args?.restart))
+  }
+
+  private terminateGhostscriptProcess(): void {
+    if (!this.gsProcesses) return
+
+    try {
+      // 首先清理所有事件监听器
+      for (const cleanup of this._processCleanupHandlers) {
+        try {
+          cleanup()
+        } catch {
+          // 忽略清理错误
+        }
+      }
+      this._processCleanupHandlers = []
+
+      if (this.gsProcesses.killed) {
+        this.gsProcesses = undefined
+        return
+      }
+
+      // 尝试关闭流
+      try {
+        this.gsProcesses.stdin?.destroy()
+        this.gsProcesses.stdout?.destroy()
+        this.gsProcesses.stderr?.destroy()
+      } catch {
+        // 忽略流关闭错误
+      }
+
+      // 发送终止信号
+      this.gsProcesses.kill('SIGTERM')
+
+      // 设置超时强制终止
+      const timeoutId = setTimeout(() => {
+        try {
+          if (this.gsProcesses && !this.gsProcesses.killed) {
+            this.gsProcesses.kill('SIGKILL')
+          }
+        } catch {
+          // 忽略强制终止错误
+        }
+      }, 500)
+
+      // 清理超时引用
+      this.once('exit', () => {
+        clearTimeout(timeoutId)
+      })
+    } catch {
+      // 忽略终止错误
     }
+
+    // 清空进程引用
+    this.gsProcesses = undefined
   }
 
   protected threadsRequest(response: DebugProtocol.ThreadsResponse): void {
@@ -621,14 +706,20 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
   /**
    * Send PostScript source code while the debugger is paused
    *  @returns {string} eval_eventName
-  **/
+   **/
   private sendPsDuringPause(expr: string): string {
-    if (!this.gsProcesses || !this.gsProcesses.stdin) throw 'Ghostscript not running'
+    if (!this.gsProcesses || !this.gsProcesses.stdin) {
+      throw new Error('Ghostscript not running')
+    }
     const id = this.evalCounter++
     const eventName = `${ps_stopped_end_mark}(${id})`
     // Use print markers and then the expression, then end marker
     // Ensure expression ends with newline
-    this.gsProcesses.stdin.write(`(${ps_stopped_start_mark}(${id})) = ${expr} (${eventName}) = flush\n`)
+    try {
+      this.gsProcesses.stdin.write(`(${ps_stopped_start_mark}(${id})) = ${expr} (${eventName}) = flush\n`)
+    } catch (error) {
+      throw new Error(`Failed to write to Ghostscript: ${error}`)
+    }
     return eventName
   }
 
@@ -658,8 +749,9 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
         if (cst) {
           this.cstWalker = new CstWalker(cst, this.programText)
         }
-      } catch (err: any) {
-        this.sendEvent(new debugadapter.OutputEvent(`Failed to re-parse modified program: ${err.message}\n`, 'stderr'))
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : String(err)
+        this.sendEvent(new debugadapter.OutputEvent(`Failed to re-parse modified program: ${errorMessage}\n`, 'stderr'))
       }
     }
 
@@ -708,10 +800,16 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
    * @returns {string} dbg_eventName
    */
   private sendPsDuringStepping(unit: string): string {
-    if (!this.gsProcesses) throw 'Ghostscript not running'
+    if (!this.gsProcesses || !this.gsProcesses.stdin) {
+      throw new Error('Ghostscript not running')
+    }
     const unitCounter = this.unitCounter++
     const eventName = `${ps_stepping_end_mark}(${unitCounter})`
-    this.gsProcesses.stdin.write(`(${ps_stepping_start_mark}(${unitCounter})) = ${unit} (${eventName}) = flush\n`)
+    try {
+      this.gsProcesses.stdin.write(`(${ps_stepping_start_mark}(${unitCounter})) = ${unit} (${eventName}) = flush\n`)
+    } catch (error) {
+      throw new Error(`Failed to write to Ghostscript: ${error}`)
+    }
     return eventName
   }
 

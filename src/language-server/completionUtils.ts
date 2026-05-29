@@ -84,37 +84,12 @@ export function filterSortAndLimitEntries(
 ): EntryMatchResult[] {
   if (entries.length === 0) return []
 
-  const pLower = prefix.toLowerCase()
-
   const results: EntryMatchResult[] = []
 
   for (const entry of entries) {
-    const nameLower = entry.name.toLowerCase()
-    const bare = nameLower.startsWith('/') ? nameLower.slice(1) : nameLower
-    const typePriority = entry.type === 'operator' ? 0 : 1
-
-    let matchInfo: MatchInfo | null = null
-
-    if (!prefix) {
-      matchInfo = { kind: 0, matchPosition: 0, length: bare.length, distance: 0, typePriority }
-    } else {
-      const exactMatch = bare === pLower
-      const startsWithMatch = bare.startsWith(pLower)
-      const substringIndex = bare.indexOf(pLower)
-      const subsequenceDistance = getSubsequenceDistance(pLower, bare)
-
-      if (exactMatch) {
-        matchInfo = { kind: 0, matchPosition: 0, length: bare.length, distance: 0, typePriority }
-      } else if (startsWithMatch) {
-        matchInfo = { kind: 1, matchPosition: 0, length: bare.length, distance: 0, typePriority }
-      } else if (substringIndex >= 0) {
-        matchInfo = { kind: 2, matchPosition: substringIndex, length: bare.length, distance: 0, typePriority }
-      } else if (subsequenceDistance >= 0) {
-        matchInfo = { kind: 3, matchPosition: 0, length: bare.length, distance: subsequenceDistance, typePriority }
-      }
-    }
-
+    const matchInfo = getCompletionMatchInfo(entry, prefix)
     if (matchInfo && !shouldDeferToSnippetInternal(entry, snippetPrefixes)) {
+      const bare = entry.name.toLowerCase().replace(/^\//, '')
       results.push({
         entry,
         sortText: buildSortTextFromMatchInfo(matchInfo, bare)
@@ -139,11 +114,11 @@ export function shouldDeferToSnippet(
 export function getCompletionPrefix(line: string, character: number): string {
   let word = ''
   let i = character - 1
-  while (i >= 0 && /[a-zA-Z0-9_\-\.\/]/.test(line[i])) {
+  while (i >= 0 && /[^\s\[\]{}<>\/%()]/.test(line[i])) {
     word = line[i] + word
     i--
   }
-  return word.replace(/^\//, '')
+  return word
 }
 
 export function matchesDictionaryEntry(entry: DictionaryEntry, prefix: string): boolean {

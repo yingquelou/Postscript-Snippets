@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.1.1]
+
+### Added
+- **PostScript Compilation** - New compile command with toolbar button to compile PostScript files directly from the editor
+- **Project Configuration** - Support for `postscript.config.json` to define dependencies, build arguments, input files, and custom Ghostscript settings per project
+- **Enhanced Auto-Detection** - Improved Ghostscript executable auto-detection with validation and fallback strategies
+- **Binary File Detection** - Automatic detection of binary data in files to prevent debugging issues with embedded content
+- **JSON Schema Validation** - Schema validation support for `postscript.config.json` configuration files
+- **Intelligent Completion** - Enhanced completion system with smart sorting, subsequence matching, and deferred snippet integration
+
+### Changed
+- **Extension Activation** - Optimized activation to start on language detection for faster responsiveness
+- **Debugger Integration** - Improved binary file detection with clear error messages when attempting to debug binary files
+- **Configuration Defaults** - Removed hardcoded defaults, using intelligent auto-detection instead
+
+### Improved
+- **Ghostscript Resolution** - Better executable validation and cross-platform path handling
+- **Configuration Management** - Cached project configuration with automatic reload on file changes
+- **Path Normalization** - Enhanced cross-platform path resolution for dependency files
+- **Workspace Awareness** - Better integration with VS Code workspace folders and multi-root workspaces
+
 ## [1.1.0] - 2026-05-05
 
 ### Added

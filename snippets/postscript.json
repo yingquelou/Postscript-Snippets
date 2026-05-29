@@ -139,7 +139,7 @@
         "body": [
             "${1|source,target|} <<",
             "\t/Uncompressed ${2|false,true|}",
-            "\t/K ${3|<0,0,>0|}",
+            "\t/K ${3|0,<0,>0|}",
             "\t/EndOfLine ${4|false,true|}",
             "\t/EncodedByteAlign ${5|false,true|}",
             "\t/Columns ${6:1728}",

@@ -1,41 +1,41 @@
 import * as vscode from 'vscode'
 import * as fs from 'fs'
 import * as path from 'path'
-import { normalizePath, resolveGhostscript } from './ghostscriptHelper'
+import { resolveGhostscript } from './ghostscriptHelper'
+import {
+  PROJECT_CONFIG_FILENAME,
+  getProjectConfig,
+  matchesCompileFile,
+  resolveConfigPath,
+  invalidateConfigCache,
+  PostscriptProjectConfig
+} from './language-server/configUtils'
 
-const PROJECT_CONFIG_FILENAME = 'postscript.config.json'
+let configWatcher: vscode.FileSystemWatcher | undefined
 
-interface DependencyEntry {
-  file: string
-  inputs: string[]
-  buildArgs?: string[]
-  executable?: string
-  workingDirectory?: string
-}
-
-interface PostscriptProjectConfig {
-  dependencies?: DependencyEntry[]
-  workspaceDependencies?: string[]
-  globalDependencies?: string[]
-}
-
-function resolveConfigRelative(value: string, configDir: string): string {
-  if (path.isAbsolute(value)) {
-    return value
+export function setupConfigWatcher(): void {
+  if (configWatcher) {
+    configWatcher.dispose()
   }
-  return path.join(configDir, value)
+  
+  configWatcher = vscode.workspace.createFileSystemWatcher(`**/${PROJECT_CONFIG_FILENAME}`)
+  configWatcher.onDidChange(() => {
+    invalidateConfigCache()
+    vscode.window.showInformationMessage('PostScript configuration updated. Changes will take effect on next compile.')
+  })
+  configWatcher.onDidCreate(() => {
+    invalidateConfigCache()
+  })
+  configWatcher.onDidDelete(() => {
+    invalidateConfigCache()
+  })
 }
 
-function matchesCompileFile(configFile: string, currentFilePath: string, configDir: string, workspaceRoot: string): boolean {
-  const normalizedCurrent = normalizePath(currentFilePath)
-  const candidatePaths = [
-    normalizePath(path.resolve(configDir, configFile)),
-    normalizePath(path.resolve(workspaceRoot, configFile)),
-    normalizePath(configFile),
-    normalizePath(path.basename(configFile))
-  ]
-
-  return candidatePaths.some(candidate => candidate === normalizedCurrent)
+export function disposeConfigWatcher(): void {
+  if (configWatcher) {
+    configWatcher.dispose()
+    configWatcher = undefined
+  }
 }
 
 export async function compilePostscript(resource?: vscode.Uri): Promise<void> {
@@ -53,32 +53,21 @@ export async function compilePostscript(resource?: vscode.Uri): Promise<void> {
 
   const workspaceRoot = workspaceFolder.uri.fsPath
   const configPath = path.join(workspaceRoot, PROJECT_CONFIG_FILENAME)
-  const configDir = path.dirname(configPath)
+  const hasConfigFile = fs.existsSync(configPath)
 
-  if (!fs.existsSync(configPath)) {
-    vscode.window.showErrorMessage(`Cannot find ${PROJECT_CONFIG_FILENAME} in workspace root.`)
-    return
-  }
-
-  let projectConfig: PostscriptProjectConfig
-  try {
-    const raw = await fs.promises.readFile(configPath, 'utf8')
-    projectConfig = JSON.parse(raw) as PostscriptProjectConfig
-  } catch (error) {
-    vscode.window.showErrorMessage(`Failed to read ${PROJECT_CONFIG_FILENAME}: ${error}`)
-    return
-  }
+  const { rawConfig, configDir } = await getProjectConfig(workspaceRoot)
+  const projectConfig = rawConfig as PostscriptProjectConfig
 
   const currentFilePath = documentUri.fsPath
-  const dependencyEntry = (projectConfig.dependencies || []).find(entry =>
-    entry.file && matchesCompileFile(entry.file, currentFilePath, configDir, workspaceRoot)
-  )
+  const dependencyEntry = hasConfigFile && projectConfig.dependencies
+    ? projectConfig.dependencies.find(entry =>
+        entry.file && matchesCompileFile(entry.file, currentFilePath, configDir || workspaceRoot, workspaceRoot)
+      )
+    : undefined
 
-  // If file isn't declared in postscript.config.json, fall back to sensible defaults
-  // and ensure -dBATCH is used as a default argument.
   const gsConfigPath = vscode.workspace.getConfiguration('postscript').get<string>('interpreter.executable')
   const explicitPath = dependencyEntry && dependencyEntry.executable
-    ? resolveConfigRelative(dependencyEntry.executable, configDir)
+    ? resolveConfigPath(dependencyEntry.executable, configDir, currentFilePath, workspaceRoot)
     : undefined
   const result = resolveGhostscript({
     explicitPath,
@@ -87,7 +76,7 @@ export async function compilePostscript(resource?: vscode.Uri): Promise<void> {
   const ghostscriptPath = result.path || 'gs'
 
   const cwd = dependencyEntry && dependencyEntry.workingDirectory
-    ? resolveConfigRelative(dependencyEntry.workingDirectory, configDir)
+    ? resolveConfigPath(dependencyEntry.workingDirectory, configDir, currentFilePath, workspaceRoot)
     : workspaceRoot
 
   const buildArgs = dependencyEntry ? (dependencyEntry.buildArgs ?? []) : []
@@ -98,28 +87,27 @@ export async function compilePostscript(resource?: vscode.Uri): Promise<void> {
 
   if (projectConfig.globalDependencies) {
     for (const depFile of projectConfig.globalDependencies) {
-      const resolvedDep = resolveConfigRelative(depFile, configDir)
+      const resolvedDep = resolveConfigPath(depFile, configDir, currentFilePath, workspaceRoot)
       args.push(resolvedDep)
     }
   }
 
   if (projectConfig.workspaceDependencies) {
     for (const depFile of projectConfig.workspaceDependencies) {
-      const resolvedDep = resolveConfigRelative(depFile, configDir)
+      const resolvedDep = resolveConfigPath(depFile, configDir, currentFilePath, workspaceRoot)
       args.push(resolvedDep)
     }
   }
 
   if (dependencyEntry && dependencyEntry.inputs) {
     for (const inputFile of dependencyEntry.inputs) {
-      const resolvedInput = resolveConfigRelative(inputFile, configDir)
+      const resolvedInput = resolveConfigPath(inputFile, configDir, currentFilePath, workspaceRoot)
       args.push(resolvedInput)
     }
   }
 
   args.push(currentFilePath)
 
-  // Run in VS Code integrated terminal (reuse if exists)
   const quoteIfNeeded = (s: string) => {
     if (!s) return '""'
     if (s.includes(' ') || s.includes('"') || s.includes("'")) {

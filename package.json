@@ -2,8 +2,19 @@
 	"name": "postscriptsnippets",
 	"displayName": "PostScript Programming Language",
 	"publisher": "yingquelou",
-	"description": "PostScript GhostScript",
+	"description": "PostScript (Ghostscript) language support for VS Code: syntax highlighting, code snippets, language server with intelligent completions, and a full-featured debugger with breakpoints, variable inspection, and step-through debugging",
 	"version": "1.1.1",
+	"keywords": [
+		"postscript",
+		"ghostscript",
+		"debugger",
+		"language-server",
+		"lsp",
+		"snippets",
+		"syntax-highlighting",
+		"code-completion",
+		"pdf-development"
+	],
 	"engines": {
 		"vscode": "^1.70.3"
 	},
@@ -35,7 +46,7 @@
 				"fileMatch": [
 					"**/postscript.config.json"
 				],
-				"url": "./postscript.config.schema.json"
+				"url": "./language/postscript.config.schema.json"
 			}
 		],
 		"commands": [
@@ -146,6 +157,7 @@
 		"build:scripts": "tsc -b scripts",
 		"build:snippets": "node .scripts/snippetsGenerator.js",
 		"prebuild": "npm run build:scripts",
+		"tscbuild": "tsc -b src",
 		"build": "node .scripts/esbuild.js",
 		"postbuild": "npm run build:snippets",
 		"prepackage": "npm run build",

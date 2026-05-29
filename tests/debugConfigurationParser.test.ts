@@ -22,44 +22,16 @@ function cleanupTestDir(): void {
 }
 
 describe('DebugConfigurationParser', () => {
-  describe('program validation', () => {
+  describe('parseStructural - program validation', () => {
     it('should return error when program is undefined', () => {
       const testDir = setupTestDir()
       try {
         const parser = new DebugConfigurationParser(testDir)
-        const result = parser.parse({})
+        const result = parser.parseStructural({})
         assert.strictEqual(result.success, false)
         const programError = result.errors?.find(e => e.field === 'program')
         assert.ok(programError)
         assert.strictEqual(programError!.message, 'Program path is required')
-      } finally {
-        cleanupTestDir()
-      }
-    })
-
-    it('should return error when program file does not exist', () => {
-      const testDir = setupTestDir()
-      try {
-        const parser = new DebugConfigurationParser(testDir)
-        const result = parser.parse({ program: 'nonexistent.ps' })
-        assert.strictEqual(result.success, false)
-        const programError = result.errors?.find(e => e.field === 'program')
-        assert.ok(programError)
-        assert.ok(programError!.message.includes('not found'))
-      } finally {
-        cleanupTestDir()
-      }
-    })
-
-    it('should return error when program is a directory', () => {
-      const testDir = setupTestDir()
-      try {
-        const parser = new DebugConfigurationParser(testDir)
-        const result = parser.parse({ program: testDir })
-        assert.strictEqual(result.success, false)
-        const programError = result.errors?.find(e => e.field === 'program')
-        assert.ok(programError)
-        assert.ok(programError!.message.includes('not a file'))
       } finally {
         cleanupTestDir()
       }
@@ -70,7 +42,7 @@ describe('DebugConfigurationParser', () => {
       try {
         const validProgram = path.join(testDir, 'valid.ps')
         const parser = new DebugConfigurationParser(testDir)
-        const result = parser.parse({ program: validProgram })
+        const result = parser.parseStructural({ program: validProgram })
         assert.strictEqual(result.success, true)
         assert.strictEqual(result.config?.program, validProgram)
       } finally {
@@ -79,70 +51,28 @@ describe('DebugConfigurationParser', () => {
     })
   })
 
-  describe('ghostscriptPath validation', () => {
-    it('should return error when ghostscriptPath is invalid', () => {
+  describe('parseStructural - ghostscriptPath validation', () => {
+    it('should resolve ghostscript path from settings or default', () => {
       const testDir = setupTestDir()
       try {
         const validProgram = path.join(testDir, 'valid.ps')
         const parser = new DebugConfigurationParser(testDir)
-        const result = parser.parse({ 
-          program: validProgram,
-          ghostscriptPath: '/nonexistent/path/to/gs'
-        })
-        assert.strictEqual(result.success, false)
-        const gsError = result.errors?.find(e => e.field === 'ghostscriptPath')
-        assert.ok(gsError)
-        assert.ok(gsError!.message.includes('Invalid Ghostscript path'))
+        const result = parser.parseStructural({ program: validProgram })
+        assert.strictEqual(result.success, true)
+        assert.ok(result.config?.ghostscriptPath)
       } finally {
         cleanupTestDir()
       }
     })
   })
 
-  describe('cwd validation', () => {
-    it('should return error when cwd does not exist', () => {
-      const testDir = setupTestDir()
-      try {
-        const validProgram = path.join(testDir, 'valid.ps')
-        const invalidDir = path.join(testDir, 'nonexistent')
-        const parser = new DebugConfigurationParser(testDir)
-        const result = parser.parse({ 
-          program: validProgram,
-          cwd: invalidDir
-        })
-        assert.strictEqual(result.success, false)
-        const cwdError = result.errors?.find(e => e.field === 'cwd')
-        assert.ok(cwdError)
-        assert.ok(cwdError!.message.includes('not found'))
-      } finally {
-        cleanupTestDir()
-      }
-    })
-
-    it('should return error when cwd is a file', () => {
-      const testDir = setupTestDir()
-      try {
-        const validProgram = path.join(testDir, 'valid.ps')
-        const parser = new DebugConfigurationParser(testDir)
-        const result = parser.parse({ 
-          program: validProgram,
-          cwd: validProgram
-        })
-        assert.strictEqual(result.success, false)
-        const cwdError = result.errors?.find(e => e.field === 'cwd')
-        assert.ok(cwdError)
-        assert.ok(cwdError!.message.includes('not a directory'))
-      } finally {
-        cleanupTestDir()
-      }
-    })
-
+  describe('parseStructural - cwd validation', () => {
     it('should use program directory as default cwd', () => {
       const testDir = setupTestDir()
       try {
         const validProgram = path.join(testDir, 'valid.ps')
         const parser = new DebugConfigurationParser(testDir)
-        const result = parser.parse({ program: validProgram })
+        const result = parser.parseStructural({ program: validProgram })
         if (result.success) {
           assert.strictEqual(result.config?.cwd, testDir)
         }
@@ -152,13 +82,13 @@ describe('DebugConfigurationParser', () => {
     })
   })
 
-  describe('args validation', () => {
+  describe('parseStructural - args validation', () => {
     it('should return error when args is not an array', () => {
       const testDir = setupTestDir()
       try {
         const validProgram = path.join(testDir, 'valid.ps')
         const parser = new DebugConfigurationParser(testDir)
-        const result = parser.parse({ 
+        const result = parser.parseStructural({ 
           program: validProgram,
           args: 'invalid' as any
         })
@@ -176,7 +106,7 @@ describe('DebugConfigurationParser', () => {
       try {
         const validProgram = path.join(testDir, 'valid.ps')
         const parser = new DebugConfigurationParser(testDir)
-        const result = parser.parse({ 
+        const result = parser.parseStructural({ 
           program: validProgram,
           args: ['-dSAFER', 123, '-dBATCH'] as any
         })
@@ -194,7 +124,7 @@ describe('DebugConfigurationParser', () => {
       try {
         const validProgram = path.join(testDir, 'valid.ps')
         const parser = new DebugConfigurationParser(testDir)
-        const result = parser.parse({ 
+        const result = parser.parseStructural({ 
           program: validProgram,
           args: ['-dSAFER', '', '-', '-dBATCH']
         })
@@ -207,13 +137,13 @@ describe('DebugConfigurationParser', () => {
     })
   })
 
-  describe('default values', () => {
+  describe('parseStructural - default values', () => {
     it('should set default stopOnEntry to false', () => {
       const testDir = setupTestDir()
       try {
         const validProgram = path.join(testDir, 'valid.ps')
         const parser = new DebugConfigurationParser(testDir)
-        const result = parser.parse({ program: validProgram })
+        const result = parser.parseStructural({ program: validProgram })
         if (result.success) {
           assert.strictEqual(result.config?.stopOnEntry, false)
         }
@@ -227,7 +157,7 @@ describe('DebugConfigurationParser', () => {
       try {
         const validProgram = path.join(testDir, 'valid.ps')
         const parser = new DebugConfigurationParser(testDir)
-        const result = parser.parse({ program: validProgram })
+        const result = parser.parseStructural({ program: validProgram })
         if (result.success) {
           assert.deepStrictEqual(result.config?.args, [])
         }
@@ -237,18 +167,104 @@ describe('DebugConfigurationParser', () => {
     })
   })
 
-  describe('variable substitution', () => {
-    it('should resolve ${workspaceFolder}', () => {
+  describe('validateResolvedPaths', () => {
+    it('should return error when program file does not exist', () => {
+      const testDir = setupTestDir()
+      try {
+        const parser = new DebugConfigurationParser(testDir)
+        const structuralResult = parser.parseStructural({ program: 'nonexistent.ps' })
+        assert.strictEqual(structuralResult.success, true)
+        const errors = parser.validateResolvedPaths(structuralResult.config!)
+        const programError = errors.find(e => e.field === 'program')
+        assert.ok(programError)
+        assert.ok(programError!.message.includes('not found'))
+      } finally {
+        cleanupTestDir()
+      }
+    })
+
+    it('should return error when program is a directory', () => {
+      const testDir = setupTestDir()
+      try {
+        const parser = new DebugConfigurationParser(testDir)
+        const structuralResult = parser.parseStructural({ program: testDir })
+        assert.strictEqual(structuralResult.success, true)
+        const errors = parser.validateResolvedPaths(structuralResult.config!)
+        const programError = errors.find(e => e.field === 'program')
+        assert.ok(programError)
+        assert.ok(programError!.message.includes('not a file'))
+      } finally {
+        cleanupTestDir()
+      }
+    })
+
+    it('should return error when ghostscriptPath is invalid', () => {
       const testDir = setupTestDir()
       try {
         const validProgram = path.join(testDir, 'valid.ps')
         const parser = new DebugConfigurationParser(testDir)
-        const result = parser.parse({ 
-          program: '${workspaceFolder}/valid.ps'
+        const structuralResult = parser.parseStructural({ 
+          program: validProgram,
+          ghostscriptPath: '/nonexistent/path/to/gs'
         })
-        if (result.success) {
-          assert.strictEqual(result.config?.program, validProgram)
-        }
+        assert.strictEqual(structuralResult.success, true)
+        const errors = parser.validateResolvedPaths(structuralResult.config!)
+        const gsError = errors.find(e => e.field === 'ghostscriptPath')
+        assert.ok(gsError)
+        assert.ok(gsError!.message.includes('Invalid Ghostscript path'))
+      } finally {
+        cleanupTestDir()
+      }
+    })
+
+    it('should return error when cwd does not exist', () => {
+      const testDir = setupTestDir()
+      try {
+        const validProgram = path.join(testDir, 'valid.ps')
+        const invalidDir = path.join(testDir, 'nonexistent')
+        const parser = new DebugConfigurationParser(testDir)
+        const structuralResult = parser.parseStructural({ 
+          program: validProgram,
+          cwd: invalidDir
+        })
+        assert.strictEqual(structuralResult.success, true)
+        const errors = parser.validateResolvedPaths(structuralResult.config!)
+        const cwdError = errors.find(e => e.field === 'cwd')
+        assert.ok(cwdError)
+        assert.ok(cwdError!.message.includes('not found'))
+      } finally {
+        cleanupTestDir()
+      }
+    })
+
+    it('should return error when cwd is a file', () => {
+      const testDir = setupTestDir()
+      try {
+        const validProgram = path.join(testDir, 'valid.ps')
+        const parser = new DebugConfigurationParser(testDir)
+        const structuralResult = parser.parseStructural({ 
+          program: validProgram,
+          cwd: validProgram
+        })
+        assert.strictEqual(structuralResult.success, true)
+        const errors = parser.validateResolvedPaths(structuralResult.config!)
+        const cwdError = errors.find(e => e.field === 'cwd')
+        assert.ok(cwdError)
+        assert.ok(cwdError!.message.includes('not a directory'))
+      } finally {
+        cleanupTestDir()
+      }
+    })
+
+    it('should return empty array for valid config', () => {
+      const testDir = setupTestDir()
+      try {
+        const validProgram = path.join(testDir, 'valid.ps')
+        const parser = new DebugConfigurationParser(testDir)
+        const structuralResult = parser.parseStructural({ program: validProgram })
+        assert.strictEqual(structuralResult.success, true)
+        const errors = parser.validateResolvedPaths(structuralResult.config!)
+        assert.deepStrictEqual(errors, [])
       } finally {
         cleanupTestDir()
       }

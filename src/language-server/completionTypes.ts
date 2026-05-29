@@ -1,6 +1,27 @@
+import { CompletionItemKind } from 'vscode-languageserver'
+
 export interface DictionaryEntry {
   name: string
   type: 'array' | 'boolean' | 'dict' | 'file' | 'fontID' | 'gstate' | 'integer' | 'mark' | 'name' | 'null' | 'operator' | 'packedarray' | 'real' | 'save' | 'string' | 'any'
+}
+
+export const DICTIONARY_TYPE_KIND_MAP: Record<DictionaryEntry['type'], CompletionItemKind> = {
+  operator: CompletionItemKind.Function,
+  array: CompletionItemKind.Value,
+  packedarray: CompletionItemKind.Method,
+  string: CompletionItemKind.Value,
+  integer: CompletionItemKind.Value,
+  real: CompletionItemKind.Value,
+  boolean: CompletionItemKind.Constant,
+  dict: CompletionItemKind.Class,
+  name: CompletionItemKind.Variable,
+  file: CompletionItemKind.File,
+  fontID: CompletionItemKind.Field,
+  gstate: CompletionItemKind.Field,
+  mark: CompletionItemKind.Constant,
+  null: CompletionItemKind.Constant,
+  save: CompletionItemKind.Constant,
+  any: CompletionItemKind.Property
 }
 
 export interface PreloadConfig {

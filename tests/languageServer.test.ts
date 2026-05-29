@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test'
 import * as assert from 'node:assert'
-import { parseFileLevelPreloadConfig, resolveFileLevelPreloadPaths } from '../out/language-server/languageServer.js'
+import { parseFileLevelPreloadConfig, resolveFileLevelPreloadPaths } from '../out/language-server/configUtils.js'
 
 const workspaceRoot = process.platform === 'win32' ? 'C:/repo/project' : '/repo/project'
 const filePath = process.platform === 'win32' ? 'C:/repo/project/src/foo.ps' : '/repo/project/src/foo.ps'

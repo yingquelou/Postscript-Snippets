@@ -1,13 +1,6 @@
 import { execFile } from 'child_process'
-import { promisify } from 'util'
 import * as path from 'path'
-import * as fs from 'fs'
-import * as os from 'os'
 import { DictionaryEntry } from './completionTypes'
-
-const execFileAsync = promisify(execFile)
-const readFileAsync = promisify(fs.readFile)
-const unlinkAsync = promisify(fs.unlink)
 
 const GS_ARGS_PREFIX = ['-dNOPAUSE', '-dNOPROMPT', '-dBATCH', '-dQUIET', '-sDEVICE=nullpage'] as const
 const EXEC_TIMEOUT_MS = 30000
@@ -34,8 +27,11 @@ export function parseDictionaryOutput(output: string): DictionaryEntry[] {
       const bracketEnd = line.lastIndexOf(']')
       if (bracketEnd <= bracketStart) continue
 
-      const name = line.slice(0, bracketStart).trim()
-      if (!name) continue
+      const rawName = line.slice(0, bracketStart)
+      if (!rawName) continue
+      if (!rawName.startsWith('{') || !rawName.endsWith('}')) continue
+
+      const name = rawName.slice(1, -1)
 
       const typeStr = line.slice(bracketStart + 1, bracketEnd).trim()
       if (!typeStr) continue
@@ -92,25 +88,64 @@ export class GhostscriptRunner {
   }
 
   async getDictionaryStackAfterPreload(preloadFilePath: string, workingDirectory?: string): Promise<DictionaryEntry[]> {
-    const preloadFull = path.isAbsolute(preloadFilePath)
-      ? preloadFilePath
-      : path.resolve(preloadFilePath)
+    return this.getDictionaryStackWithDependencies([preloadFilePath], workingDirectory)
+  }
+
+  async getDictionaryStackWithDependencies(preloadFilePaths: string[], workingDirectory?: string): Promise<DictionaryEntry[]> {
+    const resolvedPaths = preloadFilePaths.map(filePath => 
+      path.isAbsolute(filePath) ? filePath : path.resolve(filePath)
+    )
     const dictStackScript = path.join(this.psScriptsPath, 'dictionaryStack.ps')
-    const output = await this.runGhostscript([preloadFull, dictStackScript], workingDirectory)
+    const allScripts = [...resolvedPaths, dictStackScript]
+    const output = await this.runGhostscript(allScripts, workingDirectory)
     return parseDictionaryOutput(output)
   }
 
   private async runGhostscript(scriptPaths: string[], workingDirectory?: string): Promise<string> {
-    const outputFile = path.join(os.tmpdir(), `gs_output_${Date.now()}_${process.pid}.txt`)
+    let childProcess: ReturnType<typeof execFile> | undefined
+
+    const cleanup = async (): Promise<void> => {
+      if (childProcess && !childProcess.killed) {
+        try {
+          childProcess.kill('SIGTERM')
+          await new Promise(resolve => setTimeout(resolve, 500))
+          if (!childProcess.killed) {
+            childProcess.kill('SIGKILL')
+          }
+        } catch {
+          // Ignore kill errors
+        }
+      }
+    }
 
     try {
-      await execFileAsync(
-        this.gsPath,
-        [...GS_ARGS_PREFIX, ...this.currentBuildArgs, `-sstdout=${outputFile}`, ...scriptPaths],
-        { timeout: EXEC_TIMEOUT_MS, windowsHide: true, cwd: workingDirectory }
-      )
-      const buffer = await readFileAsync(outputFile)
-      return buffer.toString('utf-8').replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+      const execPromise = new Promise<string>((resolve, reject) => {
+        childProcess = execFile(
+          this.gsPath,
+          [...GS_ARGS_PREFIX, ...this.currentBuildArgs, ...scriptPaths],
+          { windowsHide: true, cwd: workingDirectory },
+          (error, stdout, stderr) => {
+            if (error) {
+              const err = error as any
+              err.stderr = stderr
+              err.stdout = stdout
+              reject(err)
+            } else {
+              resolve(stdout)
+            }
+          }
+        )
+      })
+
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          cleanup().catch(() => {})
+          reject(new Error(`Ghostscript execution timed out after ${EXEC_TIMEOUT_MS}ms`))
+        }, EXEC_TIMEOUT_MS)
+      })
+
+      const stdout = await Promise.race([execPromise, timeoutPromise])
+      return stdout.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
     } catch (error: unknown) {
       const details: string[] = []
       if (error && typeof error === 'object') {
@@ -124,16 +159,6 @@ export class GhostscriptRunner {
         }
       }
 
-      try {
-        const fileBuffer = await readFileAsync(outputFile)
-        const fileText = fileBuffer.toString('utf-8').replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim()
-        if (fileText) {
-          details.push(`ghostscript output:\n${fileText}`)
-        }
-      } catch {
-        // ignore missing output file
-      }
-
       const message = [
         error instanceof Error ? error.message : String(error),
         ...details
@@ -144,11 +169,7 @@ export class GhostscriptRunner {
       console.error('[GhostscriptRunner] runGhostscript error:', message)
       throw new Error(message)
     } finally {
-      try {
-        await unlinkAsync(outputFile)
-      } catch (cleanupError) {
-        console.warn('[GhostscriptRunner] Failed to clean up temp file:', outputFile, cleanupError)
-      }
+      await cleanup()
     }
   }
 }

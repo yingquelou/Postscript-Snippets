@@ -23,7 +23,6 @@ function createBuildOptions(env: BuildEnvironment): esbuild.BuildOptions {
   return {
     entryPoints: [
       'src/extension.ts',
-      'src/language-server/languageServer.ts',
       'src/debugger/debugAdapter.ts',
     ],
     bundle: true,

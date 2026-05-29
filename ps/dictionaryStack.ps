@@ -41,7 +41,12 @@ result dstack {
   } forall
 } forall
 {
-  exch =only ([) print
+  exch
+  ({) print
+  =only
+  (}) print
+  
+  ([) print
   =only
   (]) =
 } forall

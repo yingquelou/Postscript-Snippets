@@ -4,8 +4,8 @@ import { parseDictionaryOutput } from '../out/language-server/ghostscriptRunner.
 import { getCompletionPrefix, matchesDictionaryEntry, completionSortText } from '../out/language-server/completionUtils.js'
 
 describe('parseDictionaryOutput', () => {
-  it('parses name[typename] lines and strips type suffix', () => {
-    const output = 'show[operatortype]\nmyVar[packedarraytype]\n'
+  it('parses {name}[typename] lines and strips type suffix', () => {
+    const output = '{show}[operatortype]\n{myVar}[packedarraytype]\n'
     const entries = parseDictionaryOutput(output)
     assert.strictEqual(entries.length, 2)
     assert.deepStrictEqual(entries[0], { name: 'show', type: 'operator' })
@@ -13,12 +13,18 @@ describe('parseDictionaryOutput', () => {
   })
 
   it('falls back to any for unknown types', () => {
-    const entries = parseDictionaryOutput('foo[weirdtype]\n')
+    const entries = parseDictionaryOutput('{foo}[weirdtype]\n')
     assert.strictEqual(entries[0].type, 'any')
   })
 
   it('skips malformed lines', () => {
-    const entries = parseDictionaryOutput('[onlybracket]\nvalid[operatortype]\n')
+    const entries = parseDictionaryOutput('[onlybracket]\n{valid}[operatortype]\n')
+    assert.strictEqual(entries.length, 1)
+    assert.strictEqual(entries[0].name, 'valid')
+  })
+
+  it('skips lines without braces', () => {
+    const entries = parseDictionaryOutput('show[operatortype]\n{valid}[operatortype]\n')
     assert.strictEqual(entries.length, 1)
     assert.strictEqual(entries[0].name, 'valid')
   })

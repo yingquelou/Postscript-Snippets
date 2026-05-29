@@ -2,113 +2,60 @@
   "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
   "name": "PostScript",
   "scopeName": "source.postscript",
-  "fileType": [
+  "fileTypes": [
     "ps",
     "eps"
   ],
   "patterns": [
     {
-      "include": "#comment"
-    },
-    {
-      "include": "#dictionary"
-    },
-    {
-      "include": "#string"
-    },
-    {
-      "include": "#array"
-    },
-    {
-      "include": "#procedure"
-    },
-    {
-      "include": "#number"
-    },
-    {
-      "include": "#name"
+      "include": "#content"
     }
   ],
   "repository": {
     "comment": {
       "name": "comment.line.percentage.postscript",
       "begin": "%",
-      "end": "(?=\\r\\n|[\\r\\n\\f])",
-      "patterns": []
-    },
-    "dictionary": {
-      "name": "meta.dictionary.postscript",
-      "begin": "<<",
-      "end": ">>",
-      "patterns": [
-        {
-          "include": "#comment"
-        },
-        {
-          "include": "#dictionary"
-        },
-        {
-          "include": "#string"
-        },
-        {
-          "include": "#array"
-        },
-        {
-          "include": "#procedure"
-        },
-        {
-          "include": "#number"
-        },
-        {
-          "include": "#name"
-        }
-      ]
+      "end": "(?=\\r?\\n)"
     },
     "string": {
       "patterns": [
         {
-          "name": "string.quoted.ascii85.postscript",
-          "begin": "<~",
-          "end": "~>",
-          "patterns": [
-            {
-              "name": "constant.character.ascii85.postscript",
-              "match": "[!-u]"
-            },
-            {
-              "name": "invalid.illegal.non-ascii85.postscript",
-              "match": "[^!-u\\s~>]"
-            }
-          ]
+          "include": "#string-ascii85"
         },
         {
-          "name": "string.quoted.literal.postscript",
-          "begin": "\\(",
-          "end": "\\)",
-          "patterns": [
-            {
-              "include": "#string-literal-content"
-            }
-          ]
+          "include": "#string-hex"
         },
         {
-          "name": "string.quoted.hexadecimal.postscript",
-          "begin": "<",
-          "end": ">",
-          "patterns": [
-            {
-              "name": "constant.character.hex-digit.postscript",
-              "match": "[0-9A-Fa-f]"
-            },
-            {
-              "name": "invalid.illegal.non-hex-digit.postscript",
-              "match": "[^0-9A-Fa-f\\s>]"
-            }
-          ]
+          "include": "#string-literal"
         }
       ]
     },
-    "string-literal-content": {
+    "string-ascii85": {
+      "name": "string.quoted.double.ascii85.postscript",
+      "begin": "<~",
+      "end": "~>",
+      "patterns": [
+        {
+          "name": "invalid.illegal.non-ascii85.postscript",
+          "match": "[^!-u\\s~>]"
+        }
+      ]
+    },
+    "string-hex": {
+      "name": "string.quoted.single.hex.postscript",
+      "begin": "<(?![<~])",
+      "end": ">",
+      "patterns": [
+        {
+          "name": "invalid.illegal.non-hex.postscript",
+          "match": "[^0-9A-Fa-f\\s]"
+        }
+      ]
+    },
+    "string-literal": {
+      "name": "string.quoted.single.literal.postscript",
+      "begin": "\\(",
+      "end": "\\)",
       "patterns": [
         {
           "name": "constant.character.escape.postscript",
@@ -116,48 +63,49 @@
         },
         {
           "name": "constant.character.escape.line-continuation.postscript",
-          "match": "\\\\\\s*(?=\\r\\n|[\\r\\n])"
+          "match": "\\\\(?:\\r?\\n)",
+          "group": "transparent"
         },
         {
           "begin": "\\(",
           "end": "\\)",
           "patterns": [
             {
-              "include": "#string-literal-content"
+              "include": "#string-literal"
             }
           ]
-        },
-        {
-          "name": "constant.character.other.postscript",
-          "match": "[^\\\\()]+"
         }
       ]
     },
-    "array": {
-      "name": "meta.array.postscript",
-      "begin": "\\[",
-      "end": "\\]",
+    "content": {
       "patterns": [
         {
-          "include": "#comment"
-        },
-        {
-          "include": "#dictionary"
-        },
-        {
-          "include": "#string"
-        },
-        {
-          "include": "#array"
+          "include": "#container"
         },
         {
           "include": "#procedure"
         },
         {
+          "include": "#comment"
+        },
+        {
           "include": "#number"
         },
         {
+          "include": "#string"
+        },
+        {
           "include": "#name"
+        }
+      ]
+    },
+    "container": {
+      "name": "meta.container.postscript",
+      "begin": "(\\[|<<|\\bmark\\b)",
+      "end": "(\\]|>>)",
+      "patterns": [
+        {
+          "include": "#content"
         }
       ]
     },
@@ -167,53 +115,41 @@
       "end": "\\}",
       "patterns": [
         {
-          "include": "#comment"
-        },
-        {
-          "include": "#dictionary"
-        },
-        {
-          "include": "#string"
-        },
-        {
-          "include": "#array"
-        },
-        {
-          "include": "#procedure"
-        },
-        {
-          "include": "#number"
-        },
-        {
-          "include": "#name"
+          "include": "#content"
         }
       ]
     },
     "number": {
       "patterns": [
         {
-          "name": "constant.numeric.float.postscript",
-          "match": "[+-]?(?:\\d+\\.\\d*|\\.\\d+)(?:[eE][+-]?\\d+)?\\b|[+-]?\\d+[eE][+-]?\\d+\\b"
+          "name": "constant.numeric.radix.postscript",
+          "match": "([2-9]|1[0-9]|2[0-9]|3[0-6])#[0-9A-Za-z]+"
         },
         {
-          "name": "constant.numeric.radix.postscript",
-          "match": "\\b(?:[2-9]|1[0-9]|2[0-9]|3[0-6])#[0-9A-Za-z]+\\b"
+          "name": "constant.numeric.float.postscript",
+          "match": "[+-]?\\d+[eE][+-]?\\d+|[+-]?(?:\\d+\\.\\d*|\\.\\d+)(?:[eE][+-]?\\d+)?"
         },
         {
           "name": "constant.numeric.integer.postscript",
-          "match": "[+-]?\\d+\\b"
+          "match": "[+-]?\\d+"
         }
       ]
     },
     "name": {
       "patterns": [
         {
-          "name": "variable.other.executable-name.postscript",
-          "match": "[^\\s\\[\\]{}<>/%()#0-9][^\\s\\[\\]{}<>/%()]*|//[^\\s\\[\\]{}<>/%()]*"
+          "name": "support.variable.postscript",
+          "begin": "//",
+          "end": "(?=[\\s{}/()\\]\\[%])"
         },
         {
-          "name": "variable.other.literal-name.postscript",
-          "match": "/[^\\s\\[\\]{}<>/%()]*|/"
+          "name": "entity.name.postscript",
+          "begin": "/",
+          "end": "(?=[\\s{}/()\\]\\[%])"
+        },
+        {
+          "name": "support.function.postscript",
+          "match": "(?:[^\\s{}/()\\]\\[%])+"
         }
       ]
     }
