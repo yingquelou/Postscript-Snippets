@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.1.2]
+
+### Added
+- **Preload Details Notification** - New `postscript/preloadDetails` notification for real-time preload error updates
+
+### Changed
+- **Error Logging Refactor** - Unified error logging through `FeedbackManager` interface replacing scattered `console.error` calls
+- **Feedback Channel Responsibilities** - Clear separation of concerns: Problems panel for document-level errors, Output channel for server logs, Status bar for quick access
+- **Centralized Feedback Management** - All server console messages now directed to unified "PostScript" Output channel
+
+### Improved
+- **Error Visibility** - All extension logs (server console + preload errors) now consolidated in a single Output channel
+- **Status Bar Integration** - Quick status bar indicator showing preload error count with one-click access to details
+
 ## [1.1.1]
 
 ### Added

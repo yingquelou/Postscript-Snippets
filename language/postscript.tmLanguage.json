@@ -15,7 +15,7 @@
     "comment": {
       "name": "comment.line.percentage.postscript",
       "begin": "%",
-      "end": "(?=\\r?\\n)"
+      "end": "$"
     },
     "string": {
       "patterns": [
@@ -138,17 +138,17 @@
     "name": {
       "patterns": [
         {
-          "name": "support.variable.postscript",
+          "name": "meta.preprocessor.name.postscript",
           "begin": "//",
           "end": "(?=[\\s{}/()\\]\\[%])"
         },
         {
-          "name": "entity.name.postscript",
+          "name": "variable.name.postscript",
           "begin": "/",
           "end": "(?=[\\s{}/()\\]\\[%])"
         },
         {
-          "name": "support.function.postscript",
+          "name": "entity.name.function.postscript",
           "match": "(?:[^\\s{}/()\\]\\[%])+"
         }
       ]

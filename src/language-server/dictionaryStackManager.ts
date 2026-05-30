@@ -117,7 +117,6 @@ export class DictionaryStackManager {
       this.systemEntries = await this.gsRunner.getDictionaryStack(this.currentWorkingDirectory || undefined)
       this.systemLoaded = true
     } catch (error) {
-      console.error('[DictionaryStackManager] loadSystemEntries error:', error)
       this.systemEntries = []
       const errorMessage = error instanceof Error ? error.message : String(error)
       this.preloadErrors.push({
@@ -168,7 +167,6 @@ export class DictionaryStackManager {
         )
       }
     } catch (error) {
-      console.error('[DictionaryStackManager] Error loading preloaded entries:', error)
       const errorMessage = error instanceof Error ? error.message : String(error)
       this.preloadErrors.push({
         filePath: allDependencies.join(', '),

@@ -21,6 +21,10 @@ export function createLanguageClient(context: vscode.ExtensionContext): Language
   const serverWriter = new StreamMessageWriter(serverToClient)
   startServer(serverReader, serverWriter, psScriptsPath, snippetsPath)
 
+  // 创建 Output Channel（在 clientOptions 之前创建以便配置）
+  const outputChannel = vscode.window.createOutputChannel('PostScript')
+  context.subscriptions.push(outputChannel)
+
   const serverOptions: ServerOptions = () =>
     Promise.resolve({ reader: clientReader, writer: clientWriter })
 
@@ -33,6 +37,8 @@ export function createLanguageClient(context: vscode.ExtensionContext): Language
         vscode.workspace.createFileSystemWatcher('postscript.config.json')
       ]
     },
+    // 配置输出通道，将服务器 console 消息重定向到统一的输出通道
+    outputChannel: outputChannel
   }
 
   const client = new LanguageClient(
@@ -42,9 +48,6 @@ export function createLanguageClient(context: vscode.ExtensionContext): Language
     clientOptions
   )
   client.start()
-
-  const outputChannel = vscode.window.createOutputChannel('PostScript Preload')
-  context.subscriptions.push(outputChannel)
 
   const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100)
   statusBar.command = 'postscriptsnippets.showPreloadErrors'

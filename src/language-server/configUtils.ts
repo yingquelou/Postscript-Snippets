@@ -217,7 +217,6 @@ export async function getProjectConfig(workspaceRoot?: string): Promise<{ rawCon
     if (error.code === 'ENOENT') {
       return { rawConfig: {} }
     }
-    console.error(`[ConfigUtils] Failed to read project config from ${configPath}:`, error)
     return { rawConfig: {} }
   } finally {
     releaseConfigLock()

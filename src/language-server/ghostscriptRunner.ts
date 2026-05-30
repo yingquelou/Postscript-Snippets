@@ -166,7 +166,6 @@ export class GhostscriptRunner {
         .filter(Boolean)
         .join('\n\n')
 
-      console.error('[GhostscriptRunner] runGhostscript error:', message)
       throw new Error(message)
     } finally {
       await cleanup()

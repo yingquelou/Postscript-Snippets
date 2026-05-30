@@ -3,7 +3,7 @@
 	"displayName": "PostScript Programming Language",
 	"publisher": "yingquelou",
 	"description": "PostScript (Ghostscript) language support for VS Code: syntax highlighting, code snippets, language server with intelligent completions, and a full-featured debugger with breakpoints, variable inspection, and step-through debugging",
-	"version": "1.1.1",
+	"version": "1.1.2",
 	"keywords": [
 		"postscript",
 		"ghostscript",
@@ -157,7 +157,6 @@
 		"build:scripts": "tsc -b scripts",
 		"build:snippets": "node .scripts/snippetsGenerator.js",
 		"prebuild": "npm run build:scripts",
-		"tscbuild": "tsc -b src",
 		"build": "node .scripts/esbuild.js",
 		"postbuild": "npm run build:snippets",
 		"prepackage": "npm run build",
@@ -169,7 +168,7 @@
 		"watch:scripts": "tsc -b scripts --watch",
 		"prewatch": "npm run build",
 		"watch": "node .scripts/esbuild.js --watch",
-		"typecheck": "tsc --noEmit -p . && tsc --noEmit -p scripts",
+		"typecheck": "tsc -b src",
 		"package": "vsce package",
 		"publish": "vsce publish"
 	},
