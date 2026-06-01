@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.1.3] - 2026-06-01
+
+### Improved
+- **Completion Caching Efficiency** - Optimized completion caching strategy with real path normalization ensures identical configuration changes correctly share cache entries for equivalent files, improving cache hit rate increased
+- **Path Handling** - More robust path resolution handles relative paths, symlinks, and case variations correctly identifying the same files, preventing duplicate cache entries
+- **Cache Key Stability** - Cache keys now more consistent and less prone to conflicts, reducing unnecessary invalidation from minor path format differences
+
+
 ## [1.1.2]
 
 ### Added

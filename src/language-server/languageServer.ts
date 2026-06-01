@@ -26,7 +26,8 @@ import {
   PROJECT_CONFIG_FILENAME,
   getProjectConfig,
   invalidateConfigCache,
-  resolvePreloadConfig
+  resolvePreloadConfig,
+  isFileDeclared
 } from './configUtils'
 import {
   getCompletionPrefix,
@@ -34,6 +35,7 @@ import {
   filterSortAndLimitEntries
 } from './completionUtils'
 import { loadSnippetPrefixSet } from './snippetIndex'
+import { buildPreloadConfigKey } from './cacheUtils'
 
 
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument)
@@ -271,15 +273,50 @@ function setupConnection(connection: Connection) {
     const workspaceRoot = await getWorkspaceRoot(connection, currentFilePath)
     const projectConfig = await getProjectConfig(workspaceRoot)
 
-    const rawConfigKey = JSON.stringify(projectConfig.rawConfig)
-    const configKey = `${rawConfigKey}|${currentFilePath || ''}|${projectConfig.configDir || ''}|${workspaceRoot || ''}`
+    const isUndeclared = !currentFilePath || !isFileDeclared(projectConfig.rawConfig.dependencies, currentFilePath, workspaceRoot)
+    
+    if (isUndeclared) {
+      const configKey = await buildPreloadConfigKey(
+        [],
+        [],
+        [],
+        undefined,
+        undefined,
+        undefined,
+        projectConfig.configDir,
+        workspaceRoot
+      )
+      if (configKey === lastPreloadConfigKey && lastPreloadConfig) {
+        return lastPreloadConfig
+      }
+      lastPreloadConfigKey = configKey
+      lastPreloadConfig = {
+        fileLevel: [],
+        workspaceLevel: [],
+        globalLevel: []
+      }
+      return lastPreloadConfig
+    }
+
+    const resolvedConfig = resolvePreloadConfig(projectConfig.rawConfig, currentFilePath, projectConfig.configDir, workspaceRoot)
+    
+    const configKey = await buildPreloadConfigKey(
+      resolvedConfig.fileLevel,
+      resolvedConfig.workspaceLevel,
+      resolvedConfig.globalLevel,
+      resolvedConfig.executable,
+      resolvedConfig.workingDirectory,
+      resolvedConfig.buildArgs?.join(' ') || '',
+      projectConfig.configDir,
+      workspaceRoot
+    )
 
     if (configKey === lastPreloadConfigKey && lastPreloadConfig) {
       return lastPreloadConfig
     }
 
     lastPreloadConfigKey = configKey
-    lastPreloadConfig = resolvePreloadConfig(projectConfig.rawConfig, currentFilePath, projectConfig.configDir, workspaceRoot)
+    lastPreloadConfig = resolvedConfig
     return lastPreloadConfig
   }
 

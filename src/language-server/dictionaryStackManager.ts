@@ -1,6 +1,7 @@
 import { DictionaryEntry, DictionaryStackInfo, PreloadConfig } from './completionTypes'
 import { GhostscriptRunner } from './ghostscriptRunner'
 import { resolveGsExecutable } from '../ghostscriptHelper'
+import { resolveRealPath, djb2Hash } from './cacheUtils'
 
 import * as fs from 'fs'
 import * as path from 'path'
@@ -288,29 +289,38 @@ export class DictionaryStackManager {
   }
 
   private async generateCacheKey(config: PreloadConfig): Promise<string> {
-    const allDependencies = [
-      ...config.globalLevel,
-      ...config.workspaceLevel,
-      ...config.fileLevel
-    ]
-
-    const normalizedPaths = await Promise.all(allDependencies.map(async (file) => {
-      try {
-        const realPath = await fs.promises.realpath(file)
-        return path.normalize(realPath).replace(/\\/g, '/')
-      } catch {
-        return path.normalize(file).replace(/\\/g, '/')
+    const hashPart = async (paths: string[], name: string): Promise<string> => {
+      if (paths.length === 0) {
+        return `${name}:`
       }
-    }))
+      const sorted = [...paths].sort()
+      const normalized = await Promise.all(sorted.map(resolveRealPath))
+      const hash = djb2Hash(normalized.join('\0'))
+      return `${name}:${hash}`
+    }
 
-    normalizedPaths.sort()
+    const hashString = (value: string | undefined, name: string): string => {
+      if (!value) {
+        return `${name}:`
+      }
+      return `${name}:${djb2Hash(value)}`
+    }
 
-    const pathsKey = normalizedPaths.join('|')
-    const buildArgsKey = JSON.stringify(config.buildArgs || this.currentBuildArgs || [])
-    const executableKey = config.executable || this.currentExecutable || ''
-    const workingDirKey = config.workingDirectory || this.currentWorkingDirectory || ''
+    const [fileHash, workspaceHash, globalHash] = await Promise.all([
+      hashPart(config.fileLevel || [], 'f'),
+      hashPart(config.workspaceLevel || [], 'w'),
+      hashPart(config.globalLevel || [], 'g')
+    ])
 
-    return `${pathsKey}|${buildArgsKey}|${executableKey}|${workingDirKey}`
+    const buildArgs = (config.buildArgs || this.currentBuildArgs || []).join('|')
+    const executable = config.executable || this.currentExecutable || ''
+    const workingDir = config.workingDirectory || this.currentWorkingDirectory || ''
+
+    const argsHash = hashString(buildArgs, 'a')
+    const exeHash = executable ? `e:${djb2Hash(await resolveRealPath(executable))}` : 'e:'
+    const dirHash = workingDir ? `d:${djb2Hash(await resolveRealPath(workingDir))}` : 'd:'
+
+    return `v2|${fileHash}|${workspaceHash}|${globalHash}|${exeHash}|${dirHash}|${argsHash}`
   }
 
   setSystemEntries(entries: DictionaryEntry[]): void {

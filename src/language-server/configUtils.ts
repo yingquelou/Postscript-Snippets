@@ -254,3 +254,31 @@ export function matchesCompileFile(configFile: string, currentFilePath: string, 
 
   return candidatePaths.some(candidate => candidate === normalizedCurrent)
 }
+
+export function isFileDeclared(rawValue: any, currentFilePath: string | undefined, workspaceRoot: string | undefined): boolean {
+  const mapping = parseFileLevelPreloadConfig(rawValue)
+  if (!currentFilePath) {
+    return false
+  }
+
+  const resolvedKeys: string[] = []
+  const absoluteKey = normalizeConfigKey(currentFilePath)
+  resolvedKeys.push(absoluteKey)
+  if (workspaceRoot) {
+    const relativeKey = normalizeConfigKey(path.relative(workspaceRoot, currentFilePath))
+    if (relativeKey && relativeKey !== absoluteKey) {
+      resolvedKeys.push(relativeKey)
+    }
+  }
+  const basenameKey = normalizeConfigKey(path.basename(currentFilePath))
+  if (basenameKey && !resolvedKeys.includes(basenameKey)) {
+    resolvedKeys.push(basenameKey)
+  }
+
+  for (const key of resolvedKeys) {
+    if (mapping[key]) {
+      return true
+    }
+  }
+  return false
+}

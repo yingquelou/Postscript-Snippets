@@ -3,13 +3,20 @@
 %%
 currentglobal
 true setglobal
-/dap_init {
+errordict /handleerror {
+  $error dup /newerror false put
+  (ERROR_START(0){"error":") print
+  dup /errorname get =only
+  ( in ) print
+  /command get =only
+  ("}ERROR_END(0)) print flush
+} bind executeonly put
+$error /recordstacks false put
+/Dap
   <<>> begin
-    /next_id 1 def
-    /table <<>> def
+    /buffer 256 string def
     /stdout (%stdout) (w) file def
     /stderr (%stderr) (w) file def
-    /buffer 256 string def
     /compositeKey <<
       /dicttype 1
       /arraytype 1
@@ -19,9 +26,9 @@ true setglobal
       % <dict> <key>
       2 copy known {
           get true
-      } bind  {
+      } bind {
           pop pop false
-      } bind  ifelse
+      } bind ifelse
     } bind executeonly def
     /quotationEnclosed {
       (")print exec (")print
@@ -32,7 +39,6 @@ true setglobal
           /radix 16
           /format (\\u0000)
           dup length /len exch
-          /buffer 256 string
       >> begin
         /put_entry {
             map_table exch
@@ -67,7 +73,7 @@ true setglobal
                 13 (\\r)
                 9 (\\t)
             >>
-        ] 
+        ]
         {
             dup type switch exch 2 copy known {
                 get exec
@@ -76,14 +82,12 @@ true setglobal
       end
     } executeonly exec def
     /escape_tring {
-      <<[/ascii_escape /stdout] {dup dap_get_global}forall>> begin
-        {
-          dup ascii_escape exch knownGet
-          {print pop} {
-              stdout exch write
-          } ifelse
-        } forall
-      end
+      {
+        dup ascii_escape exch knownGet
+        {print pop} {
+            stdout exch write
+        } ifelse
+      } forall
     } bind executeonly def
     /preview {
       <<
@@ -109,13 +113,13 @@ true setglobal
         dup /devicetype exch
         dup /marktype exch
         dup /gstatetype exch
-        % filetype 
+        % filetype
         % booleantype
         % fontIDtype
         % realtype
         % savetype
         % integertype
-      >> 
+      >>
       1 index type knownGet {exec} {
         {=only} quotationEnclosed
       } ifelse
@@ -133,7 +137,7 @@ true setglobal
               theType /dicttype eq {
                 array /idx 0 def
                 exch dup {
-                  pop 2 index 
+                  pop 2 index
                   exch idx exch put
                   /idx 1 idx add def
                 } forall 1 dict begin
@@ -163,7 +167,7 @@ true setglobal
             % <dict> <array>
             dup length
             arg_dict /start get
-            arg_dict /count get 
+            arg_dict /count get
             getStartEnd
             /comma false def
             1 exch {
@@ -179,12 +183,12 @@ true setglobal
             } for pop pop
           end
         } forall
-      } def
+      } bind executeonly def
       /arraytype {
         <<>> begin
           dup length
           arg_dict /start get
-          arg_dict /count get 
+          arg_dict /count get
           getStartEnd
           /comma false def
           1 exch {
@@ -198,89 +202,77 @@ true setglobal
             (}) print
           } for pop
         end
-      } def
-      /packedarraytype {iterator /arraytype get exec} def
-      currentdict
-    end /iterator exch def
-    currentdict
-  end /dap_global exch store
-  errordict /handleerror {
-    $error dup /newerror false put
-    (ERROR_START(0){"error":") print
-    dup /errorname get =only
-    ( in ) print
-    /command get =only
-    ("}ERROR_END(0)) print flush
-  } bind executeonly put
-  $error /recordstacks false put
-} def
-/dap_get_global {dap_global exch get} bind executeonly def
-/dap_set_global {dap_global begin def end} bind executeonly def
+      } bind executeonly def
+      /packedarraytype {iterator /arraytype get exec} bind executeonly def
+    currentdict end /iterator exch readonly def
+  currentdict end
+/ProcSet defineresource pop
+
+/dap_init {
+  /.dap <<
+    /context <<
+      /next_id 1
+      /table <<>>
+    >>
+  >> /ProcSet defineresource pop
+} bind executeonly def
+/dap_get_from_context {
+  /.dap /ProcSet findresource
+  /context get exch get
+} bind executeonly def
+/dap_set_to_context {
+  /.dap /ProcSet findresource
+  /context get
+  begin def end
+} bind executeonly def
 /dap_incremental_id {
-  /next_id dap_get_global
-  dup 1 add /next_id exch dap_set_global
+  /next_id dap_get_from_context
+  dup 1 add /next_id exch dap_set_to_context
 } bind executeonly def
 /dap_set_obj {
-  /table dap_get_global 3 1 roll put
+  /table dap_get_from_context 3 1 roll put
 } bind executeonly def
 /dap_get_obj {
-  /table dap_get_global exch get
+  /table dap_get_from_context exch get
 } bind executeonly def
 /dap_stackTrace {
 % Unused: <arg_dict>
 pop } bind executeonly def
 /dap_scopes {
   % Unused: frameId
-  pop<<[/extractVariablesReference /compositeKey]
-  {dup dap_get_global} forall
-  /dstack countdictstack array dictstack>> begin 
+  pop /dstack countdictstack array dictstack
+  /Dap /ProcSet findresource begin
+  <<>> begin def
   ([{"name":"Operand Stack","expensive":true,) print
   count array astore aload extractVariablesReference
   (},{"name":"Execution Stack","expensive":true,) print
   countexecstack array execstack extractVariablesReference
   (},{"name":"Dictionary Stack","expensive":true,) print
   dstack extractVariablesReference
-  (}]) print end
+  (}]) print end end
 } bind executeonly def
 /dap_variables {
-  <<
-    [
-      /knownGet
-      /quotationEnclosed
-      /preview
-      /compositeKey
-      /escape_tring
-      /buffer
-      /iterator
-      /getStartEnd
-      /extractName
-      /extractValue
-      /extractType
-      /extractVariablesReference
-    ] {dup dap_get_global} forall
-  >> begin
+  /Dap /ProcSet findresource begin
+  <<>> begin
     /arg_dict exch def
     ([) print
     arg_dict /variablesReference get dap_get_obj
     dup type iterator exch get exec
     (]) print
-  end
+  end end
 } bind executeonly def
 /dap_evaluate {
   % {...} no empty
+  /Dap /ProcSet findresource begin
   <<
     /xnload {
-      dup type /nametype eq 
+      dup type /nametype eq
       1 index xcheck and {
         dup where {
           exch get true
         } {pop false} ifelse
       } {pop false} ifelse
     }
-    [/knownGet /preview /extractVariablesReference
-    /quotationEnclosed /extractType /compositeKey /buffer
-    /escape_tring]
-    {dup dap_get_global} forall
   >> begin
     dup length 1 sub
     0 exch 1 exch {
@@ -293,6 +285,6 @@ pop } bind executeonly def
       0 get dup ("result":) print preview (,) print
       dup extractType (,) print
     } if extractVariablesReference (})print
-  end 
+  end end
 } bind executeonly def
 setglobal
