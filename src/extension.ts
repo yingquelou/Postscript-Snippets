@@ -1,10 +1,13 @@
 import * as vscode from 'vscode'
 import { createLanguageClient, LANGUAGE_ID } from './language-server/languageServerClient'
 import { createPostscriptDebugConfigurationProvider } from './debugger/debugConfigurationProvider'
-import { compilePostscript, setupConfigWatcher, disposeConfigWatcher } from './compilePostscript'
+import { compilePostscript } from './compilePostscript'
 
 export function activate(context: vscode.ExtensionContext) {
-  const client = createLanguageClient(context)
+  const outputChannel = vscode.window.createOutputChannel('PostScript')
+  context.subscriptions.push(outputChannel)
+  
+  const client = createLanguageClient(context, outputChannel)
   context.subscriptions.push({ dispose() { client.stop() } })
 
   context.subscriptions.push(
@@ -17,11 +20,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand('postscriptsnippets.compilePostscript', compilePostscript)
   )
-
-  setupConfigWatcher()
-  context.subscriptions.push({ dispose() { disposeConfigWatcher() } })
 }
 
 export function deactivate() {
-  disposeConfigWatcher()
 }

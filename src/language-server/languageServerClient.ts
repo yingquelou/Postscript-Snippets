@@ -7,7 +7,7 @@ import { startServer } from './languageServer'
 
 const LANGUAGE_ID = 'postscript'
 
-export function createLanguageClient(context: vscode.ExtensionContext): LanguageClient {
+export function createLanguageClient(context: vscode.ExtensionContext, outputChannel: vscode.OutputChannel): LanguageClient {
   const clientToServer = new PassThrough()
   const serverToClient = new PassThrough()
   const clientReader = new StreamMessageReader(serverToClient)
@@ -20,10 +20,6 @@ export function createLanguageClient(context: vscode.ExtensionContext): Language
   const serverReader = new StreamMessageReader(clientToServer)
   const serverWriter = new StreamMessageWriter(serverToClient)
   startServer(serverReader, serverWriter, psScriptsPath, snippetsPath)
-
-  // 创建 Output Channel（在 clientOptions 之前创建以便配置）
-  const outputChannel = vscode.window.createOutputChannel('PostScript')
-  context.subscriptions.push(outputChannel)
 
   const serverOptions: ServerOptions = () =>
     Promise.resolve({ reader: clientReader, writer: clientWriter })

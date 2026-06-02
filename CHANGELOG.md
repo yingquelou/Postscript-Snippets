@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.1.5]
+
+### Changed
+- **Configuration Change Feedback** - Configuration file updates now log to the Output channel instead of showing popup notifications, reducing user distraction
+- **Code Refactoring** - Output channel creation moved from language server client to extension activation function for better architectural separation
+- **Duplicate Listener Removal** - Removed redundant configuration file watcher from compile command, now relying solely on language server's existing listener
+
+### Improved
+- **Reduced Popup Notifications** - Minimized intrusive UI notifications; configuration changes are now logged silently to the PostScript Output channel
+- **Code Maintainability** - Eliminated duplicate configuration monitoring logic across modules
+
 ## [1.1.4]
 
 ### Improved

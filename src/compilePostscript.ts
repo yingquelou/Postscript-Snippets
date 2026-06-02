@@ -7,36 +7,8 @@ import {
   getProjectConfig,
   matchesCompileFile,
   resolveConfigPath,
-  invalidateConfigCache,
   PostscriptProjectConfig
 } from './language-server/configUtils'
-
-let configWatcher: vscode.FileSystemWatcher | undefined
-
-export function setupConfigWatcher(): void {
-  if (configWatcher) {
-    configWatcher.dispose()
-  }
-  
-  configWatcher = vscode.workspace.createFileSystemWatcher(`**/${PROJECT_CONFIG_FILENAME}`)
-  configWatcher.onDidChange(() => {
-    invalidateConfigCache()
-    vscode.window.showInformationMessage('PostScript configuration updated. Changes will take effect on next compile.')
-  })
-  configWatcher.onDidCreate(() => {
-    invalidateConfigCache()
-  })
-  configWatcher.onDidDelete(() => {
-    invalidateConfigCache()
-  })
-}
-
-export function disposeConfigWatcher(): void {
-  if (configWatcher) {
-    configWatcher.dispose()
-    configWatcher = undefined
-  }
-}
 
 export async function compilePostscript(resource?: vscode.Uri): Promise<void> {
   const documentUri = resource ?? vscode.window.activeTextEditor?.document.uri
