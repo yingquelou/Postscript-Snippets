@@ -227,7 +227,7 @@ const main = async () => {
       packageObj.scripts = existingScripts
       packageObj.devDependencies = existingDevDependencies
 
-      fs.writeFileSync(packageFile, JSON.stringify(packageObj, null, '\t') + '\n')
+      fs.writeFileSync(packageFile, JSON.stringify(packageObj))
       console.log('成功更新package.json')
     } catch (error) {
       console.error('更新package.json时出错:', error)

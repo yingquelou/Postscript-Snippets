@@ -6,13 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [1.1.3] - 2026-06-01
+## [1.1.4]
+
+### Improved
+- **Debugger Panel Preview** - the preview of certain PS objects
+
+## [1.1.3]
 
 ### Improved
 - **Completion Caching Efficiency** - Optimized completion caching strategy with real path normalization ensures identical configuration changes correctly share cache entries for equivalent files, improving cache hit rate increased
 - **Path Handling** - More robust path resolution handles relative paths, symlinks, and case variations correctly identifying the same files, preventing duplicate cache entries
 - **Cache Key Stability** - Cache keys now more consistent and less prone to conflicts, reducing unnecessary invalidation from minor path format differences
-
 
 ## [1.1.2]
 
@@ -49,7 +53,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Path Normalization** - Enhanced cross-platform path resolution for dependency files
 - **Workspace Awareness** - Better integration with VS Code workspace folders and multi-root workspaces
 
-## [1.1.0] - 2026-05-05
+## [1.1.0]
 
 ### Added
 - **Bilingual Documentation** - Separate English / Chinese user documentation

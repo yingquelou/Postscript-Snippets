@@ -92,7 +92,6 @@ $error /recordstacks false put
     /preview {
       <<
         /arraytype {pop ("-array-") print}
-        /dicttype {{==only} quotationEnclosed}
         /packedarraytype {pop ("-packedarray-") print}
         /operatortype {{
           buffer cvs escape_tring
@@ -113,12 +112,11 @@ $error /recordstacks false put
         dup /devicetype exch
         dup /marktype exch
         dup /gstatetype exch
-        % filetype
-        % booleantype
-        % fontIDtype
-        % realtype
-        % savetype
-        % integertype
+        dup /dicttype exch
+        dup /filetype exch
+        dup /savetype exch
+        dup /fonttype exch
+        % booleantype realtype integertype fontIDtype
       >>
       1 index type knownGet {exec} {
         {=only} quotationEnclosed
