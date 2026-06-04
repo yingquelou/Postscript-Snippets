@@ -3,20 +3,10 @@
 %%
 currentglobal
 true setglobal
-errordict /handleerror {
-  $error dup /newerror false put
-  (ERROR_START(0){"error":") print
-  dup /errorname get =only
-  ( in ) print
-  /command get =only
-  ("}ERROR_END(0)) print flush
-} bind executeonly put
-$error /recordstacks false put
 /Dap
   <<>> begin
     /buffer 256 string def
     /stdout (%stdout) (w) file def
-    /stderr (%stderr) (w) file def
     /compositeKey <<
       /dicttype 1
       /arraytype 1
@@ -207,21 +197,30 @@ $error /recordstacks false put
 /ProcSet defineresource pop
 
 /dap_init {
-  /.dap <<
+  (%dap%) <<
     /context <<
-      /next_id 1
-      /table <<>>
+    /next_id 1
+    /table <<>>
     >>
   >> /ProcSet defineresource pop
+  errordict /handleerror {
+  $error dup /newerror false put
+  (ERROR_START(0){"error":") print
+  dup /errorname get =only
+  ( in ) print
+  /command get =only
+  ("}ERROR_END(0)) print flush
+} bind executeonly put
+$error /recordstacks false put
+} bind executeonly def
+/dap_config_context {
+  /context (%dap%) /ProcSet findresource 1 index get def
 } bind executeonly def
 /dap_get_from_context {
-  /.dap /ProcSet findresource
-  /context get exch get
+  context exch get
 } bind executeonly def
 /dap_set_to_context {
-  /.dap /ProcSet findresource
-  /context get
-  begin def end
+  context begin def end
 } bind executeonly def
 /dap_incremental_id {
   /next_id dap_get_from_context
@@ -240,7 +239,7 @@ pop } bind executeonly def
   % Unused: frameId
   pop /dstack countdictstack array dictstack
   /Dap /ProcSet findresource begin
-  <<>> begin def
+  <<>> begin def dap_config_context
   ([{"name":"Operand Stack","expensive":true,) print
   count array astore aload extractVariablesReference
   (},{"name":"Execution Stack","expensive":true,) print
@@ -252,7 +251,7 @@ pop } bind executeonly def
 /dap_variables {
   /Dap /ProcSet findresource begin
   <<>> begin
-    /arg_dict exch def
+    /arg_dict exch def dap_config_context
     ([) print
     arg_dict /variablesReference get dap_get_obj
     dup type iterator exch get exec
@@ -271,7 +270,7 @@ pop } bind executeonly def
         } {pop false} ifelse
       } {pop false} ifelse
     }
-  >> begin
+  >> begin dap_config_context
     dup length 1 sub
     0 exch 1 exch {
       2 copy get xnload {

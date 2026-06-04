@@ -202,9 +202,10 @@ export class DictionaryStackManager {
       needsSystemReload = true
     }
 
-    if (config.buildArgs && !this.arraysEqual(config.buildArgs, this.currentBuildArgs)) {
-      this.gsRunner.setBuildArgs(config.buildArgs)
-      this.currentBuildArgs = config.buildArgs
+    const newBuildArgs = config.buildArgs || []
+    if (!this.arraysEqual(newBuildArgs, this.currentBuildArgs)) {
+      this.gsRunner.setBuildArgs(newBuildArgs)
+      this.currentBuildArgs = newBuildArgs
       needsSystemReload = true
     }
 

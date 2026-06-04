@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.1.6]
+
+### Fixed
+- **Completion Isolation** - Files not declared in configuration file are now properly isolated from buildArgs of other files; this fixes an issue where `-sstdout=...` parameters in one file's configuration would incorrectly disable dynamic completion for all other files
+- **Configuration Change Response** - Configuration file changes now properly trigger reloading of preloaded entries for all open documents, ensuring completion reflects updated `buildArgs`, `inputs`, and other configuration changes
+- **Debugger stderr Handling** - Fixed incorrect JSON parsing of Ghostscript stderr output; stderr content is now properly displayed as plain text in the debug console since DAP errors are transmitted via stdout with block markers
+
 ## [1.1.5]
 
 ### Changed

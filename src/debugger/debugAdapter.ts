@@ -242,6 +242,7 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
         this._stepping = false
         this.sendEvent(new debugadapter.StoppedEvent('exception', 1, msg.error))
       }
+      this.sendEvent(new debugadapter.OutputEvent(`Error: ${msg.error}\n`, 'stderr'))
     } catch (e: any) {
       this.sendEvent(new debugadapter.OutputEvent(`Error parsing error block: ${block.content}\n`, 'stderr'))
     }
@@ -265,11 +266,9 @@ class GhostscriptDebugSession extends debugadapter.DebugSession {
       return
     }
     const handler = (chunk: Buffer | string) => {
-      try {
-        const obj = JSON.parse(chunk.toString())
-        this.sendEvent(new debugadapter.StoppedEvent('exception', 1, obj.error))
-      } catch (error) {
-        this.sendEvent(new debugadapter.OutputEvent(`Ghostscript error: ${error}\n`, 'stderr'))
+      const content = chunk.toString()
+      if (content.trim()) {
+        this.sendEvent(new debugadapter.OutputEvent(content, 'stderr'))
       }
     }
     this.gsProcesses.stderr.on('data', handler)
