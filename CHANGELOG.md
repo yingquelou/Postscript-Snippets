@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.1.8]
+
+### Added
+- **Extension Icon** - The marketplace listing now has a proper icon: a 128x128 mark built from `%!`, the magic number every PostScript file starts with
+
+### Changed
+- **Tokenless Releases** - Publishing to both registries now uses OIDC trusted publishing (`vsce publish --oidc`, `ovsx publish --trusted-publishing`); the repository no longer needs `VSCE_PAT` or `OVSX_PAT`, and a guard step fails the build if either re-appears
+
+### Removed
+- **Open VSX Preflight Check** - Publishing no longer probes the registry before uploading; the API sits behind a CDN with a 10-minute TTL and a stale edge node could falsely report the namespace as unverified, silently skipping a correct release
+
 ## [1.1.7]
 
 ### Added
