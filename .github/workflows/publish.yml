@@ -6,13 +6,14 @@ name: Publish Extension
 # 两个注册表都不再使用长期凭据，仓库里不需要 VSCE_PAT / OVSX_PAT。
 # 也可以在 Actions 页面手动触发，默认只构建不发布（dry_run）。
 #
-# 首次迁移需要手工完成的一次性配置（详见发布说明）：
+# 首次迁移需要手工完成的一次性配置（已完成，留作记录）：
 #   1. Marketplace：Marketplace 管理页 → Publisher yingquelou → Trusted Publishing
 #      新建策略，Repository owner=yingquelou，Repository=Postscript-Snippets，
 #      Workflow=publish.yml，Environment 留空。
-#   2. Open VSX：该注册表要求命名空间已验证、且扩展已有活跃版本，才允许登记
-#      Trusted Publisher。因此首个版本仍需用 PAT 手工推一次，之后在
-#      open-vsx.org → Settings → Trusted Publishers 登记同样的仓库与工作流。
+#   2. Open VSX：命名空间认领通过后，在 open-vsx.org → Settings → Trusted
+#      Publishers 登记同样的仓库与工作流。workflow 字段必须**正好**是文件名
+#      （publish.yml）：服务端会拼成 owner/repo/.github/workflows/<workflow>
+#      再与 OIDC token 的 workflow_ref 严格比较，多一个字都不匹配。
 
 on:
   push:
@@ -159,38 +160,14 @@ jobs:
 
           exit $status
 
-      # Open VSX 的可信发布有硬性前置：命名空间已验证 + 扩展已有活跃版本。
-      # 两者都不由本工作流控制，缺任意一项时 ovsx 会直接失败，因此先探测、
-      # 再决定是否发布，避免每次发布都因外部状态报错。
-      - name: Check Open VSX trusted publishing prerequisites
-        id: preflight
-        if: startsWith(github.ref, 'refs/tags/v') && inputs.dry_run != true
-        shell: bash
-        run: |
-          ns_code="$(curl -sS -o /tmp/ns.json -w '%{http_code}' "https://open-vsx.org/api/$PUBLISHER" || echo 000)"
-          ext_code="$(curl -sS -o /tmp/ext.json -w '%{http_code}' "https://open-vsx.org/api/$PUBLISHER/$EXTENSION_NAME" || echo 000)"
-
-          verified=false
-          if [ "$ns_code" = "200" ]; then
-            verified="$(python3 -c "import json;print(str(json.load(open('/tmp/ns.json')).get('verified', False)).lower())" 2>/dev/null || echo false)"
-          fi
-
-          echo "namespace HTTP: $ns_code (verified=$verified)"
-          echo "extension HTTP: $ext_code"
-
-          if [ "$ns_code" = "200" ] && [ "$verified" = "true" ] && [ "$ext_code" = "200" ]; then
-            echo "ready=true" >> "$GITHUB_OUTPUT"
-            echo "Open VSX prerequisites met: verified namespace and an active version exist."
-          else
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Skipping Open VSX. Trusted publishing requires a verified namespace (verified=$verified) and an already-active extension version (HTTP $ext_code). Publish the first version with a PAT, then register the trusted publisher on open-vsx.org and delete OVSX_PAT."
-          fi
-
       # 两个注册表相互独立：任一方失败都不应阻止另一方发布，
-      # 失败情况由最后的汇总步骤统一报告。
+      # 失败情况由最后的汇总步骤统一报告。这里不做任何“前置探测”——
+      # open-vsx.org 的 API 走 Fastly（max-age=600），曾出现边缘节点返回
+      # 8 分钟前的旧 JSON（verified=false、extensions 为空），据此跳过发布
+      # 会把配置正确的一次发布误判掉。--skip-duplicate 已保证重跑安全。
       - name: Publish to VS Code Marketplace
         id: marketplace
-        if: startsWith(github.ref, 'refs/tags/v') && inputs.dry_run != true
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run != true) || startsWith(github.ref, 'refs/tags/v') }}
         continue-on-error: true
         shell: bash
         run: |
@@ -202,27 +179,26 @@ jobs:
 
       - name: Publish to Open VSX
         id: openvsx
-        if: startsWith(github.ref, 'refs/tags/v') && inputs.dry_run != true && steps.preflight.outputs.ready == 'true'
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run != true) || startsWith(github.ref, 'refs/tags/v') }}
         continue-on-error: true
         shell: bash
         run: |
-          # 命名空间已存在、扩展已有活跃版本，因此不再执行 create-namespace / verify-pat
-          # （这两个子命令只接受 PAT）。--trusted-publishing 在拿不到 ID token 时会
-          # 直接失败，而不是静默退回 PAT，正好用来兜住配置错误。
-          npx --yes ovsx@1.3.0 publish "$VSIX_FILE" --trusted-publishing --skip-duplicate
+          # 命名空间与扩展均已在注册表存在，因此不再执行 create-namespace /
+          # verify-pat（这两个子命令只接受 PAT）。--trusted-publishing 在拿不到
+          # ID token 或没有匹配的 Trusted Publisher 时会直接失败，而不是静默
+          # 退回 PAT，正好用来兜住配置错误。
+          if ! npx --yes ovsx@1.3.0 publish "$VSIX_FILE" --trusted-publishing --skip-duplicate; then
+            echo "::error::Open VSX trusted publishing failed. Check the registration at https://open-vsx.org/user-settings/trusted-publishers: workflow must be exactly 'publish.yml' (the server expands it to $PUBLISHER/Postscript-Snippets/.github/workflows/publish.yml and compares it with the token's workflow_ref)."
+            exit 1
+          fi
 
       - name: Summarize publish results
-        if: startsWith(github.ref, 'refs/tags/v') && inputs.dry_run != true
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run != true) || startsWith(github.ref, 'refs/tags/v') }}
         shell: bash
         env:
           MARKETPLACE_RESULT: ${{ steps.marketplace.outcome }}
           OPENVSX_RESULT: ${{ steps.openvsx.outcome }}
-          OPENVSX_READY: ${{ steps.preflight.outputs.ready }}
         run: |
-          if [ "$OPENVSX_RESULT" = "skipped" ] && [ "$OPENVSX_READY" != "true" ]; then
-            OPENVSX_RESULT="skipped (prerequisites not met)"
-          fi
-
           echo "VS Code Marketplace: $MARKETPLACE_RESULT"
           echo "Open VSX:            $OPENVSX_RESULT"
           {
@@ -234,14 +210,16 @@ jobs:
             echo "| Open VSX | \`ovsx publish --trusted-publishing\` | $OPENVSX_RESULT |"
           } >> "$GITHUB_STEP_SUMMARY"
 
+          status=0
           if [ "$MARKETPLACE_RESULT" != "success" ]; then
             echo "::error::VS Code Marketplace publish failed - see the step log above"
-            exit 1
+            status=1
           fi
-          if [ "$OPENVSX_READY" = "true" ] && [ "$OPENVSX_RESULT" != "success" ]; then
+          if [ "$OPENVSX_RESULT" != "success" ]; then
             echo "::error::Open VSX publish failed - see the step log above"
-            exit 1
+            status=1
           fi
+          exit $status
 
       - name: Upload VSIX artifact
         if: always()
