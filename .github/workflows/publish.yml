@@ -1,9 +1,18 @@
 name: Publish Extension
 
 # 推送 v* 标签（如 v1.1.7）时构建并发布到两个注册表：
-#   - VS Code Marketplace（需要 secrets.VSCE_PAT）
-#   - Open VSX（需要 secrets.OVSX_PAT）
+#   - VS Code Marketplace：OIDC 可信发布（vsce publish --oidc）
+#   - Open VSX：OIDC 可信发布（ovsx publish --trusted-publishing）
+# 两个注册表都不再使用长期凭据，仓库里不需要 VSCE_PAT / OVSX_PAT。
 # 也可以在 Actions 页面手动触发，默认只构建不发布（dry_run）。
+#
+# 首次迁移需要手工完成的一次性配置（详见发布说明）：
+#   1. Marketplace：Marketplace 管理页 → Publisher yingquelou → Trusted Publishing
+#      新建策略，Repository owner=yingquelou，Repository=Postscript-Snippets，
+#      Workflow=publish.yml，Environment 留空。
+#   2. Open VSX：该注册表要求命名空间已验证、且扩展已有活跃版本，才允许登记
+#      Trusted Publisher。因此首个版本仍需用 PAT 手工推一次，之后在
+#      open-vsx.org → Settings → Trusted Publishers 登记同样的仓库与工作流。
 
 on:
   push:
@@ -25,12 +34,22 @@ concurrency:
 
 env:
   VSIX_FILE: postscriptsnippets.vsix
+  EXTENSION_NAME: postscriptsnippets
   PUBLISHER: yingquelou
 
 jobs:
   publish:
     name: Build & Publish
     runs-on: ubuntu-latest
+    # 请求 GitHub OIDC ID token 所需；两个注册表都用它换取短时凭据。
+    # 注意：job 级 permissions 会整体覆盖 workflow 级设置，因此 contents 要重申。
+    permissions:
+      contents: read
+      id-token: write
+    # 可选加固：如需发布前人工审批，取消下一行注释，并在 Marketplace 的
+    # Trusted Publishing 策略与 Open VSX 的 Trusted Publisher 注册里都把
+    # Environment 填成同名值（两边必须完全一致，否则鉴权失败）。
+    # environment: release
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -68,6 +87,20 @@ jobs:
             echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $pkg_version"
             exit 1
           fi
+
+      # 可信发布的前提是“没有任何长期凭据参与”。--pat / OVSX_PAT 的优先级
+      # 高于 OIDC，一旦被注入就会静默退回 PAT 认证，等于没迁移，所以这里硬拦。
+      - name: Ensure no long-lived publishing token is present
+        shell: bash
+        run: |
+          status=0
+          for name in VSCE_PAT OVSX_PAT; do
+            if [ -n "${!name:-}" ]; then
+              echo "::error::$name is set. Trusted publishing must run without a PAT; remove the secret or the env binding."
+              status=1
+            fi
+          done
+          exit $status
 
       - name: Type check
         run: npm run typecheck
@@ -126,6 +159,33 @@ jobs:
 
           exit $status
 
+      # Open VSX 的可信发布有硬性前置：命名空间已验证 + 扩展已有活跃版本。
+      # 两者都不由本工作流控制，缺任意一项时 ovsx 会直接失败，因此先探测、
+      # 再决定是否发布，避免每次发布都因外部状态报错。
+      - name: Check Open VSX trusted publishing prerequisites
+        id: preflight
+        if: startsWith(github.ref, 'refs/tags/v') && inputs.dry_run != true
+        shell: bash
+        run: |
+          ns_code="$(curl -sS -o /tmp/ns.json -w '%{http_code}' "https://open-vsx.org/api/$PUBLISHER" || echo 000)"
+          ext_code="$(curl -sS -o /tmp/ext.json -w '%{http_code}' "https://open-vsx.org/api/$PUBLISHER/$EXTENSION_NAME" || echo 000)"
+
+          verified=false
+          if [ "$ns_code" = "200" ]; then
+            verified="$(python3 -c "import json;print(str(json.load(open('/tmp/ns.json')).get('verified', False)).lower())" 2>/dev/null || echo false)"
+          fi
+
+          echo "namespace HTTP: $ns_code (verified=$verified)"
+          echo "extension HTTP: $ext_code"
+
+          if [ "$ns_code" = "200" ] && [ "$verified" = "true" ] && [ "$ext_code" = "200" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "Open VSX prerequisites met: verified namespace and an active version exist."
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Skipping Open VSX. Trusted publishing requires a verified namespace (verified=$verified) and an already-active extension version (HTTP $ext_code). Publish the first version with a PAT, then register the trusted publisher on open-vsx.org and delete OVSX_PAT."
+          fi
+
       # 两个注册表相互独立：任一方失败都不应阻止另一方发布，
       # 失败情况由最后的汇总步骤统一报告。
       - name: Publish to VS Code Marketplace
@@ -133,49 +193,53 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v') && inputs.dry_run != true
         continue-on-error: true
         shell: bash
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
         run: |
-          if [ -z "${VSCE_PAT}" ]; then
-            echo "::error::Secret VSCE_PAT is not configured"
+          # GitHub OIDC token 换取 Marketplace 凭据，有效期 15 分钟，不落盘
+          if ! npx vsce publish --packagePath "$VSIX_FILE" --oidc --skip-duplicate; then
+            echo "::error::Marketplace OIDC publish failed. Confirm the Trusted Publishing policy on publisher '$PUBLISHER' names owner=yingquelou, repo=Postscript-Snippets, workflow=publish.yml (and the same environment, if any), and that this job grants id-token: write."
             exit 1
           fi
-          npx --yes @vscode/vsce@3.9.1 publish --packagePath "$VSIX_FILE" -p "$VSCE_PAT" --skip-duplicate
 
       - name: Publish to Open VSX
         id: openvsx
-        if: startsWith(github.ref, 'refs/tags/v') && inputs.dry_run != true
+        if: startsWith(github.ref, 'refs/tags/v') && inputs.dry_run != true && steps.preflight.outputs.ready == 'true'
         continue-on-error: true
         shell: bash
-        env:
-          OVSX_PAT: ${{ secrets.OVSX_PAT }}
         run: |
-          if [ -z "${OVSX_PAT}" ]; then
-            echo "::error::Secret OVSX_PAT is not configured"
-            exit 1
-          fi
-          # 首次发布前需要创建命名空间；已存在时会报错，这里忽略即可
-          npx --yes ovsx@1.3.0 create-namespace "$PUBLISHER" -p "$OVSX_PAT" \
-            || echo "::notice::Namespace $PUBLISHER already exists, continuing"
-          npx --yes ovsx@1.3.0 verify-pat "$PUBLISHER" -p "$OVSX_PAT"
-          npx --yes ovsx@1.3.0 publish "$VSIX_FILE" -p "$OVSX_PAT" --skip-duplicate
+          # 命名空间已存在、扩展已有活跃版本，因此不再执行 create-namespace / verify-pat
+          # （这两个子命令只接受 PAT）。--trusted-publishing 在拿不到 ID token 时会
+          # 直接失败，而不是静默退回 PAT，正好用来兜住配置错误。
+          npx --yes ovsx@1.3.0 publish "$VSIX_FILE" --trusted-publishing --skip-duplicate
 
       - name: Summarize publish results
         if: startsWith(github.ref, 'refs/tags/v') && inputs.dry_run != true
         shell: bash
+        env:
+          MARKETPLACE_RESULT: ${{ steps.marketplace.outcome }}
+          OPENVSX_RESULT: ${{ steps.openvsx.outcome }}
+          OPENVSX_READY: ${{ steps.preflight.outputs.ready }}
         run: |
-          echo "VS Code Marketplace: ${{ steps.marketplace.outcome }}"
-          echo "Open VSX:            ${{ steps.openvsx.outcome }}"
+          if [ "$OPENVSX_RESULT" = "skipped" ] && [ "$OPENVSX_READY" != "true" ]; then
+            OPENVSX_RESULT="skipped (prerequisites not met)"
+          fi
+
+          echo "VS Code Marketplace: $MARKETPLACE_RESULT"
+          echo "Open VSX:            $OPENVSX_RESULT"
           {
-            echo "## Publish results"
+            echo "## Publish results (OIDC trusted publishing)"
             echo ""
-            echo "| Registry | Result |"
-            echo "| --- | --- |"
-            echo "| VS Code Marketplace | ${{ steps.marketplace.outcome }} |"
-            echo "| Open VSX | ${{ steps.openvsx.outcome }} |"
+            echo "| Registry | Method | Result |"
+            echo "| --- | --- | --- |"
+            echo "| VS Code Marketplace | \`vsce publish --oidc\` | $MARKETPLACE_RESULT |"
+            echo "| Open VSX | \`ovsx publish --trusted-publishing\` | $OPENVSX_RESULT |"
           } >> "$GITHUB_STEP_SUMMARY"
-          if [ "${{ steps.marketplace.outcome }}" != "success" ] || [ "${{ steps.openvsx.outcome }}" != "success" ]; then
-            echo "::error::At least one registry failed to publish - see the table above"
+
+          if [ "$MARKETPLACE_RESULT" != "success" ]; then
+            echo "::error::VS Code Marketplace publish failed - see the step log above"
+            exit 1
+          fi
+          if [ "$OPENVSX_READY" = "true" ] && [ "$OPENVSX_RESULT" != "success" ]; then
+            echo "::error::Open VSX publish failed - see the step log above"
             exit 1
           fi
 

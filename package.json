@@ -179,7 +179,7 @@
 		"@types/vscode": "^1.70.3",
 		"@vscode/debugadapter": "^1.68.0",
 		"@vscode/debugprotocol": "^1.68.0",
-		"@vscode/vsce": "^3.9.1",
+		"@vscode/vsce": "^4.1.0",
 		"chevrotain": "^12.0.0",
 		"esbuild": "^0.28.0",
 		"marked": "^18.0.4",
