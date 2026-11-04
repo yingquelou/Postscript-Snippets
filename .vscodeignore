@@ -7,6 +7,7 @@ docs/
 snippets/
 *.ps1
 *.md
+icon.svg
 *.bat
 tsconfig.json
 tsconfig.scripts.json
