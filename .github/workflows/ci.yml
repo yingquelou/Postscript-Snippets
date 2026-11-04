@@ -43,16 +43,25 @@ jobs:
         run: pnpm install --no-frozen-lockfile
 
       # dictionaryStackManager 的测试会实际 spawn Ghostscript 加载 systemdict
-      - name: Install Ghostscript
-        shell: bash
+      - name: Install Ghostscript (Linux)
+        if: runner.os == 'Linux'
         run: |
-          if [ "$RUNNER_OS" = "Linux" ]; then
-            sudo apt-get update -qq
-            sudo apt-get install -y --no-install-recommends ghostscript
-          else
-            choco install ghostscript -y --no-progress
-          fi
-          gs --version || gswin64c --version
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends ghostscript
+          gs --version
+
+      # choco 安装后当前会话的 PATH 不会刷新，需要显式写入 GITHUB_PATH
+      - name: Install Ghostscript (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install ghostscript -y --no-progress
+          $exe = Get-ChildItem "C:\Program Files\gs" -Recurse -Filter gswin64c.exe |
+            Select-Object -First 1
+          if (-not $exe) { throw "gswin64c.exe not found after install" }
+          Write-Host "Found $($exe.FullName)"
+          Add-Content -Path $env:GITHUB_PATH -Value $exe.DirectoryName
+          & $exe.FullName --version
 
       - name: Type check
         run: npm run typecheck

@@ -51,15 +51,10 @@ jobs:
 
       # dictionaryStackManager 的测试会实际 spawn Ghostscript 加载 systemdict
       - name: Install Ghostscript
-        shell: bash
         run: |
-          if [ "$RUNNER_OS" = "Linux" ]; then
-            sudo apt-get update -qq
-            sudo apt-get install -y --no-install-recommends ghostscript
-          else
-            choco install ghostscript -y --no-progress
-          fi
-          gs --version || gswin64c --version
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends ghostscript
+          gs --version
 
       - name: Verify tag matches package.json version
         if: startsWith(github.ref, 'refs/tags/v')
@@ -131,8 +126,12 @@ jobs:
 
           exit $status
 
+      # 两个注册表相互独立：任一方失败都不应阻止另一方发布，
+      # 失败情况由最后的汇总步骤统一报告。
       - name: Publish to VS Code Marketplace
+        id: marketplace
         if: startsWith(github.ref, 'refs/tags/v') && inputs.dry_run != true
+        continue-on-error: true
         shell: bash
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
@@ -141,10 +140,12 @@ jobs:
             echo "::error::Secret VSCE_PAT is not configured"
             exit 1
           fi
-          npx --yes @vscode/vsce@3.9.1 publish --packagePath "$VSIX_FILE" -p "$VSCE_PAT"
+          npx --yes @vscode/vsce@3.9.1 publish --packagePath "$VSIX_FILE" -p "$VSCE_PAT" --skip-duplicate
 
       - name: Publish to Open VSX
+        id: openvsx
         if: startsWith(github.ref, 'refs/tags/v') && inputs.dry_run != true
+        continue-on-error: true
         shell: bash
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
@@ -157,7 +158,26 @@ jobs:
           npx --yes ovsx@1.3.0 create-namespace "$PUBLISHER" -p "$OVSX_PAT" \
             || echo "::notice::Namespace $PUBLISHER already exists, continuing"
           npx --yes ovsx@1.3.0 verify-pat "$PUBLISHER" -p "$OVSX_PAT"
-          npx --yes ovsx@1.3.0 publish "$VSIX_FILE" -p "$OVSX_PAT"
+          npx --yes ovsx@1.3.0 publish "$VSIX_FILE" -p "$OVSX_PAT" --skip-duplicate
+
+      - name: Summarize publish results
+        if: startsWith(github.ref, 'refs/tags/v') && inputs.dry_run != true
+        shell: bash
+        run: |
+          echo "VS Code Marketplace: ${{ steps.marketplace.outcome }}"
+          echo "Open VSX:            ${{ steps.openvsx.outcome }}"
+          {
+            echo "## Publish results"
+            echo ""
+            echo "| Registry | Result |"
+            echo "| --- | --- |"
+            echo "| VS Code Marketplace | ${{ steps.marketplace.outcome }} |"
+            echo "| Open VSX | ${{ steps.openvsx.outcome }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.marketplace.outcome }}" != "success" ] || [ "${{ steps.openvsx.outcome }}" != "success" ]; then
+            echo "::error::At least one registry failed to publish - see the table above"
+            exit 1
+          fi
 
       - name: Upload VSIX artifact
         if: always()
