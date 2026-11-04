@@ -1,6 +1,30 @@
 # PostScript Programming Language
 
+[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/yingquelou.postscriptsnippets?label=VS%20Code%20Marketplace)](https://marketplace.visualstudio.com/items?itemName=yingquelou.postscriptsnippets)
+[![Open VSX](https://img.shields.io/open-vsx/v/yingquelou/postscriptsnippets?label=Open%20VSX)](https://open-vsx.org/extension/yingquelou/postscriptsnippets)
+[![License: LGPL-3.0](https://img.shields.io/badge/license-LGPL--3.0-blue)](LICENSE)
+
 A Visual Studio Code extension for **PostScript** (Ghostscript): syntax highlighting, language server, code snippets, and a debugger that runs PostScript files with Ghostscript.
+
+Works in **VS Code** as well as **VSCodium**, Eclipse Theia and other editors that use the Open VSX registry.
+
+## Installation
+
+**VS Code** — install from the [Marketplace](https://marketplace.visualstudio.com/items?itemName=yingquelou.postscriptsnippets), or from the command line:
+
+```bash
+code --install-extension yingquelou.postscriptsnippets
+```
+
+**VSCodium / Theia / Gitpod (Open VSX)** — install from [Open VSX](https://open-vsx.org/extension/yingquelou/postscriptsnippets), or from the command line:
+
+```bash
+codium --install-extension yingquelou.postscriptsnippets
+```
+
+Both registries receive the exact same VSIX. The extension is bundled with esbuild and ships all of its dependencies, so nothing extra is downloaded at install time.
+
+> Ghostscript is still required — see [Requirements](#requirements).
 
 ## Features
 

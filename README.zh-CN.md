@@ -1,6 +1,30 @@
 # PostScript 编程语言扩展
 
+[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/yingquelou.postscriptsnippets?label=VS%20Code%20Marketplace)](https://marketplace.visualstudio.com/items?itemName=yingquelou.postscriptsnippets)
+[![Open VSX](https://img.shields.io/open-vsx/v/yingquelou/postscriptsnippets?label=Open%20VSX)](https://open-vsx.org/extension/yingquelou/postscriptsnippets)
+[![License: LGPL-3.0](https://img.shields.io/badge/license-LGPL--3.0-blue)](LICENSE)
+
 适用于 Visual Studio Code 的 **PostScript** (Ghostscript) 扩展：提供语法高亮、语言服务器、代码片段以及基于 Ghostscript 的调试运行支持。
+
+同时支持 **VSCodium**、Eclipse Theia 等使用 Open VSX 注册表的编辑器。
+
+## 安装
+
+**VS Code** — 从 [Marketplace](https://marketplace.visualstudio.com/items?itemName=yingquelou.postscriptsnippets) 安装，或使用命令行：
+
+```bash
+code --install-extension yingquelou.postscriptsnippets
+```
+
+**VSCodium / Theia / Gitpod（Open VSX）** — 从 [Open VSX](https://open-vsx.org/extension/yingquelou/postscriptsnippets) 安装，或使用命令行：
+
+```bash
+codium --install-extension yingquelou.postscriptsnippets
+```
+
+两个注册表发布的是同一个 VSIX 包。扩展使用 esbuild 打包并内置全部依赖，安装时无需额外下载。
+
+> 仍需自行安装 Ghostscript — 见[系统要求](#系统要求)。
 
 ## 功能特性
 

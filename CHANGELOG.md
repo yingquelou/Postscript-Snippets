@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.1.7]
+
+### Added
+- **Open VSX Publishing** - The extension is now also published to [Open VSX](https://open-vsx.org/extension/yingquelou/postscriptsnippets), making it installable in VSCodium, Eclipse Theia, Gitpod and other editors that only consume the Open VSX registry
+- **Automated Release** - GitHub Actions workflow that builds, verifies and publishes the same VSIX to both the VS Code Marketplace and Open VSX when a `v*` tag is pushed
+- **License Metadata** - Added the `LGPL-3.0-only` license field to `package.json` so both registries display the correct license
+
+### Changed
+- **README** - Added an Installation section covering the VS Code Marketplace, Open VSX and VSCodium, plus registry badges
+- **Packaging Hardening** - `npm run package` and `npm run publish` now wipe `out/` before rebuilding, so TypeScript artifacts left behind by `npm test` or `tsc -b` can no longer leak into the VSIX (previously 47 stray files); the VSIX is additionally restricted to the two bundled entry points
+
 ## [1.1.6]
 
 ### Fixed

@@ -1,0 +1,106 @@
+name: CI
+
+# 每次推送到 main 或提交 PR 时验证：类型检查 + 单元测试 + 打包完整性。
+# 打包校验放在 CI 里，是为了在真正发布前发现「out/ 被 tsc 产物污染」这类问题。
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build & Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.17.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # 仓库未纳入 pnpm-lock.yaml，因此使用 --no-frozen-lockfile
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build and package
+        run: npm run package -- --out postscriptsnippets.vsix
+
+      - name: Verify VSIX contents
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          unzip -Z1 postscriptsnippets.vsix > vsix-contents.txt
+
+          required=(
+            "extension/out/extension.js"
+            "extension/out/debugger/debugAdapter.js"
+            "extension/.snippets/snippet-index.json"
+            "extension/language/postscript.tmLanguage.json"
+            "extension/ps/dap.ps"
+            "extension/readme.md"
+          )
+
+          status=0
+          for path in "${required[@]}"; do
+            if grep -qx "$path" vsix-contents.txt; then
+              echo "OK    $path"
+            else
+              echo "::error::Missing $path in the VSIX"
+              status=1
+            fi
+          done
+
+          out_files="$(grep -c '^extension/out/' vsix-contents.txt || true)"
+          echo "files under extension/out/: $out_files (expected 2)"
+          if [ "$out_files" -ne 2 ]; then
+            echo "::error::extension/out/ must contain exactly the 2 bundled files, found $out_files"
+            status=1
+          fi
+
+          # 防止绕过 npm 钩子直接 `vsce package`：那样 out/ 里是 tsc 产物而不是 esbuild bundle
+          bundle="$RUNNER_TEMP/extension-entry.js"
+          unzip -p postscriptsnippets.vsix extension/out/extension.js > "$bundle"
+          if head -c 4000 "$bundle" | grep -q 'require("\./'; then
+            echo "::error::extension/out/extension.js looks like unbundled TypeScript output; use 'npm run package', not 'npx vsce package'"
+            status=1
+          else
+            echo "OK    extension/out/extension.js is a self-contained bundle ($(wc -c < "$bundle") bytes)"
+          fi
+
+          echo "VSIX size: $(du -h postscriptsnippets.vsix | cut -f1)"
+          exit $status
+
+      - name: Upload VSIX artifact
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: postscriptsnippets-vsix
+          path: postscriptsnippets.vsix
+          if-no-files-found: error
+          retention-days: 7

@@ -1,0 +1,157 @@
+name: Publish Extension
+
+# 推送 v* 标签（如 v1.1.7）时构建并发布到两个注册表：
+#   - VS Code Marketplace（需要 secrets.VSCE_PAT）
+#   - Open VSX（需要 secrets.OVSX_PAT）
+# 也可以在 Actions 页面手动触发，默认只构建不发布（dry_run）。
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Only build and verify the VSIX, do not publish"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  VSIX_FILE: postscriptsnippets.vsix
+  PUBLISHER: yingquelou
+
+jobs:
+  publish:
+    name: Build & Publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.17.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # 仓库未纳入 pnpm-lock.yaml，因此使用 --no-frozen-lockfile
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Verify tag matches package.json version
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          pkg_version="$(node -p "require('./package.json').version")"
+          tag_version="${GITHUB_REF_NAME#v}"
+          echo "package.json version: $pkg_version"
+          echo "git tag version:      $tag_version"
+          if [ "$pkg_version" != "$tag_version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $pkg_version"
+            exit 1
+          fi
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Run tests
+        run: npm test
+
+      # prepackage 会先清空 out/ 再重新构建，确保只打包两个 esbuild 产物
+      - name: Build and package
+        run: npm run package -- --out "$VSIX_FILE"
+
+      - name: Verify VSIX contents
+        shell: bash
+        run: |
+          unzip -Z1 "$VSIX_FILE" > vsix-contents.txt
+          cat vsix-contents.txt
+
+          required=(
+            "extension/out/extension.js"
+            "extension/out/debugger/debugAdapter.js"
+            "extension/.snippets/snippet-index.json"
+            "extension/language/postscript.tmLanguage.json"
+            "extension/language/postscript.config.schema.json"
+            "extension/ps/dap.ps"
+            "extension/ps/dictionaryStack.ps"
+            "extension/readme.md"
+            "extension/LICENSE.txt"
+          )
+
+          status=0
+          for path in "${required[@]}"; do
+            if grep -qx "$path" vsix-contents.txt; then
+              echo "OK    $path"
+            else
+              echo "::error::Missing $path in $VSIX_FILE"
+              status=1
+            fi
+          done
+
+          out_files="$(grep -c '^extension/out/' vsix-contents.txt || true)"
+          echo "files under extension/out/: $out_files (expected 2)"
+          if [ "$out_files" -ne 2 ]; then
+            echo "::error::extension/out/ must contain exactly the 2 bundled files, found $out_files"
+            status=1
+          fi
+
+          # 防止绕过 npm 钩子直接 `vsce package`：那样 out/ 里是 tsc 产物而不是 esbuild bundle
+          bundle="$RUNNER_TEMP/extension-entry.js"
+          unzip -p "$VSIX_FILE" extension/out/extension.js > "$bundle"
+          if head -c 4000 "$bundle" | grep -q 'require("\./'; then
+            echo "::error::extension/out/extension.js looks like unbundled TypeScript output; use 'npm run package', not 'npx vsce package'"
+            status=1
+          else
+            echo "OK    extension/out/extension.js is a self-contained bundle ($(wc -c < "$bundle") bytes)"
+          fi
+
+          exit $status
+
+      - name: Publish to VS Code Marketplace
+        if: startsWith(github.ref, 'refs/tags/v') && inputs.dry_run != true
+        shell: bash
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: |
+          if [ -z "${VSCE_PAT}" ]; then
+            echo "::error::Secret VSCE_PAT is not configured"
+            exit 1
+          fi
+          npx --yes @vscode/vsce@3.9.1 publish --packagePath "$VSIX_FILE" -p "$VSCE_PAT"
+
+      - name: Publish to Open VSX
+        if: startsWith(github.ref, 'refs/tags/v') && inputs.dry_run != true
+        shell: bash
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        run: |
+          if [ -z "${OVSX_PAT}" ]; then
+            echo "::error::Secret OVSX_PAT is not configured"
+            exit 1
+          fi
+          # 首次发布前需要创建命名空间；已存在时会报错，这里忽略即可
+          npx --yes ovsx@1.3.0 create-namespace "$PUBLISHER" -p "$OVSX_PAT" \
+            || echo "::notice::Namespace $PUBLISHER already exists, continuing"
+          npx --yes ovsx@1.3.0 verify-pat "$PUBLISHER" -p "$OVSX_PAT"
+          npx --yes ovsx@1.3.0 publish "$VSIX_FILE" -p "$OVSX_PAT"
+
+      - name: Upload VSIX artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: postscriptsnippets-${{ github.ref_name }}
+          path: ${{ env.VSIX_FILE }}
+          if-no-files-found: warn
+          retention-days: 14

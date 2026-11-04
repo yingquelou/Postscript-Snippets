@@ -11,6 +11,10 @@ snippets/
 tsconfig.json
 tsconfig.scripts.json
 **/*.map
+out/**/*.d.ts
+out/**
+!out/extension.js
+!out/debugger/debugAdapter.js
 ps.test/
 pslib/
 tests/
