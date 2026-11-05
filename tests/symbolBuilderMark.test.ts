@@ -68,16 +68,25 @@ describe('symbolBuilder mark-aware operators (issue #2)', () => {
     assert.deepStrictEqual(DEFAULT_MARK_OPERATORS.suspending, ['clear'])
     assert.deepStrictEqual(
       DEFAULT_MARK_OPERATORS.consuming,
-      ['cleartomark', 'packedarray', 'pdfmark']
+      ['cleartomark', 'pdfmark']
     )
   })
 
-  it('packedarray consumes the mark like gs does', () => {
-    // gs 10.08: `mark 1 2 3 packedarray` → one packed array (count 1)
+  it('packedarray is not a default consumer: its signature takes an explicit count', () => {
+    // gs accepts a mark form (`mark 1 2 3 packedarray` → one packed array,
+    // the mark consumed), but the operator's primary signature is
+    // `any0…any(n-1) n packedarray` — no mark involved. Static analysis
+    // cannot know the mark form is intended, so without an explicit
+    // declaration the leftover mark is reported and L3 grading settles it.
     const result = parsePostScript('mark 1 2 3 packedarray')
-    assert.strictEqual(result.errors.length, 0, `expected no errors, got: ${JSON.stringify(result.errors)}`)
-    assert.strictEqual(result.symbols.length, 1)
-    assert.strictEqual(result.symbols[0].name, 'packedarray')
+    assert.ok(result.errors.length > 0, 'packedarray must not consume by default')
+    const configured = new PostScriptSymbolBuilder({
+      consuming: [...DEFAULT_MARK_OPERATORS.consuming, 'packedarray'],
+      suspending: DEFAULT_MARK_OPERATORS.suspending
+    }).parse('mark 1 2 3 packedarray')
+    assert.strictEqual(configured.errors.length, 0,
+      `declared packedarray must consume: ${JSON.stringify(configured.errors)}`)
+    assert.strictEqual(configured.symbols[0].name, 'packedarray')
   })
 
   it('array takes an int size and leaves the mark pending (gs parity)', () => {

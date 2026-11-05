@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.1.9]
+
+### Added
+- **Ghostscript Validation** - `PostScript: Validate with Ghostscript` runs the document (or its whole build unit, when a `postscript.config.json` declares it) through the real interpreter and reports the failure where it happened. A run is classified instead of assumed: clean, stopped early by `quit`, structured error, human-readable error, failure with no attribution, and interpreter crash. A failure that cannot be attributed is reported as such rather than pinned to a guessed position, and a leftover mark is reported separately from a clean stack
+- **Build Trace** - `PostScript: Generate Build Trace` replays the configured build with a `userdict`-level `run` shadow and writes `.postscript/build-trace.json`; stderr order is the real execution order, nested `run` included
+- **Analysis Unit** - Compile and analysis share one config lookup (a config next to the sources wins over the workspace root), and the status bar shows the active config and matched target
+- **Go to Definition / Workspace Symbols** - A token-level workspace index of `/name … def` pairs; unsaved buffers win over disk
+- **Mark-Aware Outline** - `cleartomark` and `pdfmark` keep the operands collected since their mark as children of the operator instead of being reported as an unclosed array; `clear` drops pending marks silently. Both operator tables are configurable through `postscript.parser.markConsumingOperators` and `postscript.parser.markSuspendingOperators`. The defaults hold only operators Ghostscript 10.08 actually has (it has no `clearstack`), so no entry can be dead weight. `packedarray` is deliberately not a default: its signature is `any0…any(n-1) n packedarray` (explicit count, no mark involved), and gs' mark form for it is a compatibility behaviour a project can declare via the setting if it relies on it
+
+### Changed
+- **Structural Diagnostics Are Graded** - An unclosed-mark warning becomes a hint when gs runs exactly this document version cleanly (`PS014`) or when the construct balances in the merged build stream (`PS012`), stays a warning otherwise (`PS009`), and parse errors are never downgraded (`PS001`)
+- **Config Paths Resolve From One Base** - Relative entries in `postscript.config.json` always resolve against the config file's directory; basename matching is gone, so `foo.ps` in another directory can no longer silently match a target
+- **Interpreter-Backed Verification** - `verify:parity`, `verify:ps` and `verify:trace` check the shipped `.ps` files, the documented mark semantics and the `gs` command lines against the real interpreter; they bundle from source, so they no longer depend on `out/` surviving a package run. CI runs the aggregate `npm run verify`
+- **Package Manifest Restore** - `package` and `publish` go through a wrapper, so a failed or interrupted run also restores `package.json` (npm never runs `post<script>` on failure)
+
+### Fixed
+- **Immediate Names Match the Mark Tables** - `//name` denotes the same operator as the bare `name` (gs 10.08: `mark 1 2 //cleartomark` leaves `count` 0, `mark /a 1 //.dicttomark` yields a dict), so the prefix is normalized before the table lookup and one entry covers both spellings. Previously `mark (msg) //error exec` was reported as an orphan mark even when `error` was configured as a consumer, which made the setting ineffective on the most common gs idiom. With `error` and `.dicttomark` added to `postscript.parser.markConsumingOperators`, gs' own pdfwrite implementation drops from 62 warnings to 5
+- **Explicit Debugger Path** - A `ghostscriptPath` in `launch.json` that fails validation is reported instead of being silently replaced by an auto-detected interpreter
+
 ## [1.1.8]
 
 ### Added

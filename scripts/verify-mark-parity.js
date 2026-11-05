@@ -41,7 +41,11 @@ const cases = [
   { name: 'invalid: /pdfmark /] load def (gs: unmatchedmark)', snippet: '/pdfmark /] load def', gsOk: false, lsShouldFlag: true },
   { name: 'idiom: /pdfmark (]) load def', snippet: '/pdfmark (]) load def', gsOk: true, lsShouldFlag: false },
   { name: 'idiom: /pdfmark (]) cvn cvx def', snippet: '/pdfmark (]) cvn cvx def', gsOk: true, lsShouldFlag: false },
-  { name: 'packedarray consumes the mark (gs-verified)', snippet: 'mark 1 2 3 packedarray', gsOk: true, lsShouldFlag: false },
+  // gs consumes the mark in the packedarray mark form, but the operator's
+  // signature is `any0…any(n-1) n packedarray` (explicit count, no mark) —
+  // deliberately not a default consumer; the leftover mark is reported and
+  // L3 grading (gs clean → PS014 hint) settles it.
+  { name: 'packedarray mark form: gs consumes, default tables do not (stylistic)', snippet: 'mark 1 2 3 packedarray', gsOk: true, lsShouldFlag: true, stylistic: true },
   { name: 'array takes an int size, does not consume the mark', snippet: 'mark 1 2 3 array', gsOk: true, lsShouldFlag: true, stylistic: true },
   { name: 'bind idiom: /pdfmark {cleartomark} bind def (no mark)', snippet: '/pdfmark {cleartomark} bind def', gsOk: true, lsShouldFlag: false },
   { name: 'stylistic only: mark 1 2 3 (leftover, gs silent)', snippet: 'mark 1 2 3', gsOk: true, lsShouldFlag: true, stylistic: true },
@@ -73,6 +77,18 @@ const consumer = r.symbols[0]
 const outlineOk = r.symbols.length === 1 && consumer.name === 'pdfmark' &&
   consumer.children && consumer.children.length === 3
 outlineOk ? (pass++, console.log('PASS  outline: pdfmark symbol keeps 3 collected children')) : (fail++, console.log('FAIL  outline:', JSON.stringify(r.symbols)))
+
+// packedarray must consume the mark once a project declares it — the setting
+// is the supported answer, the defaults just do not presume the mark form.
+{
+  const { PostScriptSymbolBuilder } = loadSrc('src/language-server/symbolBuilder.ts')
+  const cfg = { consuming: [...DEFAULT_MARK_OPERATORS.consuming, 'packedarray'], suspending: DEFAULT_MARK_OPERATORS.suspending }
+  const r = new PostScriptSymbolBuilder(cfg).parse('mark 1 2 3 packedarray')
+  const ok = r.errors.length === 0 && r.symbols.length === 1 && r.symbols[0].name === 'packedarray'
+  ok ? pass++ : fail++
+  console.log(`${ok ? 'PASS' : 'FAIL'}  declared packedarray consumes the mark (configured table)`)
+  if (!ok) console.log('      errors:', JSON.stringify(r.errors))
+}
 
 // immediate-name equivalence, measured rather than argued: gs must produce the
 // same operand-stack effect for `//x` and `x`. This is the evidence behind

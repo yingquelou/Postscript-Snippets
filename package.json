@@ -3,7 +3,7 @@
 	"displayName": "PostScript Programming Language",
 	"publisher": "yingquelou",
 	"description": "PostScript (Ghostscript) language support for VS Code: syntax highlighting, code snippets, language server with intelligent completions, and a full-featured debugger with breakpoints, variable inspection, and step-through debugging",
-	"version": "1.1.8",
+	"version": "1.1.9",
 	"license": "LGPL-3.0-only",
 	"icon": "icon.png",
 	"keywords": [
@@ -43,17 +43,16 @@
 						"type": "string"
 					},
 					"postscript.parser.markConsumingOperators": {
-						"description": "Operators that consume the operand stack down to and including the nearest mark (e.g. cleartomark, pdfmark, packedarray). Content since the mark is attached to the operator in the outline instead of being reported as an unclosed array.",
+						"description": "Operators that consume the operand stack down to and including the nearest mark (e.g. cleartomark, pdfmark). Content since the mark is attached to the operator in the outline instead of being reported as an unclosed array.",
 						"type": "array",
 						"items": {
 							"type": "string"
 						},
 						"default": [
 							"cleartomark",
-							"packedarray",
 							"pdfmark"
 						],
-						"scope": "resource"
+						"scope": "window"
 					},
 					"postscript.parser.markSuspendingOperators": {
 						"description": "Operators that discard the whole operand stack below the current procedure (e.g. clear). Pending marks are dropped silently instead of being reported as orphan marks.",
@@ -64,7 +63,7 @@
 						"default": [
 							"clear"
 						],
-						"scope": "resource"
+						"scope": "window"
 					}
 				}
 			}

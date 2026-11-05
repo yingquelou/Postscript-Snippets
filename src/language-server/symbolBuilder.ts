@@ -113,9 +113,13 @@ function operatorTableKey(image: string): string {
  */
 export const DEFAULT_MARK_OPERATORS: MarkOperatorConfig = {
   // cleartomark / pdfmark: pop to and including the mark.
-  // packedarray: gs accepts a mark form (`mark 1 2 3 packedarray` → 1 packed
-  // array, the mark is consumed). gs-verified.
-  consuming: ['cleartomark', 'packedarray', 'pdfmark'],
+  // packedarray is deliberately absent: its primary signature is
+  // `any0…any(n-1) n packedarray` (an explicit count, no mark involved, PLRM).
+  // gs additionally accepts a mark form (`mark 1 2 3 packedarray` → one packed
+  // array, the mark consumed — gs-verified), but that is a compatibility
+  // behaviour, not what the operator means, so it stays out of the defaults;
+  // a project relying on the mark form declares it via the setting.
+  consuming: ['cleartomark', 'pdfmark'],
   suspending: ['clear']
 };
 

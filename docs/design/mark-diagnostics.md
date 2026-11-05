@@ -59,11 +59,15 @@ complete solution. L3 is the final semantic arbiter.
 - New settings (namespace `postscript.parser`):
   - `postscript.parser.markConsumingOperators` — names that pop the stack
     down to and including the nearest mark. Default
-    `["cleartomark", "packedarray", "pdfmark"]`. Content collected since the
+    `["cleartomark", "pdfmark"]`. Content collected since the
     mark is attached to the consuming operator's symbol, so the outline keeps
-    it. `packedarray` is included because gs accepts the mark form
-    (`mark 1 2 3 packedarray` → one packed array, count 1); `array` is *not*
-    a consumer, it takes its size from an integer operand (gs-verified).
+    it. `packedarray` is deliberately **not** a default: its signature is
+    `any0…any(n-1) n packedarray` — an explicit count, no mark involved — and
+    the mark form gs also accepts (`mark 1 2 3 packedarray` → one packed
+    array, count 1) is a compatibility behaviour, not what the operator means.
+    A project relying on that form declares it via the setting; unconfigured,
+    the leftover mark is reported and L3 grading settles it. `array` is not a
+    consumer either: it takes its size from an integer operand (gs-verified).
   - `postscript.parser.markSuspendingOperators` — names that discard pending
     marks silently. Default `["clear"]`. After one of these, earlier marks no
     longer warn.
@@ -105,6 +109,19 @@ complete solution. L3 is the final semantic arbiter.
   `bind` / `put` / `exec`; an alias is honoured only when its **name** appears
   in the two operator tables. Everything else falls through to L1 (downgrade
   to hint) and L3 (interpreter as arbiter).
+- A custom closer may also consume **more than one** mark: `/dupclose { ] ] }
+  def` closes two (`mark 1 mark 2 dupclose` leaves one nested array; the
+  following `counttomark` raises `unmatchedmark`). Which body `dupclose`
+  denotes, and what the stack holds when it runs, is rebinding — undecidable
+  here by the same criterion as every alias — so the L0 answer stays
+  declarative: list the name in `markSuspendingOperators`, which suspends the
+  pending-mark check from that point on (the suspending table drops to the
+  procedure boundary, the `clear` discipline). Unconfigured, the leftover
+  marks are still reported, but every one of these diagnostics is
+  `isWarning`, so a clean gs run grades them down to PS014 hints. The built-in
+  consumers, by contrast, are measured to close exactly one mark:
+  `mark mark 1 2 cleartomark` leaves the outer mark on the stack (`count` 1,
+  `counttomark` 0), and `mark mark 1 2 pdfmark` is a typecheck error.
 - Consumption is limited to the current procedure scope: a mark opened before
   `{` is not consumed inside a procedure body, mirroring gs's per-procedure
   operand-stack discipline for structural analysis purposes.
@@ -113,7 +130,7 @@ complete solution. L3 is the final semantic arbiter.
 
 The two tables are the supported answer to "in this project `error` also closes
 a mark". gs' own pdfwrite implementation (the 8335-line `ghostscript.ps` from
-the gs distribution) is the reference case: 60 warnings out of the box, nearly
+the gs distribution) is the reference case: 62 warnings out of the box, nearly
 all of them the `mark (msg) //error exec` idiom, where the consumer is a
 procedure defined in the same file (`/error { … cleartomark … } def`) or an
 internal operator (`/.dicttomark {>>} bind def`). Two entries remove them:
@@ -121,12 +138,14 @@ internal operator (`/.dicttomark {>>} bind def`). Two entries remove them:
 ```jsonc
 // .vscode/settings.json — workspace scope
 "postscript.parser.markConsumingOperators": [
-  "cleartomark", "packedarray", "pdfmark", "error", ".dicttomark"
+  "cleartomark", "pdfmark", "error", ".dicttomark"
 ]
 ```
 
 Plain names only: `//error` hits the same entry, because an immediate name is
-the same operator. Measured on that file: **60 → 5** warnings. The five that
+the same operator. Measured on that file: **62 → 5** warnings (the two entries
+cover the `//error` idiom entirely; `packedarray` contributes nothing there).
+The five that
 remain are the shapes this layer does not model on purpose — `mark` used as an
 `eq` operand, a procedure body that is nothing but a delimiter (`{>>}`), and a
 mark handed to an unknown caller through the operand stack. All five are
@@ -432,7 +451,7 @@ output is never used to suppress a diagnostic — one direction only.
   closer"). Not planned, and not a gap this layer can close: `colorizedBracketPairs`
   in `language-configuration.json` pairs *bracket tokens* only, which is why
   `mark` is listed there (`mark … ]`, `mark … >>`) while `pdfmark`,
-  `cleartomark`, `packedarray` and their aliases are not — they are ordinary
+  `cleartomark` and their aliases are not — they are ordinary
   name tokens, not scope delimiters, and VS Code highlights a pair by matching
   token *text*. Listing `pdfmark` would therefore also light up a literal
   `/pdfmark`, a procedure named `pdfmark` that consumes nothing, or the same
@@ -467,7 +486,7 @@ Verification harness (gs 10.08.0, `-q -dNODISPLAY -dBATCH -dNOPAUSE`):
 | `/pdfmark (]) cvn cvx def` | ok — binds the executable name `]` |
 | `(]) load` alone in code position | executes `]` → `/unmatchedmark` without a mark |
 | `/x / def x length` | `0` — proves `/` + delimiter is an empty name |
-| `mark 1 2 3 packedarray` | 1 packed array, mark consumed |
+| `mark 1 2 3 packedarray` | 1 packed array, mark consumed — gs behaviour; not a default consumer (signature takes an explicit `n`) |
 | `mark 1 2 3 array` | mark survives (`array` takes an int size) |
 | `[ 1 2 3` (unclosed) | silent, stack residue is not an error |
 | `1 2 3 ]` | `/unmatchedmark` — hard error |
