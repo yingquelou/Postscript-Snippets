@@ -227,8 +227,15 @@ const main = async () => {
       packageObj.scripts = existingScripts
       packageObj.devDependencies = existingDevDependencies
 
-      fs.writeFileSync(packageFile, JSON.stringify(packageObj))
-      console.log('成功更新package.json')
+      // keep tab indentation (this file is hand-edited and tracked by git);
+      // a compact rewrite used to leave the whole manifest on one line
+      const serialized = JSON.stringify(packageObj, null, '\t') + '\n'
+      if (serialized === packageContent) {
+        console.log('package.json 无变化')
+      } else {
+        fs.writeFileSync(packageFile, serialized)
+        console.log('成功更新package.json')
+      }
     } catch (error) {
       console.error('更新package.json时出错:', error)
       throw error

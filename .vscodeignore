@@ -1,32 +1,47 @@
-.*/
-scripts/
-.gitignore
-*.txt
+# dev-only sources and tooling
 src/
+tests/
+scripts/
 docs/
-snippets/
-*.ps1
-*.md
-icon.svg
-*.bat
+.tests/
+.scripts/
+.workbuddy/
+.trae/
+.github/
+.vscode/
 tsconfig.json
 tsconfig.scripts.json
+snippets/
+.vscodeignore
+.gitignore
+
+# prose/docs (README + CHANGELOG are re-included at the end)
+*.md
+*.txt
+*.ps1
+*.bat
 **/*.map
-out/**/*.d.ts
+icon.svg
+
+# only the two runtime bundles ship from out/
 out/**
 !out/extension.js
 !out/debugger/debugAdapter.js
+
+# generated snippet set — the language server loads it at runtime
+!.snippets/
+
+# local sandboxes and packaging leftovers
 ps.test/
 pslib/
-tests/
-debug.log
 node_modules
-package-lock.json
-pnpm-lock.yaml
 *.vsix
-log
+*.log
+
+# dependency manifests are for development only
+pnpm-lock.yaml
 pnpm-workspace.yaml
-snippets/
-!.snippets/
+package-lock.json
+
 !README.md
 !CHANGELOG.md

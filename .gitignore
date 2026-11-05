@@ -1,14 +1,28 @@
-.*/
-!.github/
+# dependencies
 node_modules/
+
+# build output: tsc emit (out/, .tests/), compiled build scripts, generated snippets
 out/
-__tests__/
+.tests/
+.scripts/
+.snippets/
 snippets.gen/
+
+# packaging artifacts
 *.vsix
-*.txt
-test-*.js
+
+# logs and one-off scratch output
 *.log
-settings.json
-package-lock.json
-pnpm-lock.yaml
+diff.txt
+a.json
+b.json
+
+# local editor / agent state (launch.json and tasks.json stay tracked)
+.vscode/settings.json
+.trae/
+.workbuddy/
+
+# dev sandbox: the extension's own debug workspace (samples are local only)
 ps.test/
+
+# lockfiles are tracked on purpose — CI installs with --frozen-lockfile

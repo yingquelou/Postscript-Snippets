@@ -1,13 +1,5 @@
-import * as fs from 'fs'
+import { restoreManifest } from './manifest.js'
 
-fs.readFile(
-    'package.json',
-    (err, data) => {
-        if (err) throw err
-        const obj = JSON.parse(data.toString())
-        delete obj.contributes.snippets
-        fs.writeFile('package.json', JSON.stringify(obj, null, '\t'), err => {
-            if (err) throw err
-        })
-    },
-)
+// manual reset: `npm run restore:manifest`
+const result = restoreManifest()
+console.log(result.changed ? `package.json: ${result.reason}` : `package.json unchanged (${result.reason})`)

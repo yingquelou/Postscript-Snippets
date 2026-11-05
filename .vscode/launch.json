@@ -11,7 +11,8 @@
 			"request": "launch",
 			"args": [
 				"--extensionDevelopmentPath=${workspaceFolder}",
-				"--disable-extensions"
+				"--disable-extensions",
+				"${workspaceFolder}/ps.test"
 			],
 			"outFiles": [
 				"${workspaceFolder}/out/**/*.js"

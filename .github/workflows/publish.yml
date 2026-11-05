@@ -65,9 +65,9 @@ jobs:
         with:
           node-version: 22
 
-      # 仓库未纳入 pnpm-lock.yaml，因此使用 --no-frozen-lockfile
+      # pnpm-lock.yaml 已纳入版本控制：锁定安装，保证 CI/发布可复现
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       # dictionaryStackManager 的测试会实际 spawn Ghostscript 加载 systemdict
       - name: Install Ghostscript

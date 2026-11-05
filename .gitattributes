@@ -1,2 +1,7 @@
 # Set default behavior to automatically normalize line endings.
 * text=auto
+
+# package.json is rewritten by Node build scripts (snippetsGenerator /
+# scripts/manifest.ts), which always emit LF. Pin it so the working copy does
+# not flip between CRLF and LF on every build.
+package.json text eol=lf
