@@ -1,0 +1,14 @@
+% build-trace preamble: userdict-level shadow run — logs to stderr without
+% consuming operands (writestring eats file+string, so the file argument is
+% protected with dup; without it origrun dies with stackunderflow).
+% All loading funnels through one channel, so stderr line order IS the real
+% execution order. See docs/design/build-trace.md.
+/TR (%stderr) (w) file def
+/origrun /run load def
+/run {
+  TR (===TRACE-RUN===) writestring
+  dup TR exch writestring
+  TR (\n) writestring
+  TR flushfile
+  origrun
+} bind def

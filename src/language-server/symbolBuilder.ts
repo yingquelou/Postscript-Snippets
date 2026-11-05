@@ -72,8 +72,8 @@ export interface ParseResult {
  * is attached to the consuming operator's symbol so the outline keeps it.
  *
  * `suspending`: operators that discard the whole operand stack below the
- * current procedure boundary (e.g. clear, clearstack). Pending marks are
- * dropped silently instead of reported as orphans at end of input.
+ * current procedure boundary (e.g. clear). Pending marks are dropped
+ * silently instead of reported as orphans at end of input.
  *
  * Matching is exact-image against executable name tokens only; `/pdfmark`
  * (a literal name) never matches.
@@ -87,13 +87,18 @@ export interface MarkOperatorConfig {
  * Entries marked "gs-verified" were confirmed against Ghostscript 10.08.0
  * (`mark 1 2 3 <op>` then `count`); do not add operators here on PLRM
  * reading alone — run them through the interpreter first.
+ *
+ * `clearstack` is deliberately absent: it does not exist in gs 10.08
+ * (`1 2 3 clearstack` → /undefined in clearstack). It is a PostScript Level 1
+ * legacy name that some other interpreters implemented, so listing it would
+ * add a table entry that can never match. `clear` is the real one.
  */
 export const DEFAULT_MARK_OPERATORS: MarkOperatorConfig = {
   // cleartomark / pdfmark: pop to and including the mark.
   // packedarray: gs accepts a mark form (`mark 1 2 3 packedarray` → 1 packed
   // array, the mark is consumed). gs-verified.
   consuming: ['cleartomark', 'packedarray', 'pdfmark'],
-  suspending: ['clear', 'clearstack']
+  suspending: ['clear']
 };
 
 export class PostScriptSymbolBuilder {

@@ -23,7 +23,9 @@
 	"activationEvents": [
 		"onLanguage:postscript",
 		"onDebugResolve:postscript",
-		"onCommand:postscriptsnippets.compilePostscript"
+		"onCommand:postscriptsnippets.compilePostscript",
+		"onCommand:postscriptsnippets.validateWithGhostscript",
+		"onCommand:postscriptsnippets.generateBuildTrace"
 	],
 	"categories": [
 		"Snippets",
@@ -39,6 +41,30 @@
 					"postscript.interpreter.executable": {
 						"description": "PostScript interpreter executable path (leave empty for auto-detect on Windows: gswin64c → gswin32c → gs; on others: gs)",
 						"type": "string"
+					},
+					"postscript.parser.markConsumingOperators": {
+						"description": "Operators that consume the operand stack down to and including the nearest mark (e.g. cleartomark, pdfmark, packedarray). Content since the mark is attached to the operator in the outline instead of being reported as an unclosed array.",
+						"type": "array",
+						"items": {
+							"type": "string"
+						},
+						"default": [
+							"cleartomark",
+							"packedarray",
+							"pdfmark"
+						],
+						"scope": "resource"
+					},
+					"postscript.parser.markSuspendingOperators": {
+						"description": "Operators that discard the whole operand stack below the current procedure (e.g. clear). Pending marks are dropped silently instead of being reported as orphan marks.",
+						"type": "array",
+						"items": {
+							"type": "string"
+						},
+						"default": [
+							"clear"
+						],
+						"scope": "resource"
 					}
 				}
 			}
@@ -56,6 +82,18 @@
 				"command": "postscriptsnippets.compilePostscript",
 				"title": "Compile PostScript",
 				"icon": "$(run)",
+				"category": "PostScript"
+			},
+			{
+				"command": "postscriptsnippets.validateWithGhostscript",
+				"title": "Validate with Ghostscript",
+				"icon": "$(check)",
+				"category": "PostScript"
+			},
+			{
+				"command": "postscriptsnippets.generateBuildTrace",
+				"title": "Generate Build Trace",
+				"icon": "$(list-ordered)",
 				"category": "PostScript"
 			}
 		],
@@ -154,7 +192,7 @@
 		"url": "https://github.com/yingquelou/Postscript-Snippets.git"
 	},
 	"scripts": {
-		"test": "node --test .tests/debugAdapter.test.js .tests/dictionaryStack.test.js .tests/completionStrategy.test.js .tests/dictionaryStackManager.test.js .tests/languageServer.test.js",
+		"test": "node --test .tests/debugAdapter.test.js .tests/dictionaryStack.test.js .tests/completionStrategy.test.js .tests/dictionaryStackManager.test.js .tests/languageServer.test.js .tests/symbolBuilderMark.test.js .tests/configUtilsHardening.test.js .tests/compositionAnalysis.test.js .tests/gsIntegration.test.js .tests/gsVerificationState.test.js .tests/workspaceIndex.test.js .tests/PostScriptParser.test.js .tests/postscriptLexer.test.js .tests/syntaxTreeWalker.test.js .tests/symbolBuilderMultiline.test.js .tests/debugConfigurationParser.test.js .tests/streamingBlockParserCorrectness.test.js",
 		"pretest": "tsc -b tests",
 		"build:scripts": "tsc -b scripts",
 		"build:snippets": "node .scripts/snippetsGenerator.js",
@@ -164,16 +202,19 @@
 		"postbuild": "npm run build:snippets",
 		"prepackage": "npm run clean:out && npm run build",
 		"prepublish": "npm run clean:out && npm run build",
-		"postpackage": "node .scripts/restore.js",
-		"postpublish": "node .scripts/restore.js",
 		"preclean": "npm run build:scripts",
-		"clean": "node .scripts/clean.js out .snippets .tests .scripts",
+		"clean": "npm run restore:manifest && node .scripts/clean.js out .snippets .tests .scripts",
 		"watch:scripts": "tsc -b scripts --watch",
 		"prewatch": "npm run build",
 		"watch": "node .scripts/esbuild.js --watch",
 		"typecheck": "tsc -b src",
-		"package": "vsce package",
-		"publish": "vsce publish"
+		"verify:ps": "node scripts/verify-ps-files.js",
+		"verify:parity": "node scripts/verify-mark-parity.js",
+		"verify:trace": "node scripts/verify-l3-trace.js",
+		"verify": "npm run verify:parity && npm run verify:ps && npm run verify:trace",
+		"package": "node .scripts/vsceRun.js package",
+		"publish": "node .scripts/vsceRun.js publish",
+		"restore:manifest": "node .scripts/restore.js"
 	},
 	"devDependencies": {
 		"@types/node": "^25.9.1",

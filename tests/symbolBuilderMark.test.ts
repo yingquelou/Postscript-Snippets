@@ -61,6 +61,17 @@ describe('symbolBuilder mark-aware operators (issue #2)', () => {
     assert.ok(result.errors.length > 0, 'counttomark must not consume the mark')
   })
 
+  it('the default tables hold only operators gs actually has', () => {
+    // `clearstack` is a Level 1 legacy name gs never implemented
+    // (10.08: `1 2 3 clearstack` → /undefined in clearstack). An entry that can
+    // never match is worse than none: it advertises support that is not there.
+    assert.deepStrictEqual(DEFAULT_MARK_OPERATORS.suspending, ['clear'])
+    assert.deepStrictEqual(
+      DEFAULT_MARK_OPERATORS.consuming,
+      ['cleartomark', 'packedarray', 'pdfmark']
+    )
+  })
+
   it('packedarray consumes the mark like gs does', () => {
     // gs 10.08: `mark 1 2 3 packedarray` → one packed array (count 1)
     const result = parsePostScript('mark 1 2 3 packedarray')

@@ -1,0 +1,10 @@
+% build-trace preamble：userdict 层影子 run，写日志不消耗操作数
+/TR (%stderr) (w) file def
+/origrun /run load def
+/run {
+  TR (===TRACE-RUN===) writestring
+  dup TR exch writestring
+  TR (\n) writestring
+  TR flushfile
+  origrun
+} bind def

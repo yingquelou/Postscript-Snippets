@@ -65,8 +65,14 @@ complete solution. L3 is the final semantic arbiter.
     (`mark 1 2 3 packedarray` → one packed array, count 1); `array` is *not*
     a consumer, it takes its size from an integer operand (gs-verified).
   - `postscript.parser.markSuspendingOperators` — names that discard pending
-    marks silently. Default `["clear", "clearstack"]`. After one of these,
-    earlier marks no longer warn.
+    marks silently. Default `["clear"]`. After one of these, earlier marks no
+    longer warn.
+    `clearstack` (`/clearstack systemdict exch known` is false in 10.08;
+    `1 2 3 clearstack` → `/undefined in clearstack`) is a Level 1 legacy name
+    that gs never implemented, so it is **not** in the default table: an entry
+    that can never match is worse than no entry, because it implies support
+    that does not exist. Add it yourself if you target an interpreter that
+    has it.
 - Matching rules: exact match on **executable name tokens only**; `/pdfmark`
   (literal name) does not match. `counttomark` is read-only and deliberately
   not in the default consuming table.
@@ -376,6 +382,18 @@ output is never used to suppress a diagnostic — one direction only.
   Dropped: L3 settles those cases exactly, so a pattern table would add a second
   source of confidence for the same subset and still miss every non-literal
   binding.
+- **`[` ↔ `pdfmark` cross-highlight** (issue #2, "cursor on `[` highlights the
+  closer"). Not planned, and not a gap this layer can close: `colorizedBracketPairs`
+  in `language-configuration.json` pairs *bracket tokens* only, which is why
+  `mark` is listed there (`mark … ]`, `mark … >>`) while `pdfmark`,
+  `cleartomark`, `packedarray` and their aliases are not — they are ordinary
+  name tokens, not scope delimiters, and VS Code highlights a pair by matching
+  token *text*. Listing `pdfmark` would therefore also light up a literal
+  `/pdfmark`, a procedure named `pdfmark` that consumes nothing, or the same
+  word in a string. A server-side `documentHighlight` provider has the mark
+  stack and could do better, but only for names it can classify — which is
+  exactly the dynamic-binding problem in limit 1. It would highlight the cases
+  the outline already shows and stay silent on the ones users ask about.
 - **Source rewriting before `token`** — a second tokenizer with semantic drift
   (see limit 2).
 - **Automatic execution on every keystroke** — side effects, hangs (limit 4).

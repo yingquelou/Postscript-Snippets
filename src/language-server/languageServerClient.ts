@@ -55,18 +55,47 @@ export function createLanguageClient(context: vscode.ExtensionContext, outputCha
   context.subscriptions.push(showCmd)
 
   const attachNotificationHandler = () => {
+    // active analysis unit (config + matched target), advertised per document
+    let preloadErrorCount = 0
+    let analysisUnitText: string | undefined
+
+    const refreshStatusBar = () => {
+      if (preloadErrorCount > 0) {
+        statusBar.text = `PostScript: ${preloadErrorCount} preload error${preloadErrorCount > 1 ? 's' : ''}`
+        statusBar.tooltip = 'Show PostScript preload errors'
+        statusBar.show()
+      } else if (analysisUnitText) {
+        statusBar.text = analysisUnitText
+        statusBar.tooltip = 'PostScript analysis unit (postscript.config.json)'
+        statusBar.show()
+      } else {
+        statusBar.hide()
+      }
+    }
+
+    client.onNotification('postscript/analysisUnit', (params: any) => {
+      const hasConfig: boolean = !!params?.hasConfig
+      const target: string | undefined = params?.target
+      const configUri: string | undefined = params?.configUri
+      if (hasConfig) {
+        const label = target || (configUri ? path.basename(configUri.replace(/^file:\/\/\//, '')) : 'config')
+        analysisUnitText = `PS: ${label}`
+      } else {
+        analysisUnitText = undefined
+      }
+      refreshStatusBar()
+    })
+
     client.onNotification('postscript/preloadDetails', (params: any) => {
       const errors: Array<any> = Array.isArray(params?.errors) ? params.errors : []
       const configUri: string | undefined = params?.configUri
+      preloadErrorCount = errors.length
       if (!errors.length) {
-        statusBar.hide()
+        refreshStatusBar()
         return
       }
 
-      const count = errors.length
-      statusBar.text = `PostScript: ${count} preload error${count > 1 ? 's' : ''}`
-      statusBar.tooltip = 'Show PostScript preload errors'
-      statusBar.show()
+      refreshStatusBar()
 
       outputChannel.appendLine(`=== ${new Date().toLocaleString()} Preload errors for ${configUri || 'workspace'} ===`)
       for (const e of errors) {

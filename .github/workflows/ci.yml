@@ -38,9 +38,9 @@ jobs:
         with:
           node-version: 22
 
-      # 仓库未纳入 pnpm-lock.yaml，因此使用 --no-frozen-lockfile
+      # pnpm-lock.yaml 已纳入版本控制：锁定安装，保证 CI/发布可复现
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       # dictionaryStackManager 的测试会实际 spawn Ghostscript 加载 systemdict
       - name: Install Ghostscript (Linux)
@@ -69,8 +69,38 @@ jobs:
       - name: Run tests
         run: npm test
 
+      # PS 语义以解释器为准：这三个脚本用真实 gs 复核 ps/ 下的文件、mark 语义断言
+      # 与 L3/build-trace 的命令构造，和单测一起构成"PS 代码必须经 gs 验证"的闸门。
+      # 脚本在找不到 gs 时自行 SKIP，不会把缺少解释器误报成失败。
+      - name: Verify PostScript semantics with Ghostscript
+        run: npm run verify
+
       - name: Build and package
         run: npm run package -- --out postscriptsnippets.vsix
+
+      # contributes.snippets 是 postbuild 注入、打包后移除的字段：它登记的是
+      # .snippets/*.json（由 Operators.md 生成、git 不追踪的产物），一旦入库就是
+      # 手工维护的第二份副本。这里同时断言"HEAD 里没有"和"打包后已还原"，
+      # 让自动清理失效变成红叉，而不是靠人眼从 git status 里发现。
+      - name: Assert generated snippets field is not tracked
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const { execSync } = require('child_process')
+          const manifest = JSON.parse(execSync('git show HEAD:package.json', { encoding: 'utf8' }))
+          if (manifest.contributes && 'snippets' in manifest.contributes) {
+            console.error('::error::package.json in git contains contributes.snippets; it must be generated at build time only')
+            process.exit(1)
+          }
+          console.log('OK    HEAD manifest has no generated snippets field')
+          NODE
+
+          if ! git diff --quiet -- package.json; then
+            echo "::error::package.json still carries the generated snippets field after packaging; the restore step did not run"
+            git diff -- package.json | head -40
+            exit 1
+          fi
+          echo "OK    package.json restored to its tracked state"
 
       - name: Verify VSIX contents
         if: runner.os == 'Linux'

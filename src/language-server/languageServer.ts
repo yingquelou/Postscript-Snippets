@@ -10,7 +10,13 @@ import {
   Connection,
   CompletionItem,
   CompletionList,
-  CompletionParams
+  CompletionParams,
+  WorkspaceSymbolParams,
+  DefinitionParams,
+  SymbolInformation,
+  Location,
+  Range,
+  SymbolKind
 } from 'vscode-languageserver/node'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import { fileURLToPath } from 'url'
@@ -18,16 +24,24 @@ import * as path from 'path'
 import * as fs from 'fs'
 import { PsStrictLexer } from '../parser/postscriptParser'
 import { containsBinaryData } from '../binaryDetector'
-import { PostScriptSymbolBuilder } from './symbolBuilder'
+import { PostScriptSymbolBuilder, MarkOperatorConfig, DEFAULT_MARK_OPERATORS } from './symbolBuilder'
+import {
+  getGsVerification,
+  recordGsVerification,
+  forgetGsVerification
+} from './gsVerificationState'
+import { classifyStructuralDiagnostic } from './structuralDiagnostics'
 
 import { DictionaryStackManager } from './dictionaryStackManager'
 import { PreloadConfig, DICTIONARY_TYPE_KIND_MAP } from './completionTypes'
 import {
   PROJECT_CONFIG_FILENAME,
-  getProjectConfig,
+  getProjectConfigForFile,
   invalidateConfigCache,
   resolvePreloadConfig,
-  isFileDeclared
+  isFileDeclared,
+  findDeclaredKey,
+  validateProjectConfig
 } from './configUtils'
 import {
   getCompletionPrefix,
@@ -36,6 +50,14 @@ import {
 } from './completionUtils'
 import { loadSnippetPrefixSet } from './snippetIndex'
 import { buildPreloadConfigKey } from './cacheUtils'
+import {
+  buildCompositionStream,
+  parseComposition,
+  isBalancedInContext,
+  AnalysisFragment,
+  CompositionStream
+} from './compositionAnalysis'
+import { WorkspaceIndex, extractDefinitions } from './workspaceIndex'
 
 
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument)
@@ -206,6 +228,8 @@ function setupConnection(connection: Connection) {
       capabilities: {
         textDocumentSync: 1,
         documentSymbolProvider: true,
+        definitionProvider: true,
+        workspaceSymbolProvider: true,
         completionProvider: {
           resolveProvider: true,
         }
@@ -216,6 +240,8 @@ function setupConnection(connection: Connection) {
 
 
   connection.onDidChangeConfiguration(() => {
+    markOperators = undefined
+    parserConfigVersion++
     resetDictionaryStackManager()
     void ensureDictionaryStackManager()
   })
@@ -249,6 +275,20 @@ function setupConnection(connection: Connection) {
     const workspaceRoot = await getWorkspaceRoot(connection)
     if (!workspaceRoot) return
 
+    // keep the L2 index in sync with disk-level .ps changes
+    if (workspaceIndex) {
+      for (const change of params.changes) {
+        const fsPath = fileUriToFsPath(change.uri)
+        if (fsPath && /\.(ps|eps)$/i.test(fsPath)) {
+          if (change.type === 3 /* Deleted */) {
+            workspaceIndex.dropFile(fsPath)
+          } else {
+            void workspaceIndex.upsertFile(fsPath)
+          }
+        }
+      }
+    }
+
     const configPath = path.join(workspaceRoot, PROJECT_CONFIG_FILENAME)
     const normalizedConfigPath = path.normalize(configPath)
     const configChanged = params.changes.some(change => {
@@ -269,9 +309,35 @@ function setupConnection(connection: Connection) {
     await feedback.sendPreloadDiagnostics(manager, configUri)
   })
 
+  /** last advertised analysis unit — getPreloadConfig runs per completion, the notification only on change */
+  let lastAnalysisUnit: string | undefined
+
   async function getPreloadConfig(currentFilePath?: string): Promise<PreloadConfig> {
     const workspaceRoot = await getWorkspaceRoot(connection, currentFilePath)
-    const projectConfig = await getProjectConfig(workspaceRoot)
+    const projectConfig = await getProjectConfigForFile(currentFilePath, workspaceRoot)
+
+    // advertise the active analysis unit (config file + matched target) so
+    // the client can display it; empty when the document has no config
+    try {
+      const configUri = projectConfig.configPath
+        ? `file:///${projectConfig.configPath.replace(/\\/g, '/')}`
+        : undefined
+      const declaredKey = projectConfig.configPath
+        ? findDeclaredKey(projectConfig.rawConfig.dependencies, currentFilePath, workspaceRoot)
+        : undefined
+      const analysisUnit = {
+        configUri,
+        target: declaredKey ?? null,
+        hasConfig: !!projectConfig.configPath
+      }
+      const unitKey = JSON.stringify(analysisUnit)
+      if (unitKey !== lastAnalysisUnit) {
+        lastAnalysisUnit = unitKey
+        feedback.sendNotification('postscript/analysisUnit', analysisUnit)
+      }
+    } catch {
+      // notification is best-effort
+    }
 
     const isUndeclared = !currentFilePath || !isFileDeclared(projectConfig.rawConfig.dependencies, currentFilePath, workspaceRoot)
     
@@ -332,18 +398,20 @@ function setupConnection(connection: Connection) {
 
   async function validateConfigFile(workspaceRoot?: string): Promise<void> {
     if (!workspaceRoot) return
-    
+
     const configPath = path.join(workspaceRoot, PROJECT_CONFIG_FILENAME)
     if (!fs.existsSync(configPath)) return
-    
+
+    const configUri = `file:///${configPath.replace(/\\/g, '/')}`
+
     let raw = ''
+    let parsed: unknown
     try {
       raw = await fs.promises.readFile(configPath, 'utf8')
-      JSON.parse(raw)
+      parsed = JSON.parse(raw)
     } catch (error: any) {
-      const configUri = `file:///${configPath.replace(/\\/g, '/')}`
       const message = `Invalid JSON in ${PROJECT_CONFIG_FILENAME}: ${error instanceof Error ? error.message : String(error)}`
-      
+
       let line = 0
       let column = 0
       if (error instanceof SyntaxError && raw) {
@@ -356,16 +424,34 @@ function setupConnection(connection: Connection) {
           column = lastNewline >= 0 ? pos - lastNewline - 1 : pos
         }
       }
-      
-      const diagnostics: Diagnostic[] = [{
+
+      feedback.sendDiagnostics(configUri, [{
         severity: DiagnosticSeverity.Error,
         range: { start: { line, character: column }, end: { line, character: column + 1 } },
         message,
         source: 'postscript',
         code: 'PS005'
-      }]
-      feedback.sendDiagnostics(configUri, diagnostics)
+      }])
+      return
     }
+
+    // semantic validation: missing files, duplicate targets, self-references
+    const diagnostics: Diagnostic[] = []
+    try {
+      const issues = await validateProjectConfig(parsed as any, path.dirname(configPath), workspaceRoot)
+      for (const issue of issues) {
+        diagnostics.push({
+          severity: issue.level === 'error' ? DiagnosticSeverity.Error : DiagnosticSeverity.Warning,
+          range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
+          message: `[${PROJECT_CONFIG_FILENAME}] ${issue.message}`,
+          source: 'postscript',
+          code: issue.level === 'error' ? 'PS010' : 'PS011'
+        })
+      }
+    } catch (error) {
+      feedback.logError(`Error validating ${PROJECT_CONFIG_FILENAME} semantics`, error)
+    }
+    feedback.sendDiagnostics(configUri, diagnostics)
   }
 
   connection.onCompletion(async (params: CompletionParams): Promise<CompletionItem[] | CompletionList> => {
@@ -425,6 +511,34 @@ function setupConnection(connection: Connection) {
 
   documents.onDidClose(event => {
     void parseCache.delete(event.document.uri)
+    forgetGsVerification(event.document.uri)
+  })
+
+  /**
+   * L3 → L0 feedback. A clean gs run is the authority on mark balance: it
+   * resolves aliases, `load`, `bind` and conditional `def`s the static layer
+   * cannot follow. The verdict is bound to a document version, so an edit
+   * invalidates it before it can suppress anything.
+   */
+  connection.onNotification('postscript/gsVerified', async (params: {
+    uri?: string
+    version?: number
+    clean?: boolean
+    residue?: number
+  }) => {
+    if (!params || typeof params.uri !== 'string' || typeof params.version !== 'number') return
+    recordGsVerification(params.uri, params.version, params.clean === true, params.residue)
+    const pending = documents.get(params.uri)
+    if (pending && pending.version === params.version) {
+      await validateTextDocument(pending)
+    }
+  })
+
+  documents.onDidSave(async event => {
+    const index = await getWorkspaceIndex(connection, event.document.uri)
+    if (index) {
+      await index.upsertFile(fileUriToFsPath(event.document.uri) ?? '')
+    }
   })
 
 
@@ -443,7 +557,7 @@ function setupConnection(connection: Connection) {
   async function validateTextDocument(textDocument: TextDocument) {
     try {
       const { errors, isBinary } = await getOrParseDocument(textDocument)
-      
+
       if (isBinary) {
         feedback.sendDiagnostics(textDocument.uri, [{
           severity: DiagnosticSeverity.Warning,
@@ -455,7 +569,7 @@ function setupConnection(connection: Connection) {
         return
       }
       const diagnostics: Diagnostic[] = []
-      
+
       if (errors && errors.length > 0) {
         if (isBinaryDataError(errors, textDocument.getText().length)) {
           diagnostics.push({
@@ -466,23 +580,44 @@ function setupConnection(connection: Connection) {
             code: 'PS008'
           })
         } else {
+          // L1: when the document belongs to an analysis unit, structural
+          // warnings balanced in the merged build stream become hints
+          const composition = await getCompositionAnalysis(textDocument)
+          const docFragment = composition?.fragments[composition.fragments.length - 1]
+          // L3: a clean gs run for exactly this version outranks both the
+          // single-file view and the composition guess
+          const gsVerdict = getGsVerification(textDocument.uri.toString())
+          const gsVerified = !!gsVerdict && gsVerdict.clean && gsVerdict.version === textDocument.version
+
           for (const err of errors) {
-            const range = { 
-              start: { line: (err.line ?? 1) - 1, character: (err.column ?? 1) - 1 }, 
-              end: textDocument.positionAt((err.endOffset > 0 ? err.endOffset : (err.startOffset ?? 0)) + 1) 
+            const range = {
+              start: { line: (err.line ?? 1) - 1, character: (err.column ?? 1) - 1 },
+              end: textDocument.positionAt((err.endOffset > 0 ? err.endOffset : (err.startOffset ?? 0)) + 1)
             }
-            const severity = (err as any).isWarning ? DiagnosticSeverity.Warning : DiagnosticSeverity.Error;
-            diagnostics.push({ 
-              severity, 
-              range, 
-              message: err.message || 'Parse error', 
-              source: 'postscript',
-              code: severity === DiagnosticSeverity.Warning ? 'PS009' : 'PS001'
+            const balancedInContext = !!(
+              composition && docFragment &&
+              typeof err.startOffset === 'number' && err.startOffset >= 0 &&
+              err.startOffset <= docFragment.endOffset - docFragment.startOffset &&
+              isBalancedInContext(composition.merged, docFragment, err.startOffset)
+            )
+            const classification = classifyStructuralDiagnostic({
+              isWarning: !!(err as any).isWarning,
+              gsClean: gsVerified,
+              residue: gsVerified ? gsVerdict?.residue : undefined,
+              balancedInContext
             })
+            const severity = classification.level === 'error'
+              ? DiagnosticSeverity.Error
+              : classification.level === 'warning'
+                ? DiagnosticSeverity.Warning
+                : DiagnosticSeverity.Hint
+            const message = `${err.message || 'Parse error'}${classification.suffix}`
+
+            diagnostics.push({ severity, range, message, source: 'postscript', code: classification.code })
           }
         }
       }
-      
+
       feedback.sendDiagnostics(textDocument.uri, diagnostics)
     } catch (error) {
       feedback.logError(`Error validating document: URI: ${textDocument.uri}`, error)
@@ -506,6 +641,7 @@ interface ParseCacheEntry {
   errors: any[]
   timestamp: number
   isBinary: boolean
+  parserConfigVersion?: number
 }
 
 class AsyncMutex {
@@ -644,6 +780,89 @@ const parseCache = new ThreadSafeLRUCache<string, ParseCacheEntry>(MAX_CACHE_SIZ
 
 const MAX_CACHE_AGE = 5 * 60 * 1000
 
+// mark-aware operator tables (postscript.parser.*); refetched after config changes
+let markOperators: MarkOperatorConfig | undefined
+let parserConfigVersion = 0
+
+// L2 workspace symbol index (go-to-definition / workspace symbols)
+let workspaceIndex: WorkspaceIndex | null = null
+
+async function getWorkspaceIndex(connection: Connection, preferredUri?: string): Promise<WorkspaceIndex | null> {
+  const root = await getWorkspaceRoot(connection, preferredUri)
+  if (!root) return null
+  if (!workspaceIndex || workspaceIndex.root !== root) {
+    workspaceIndex = new WorkspaceIndex(root)
+  }
+  return workspaceIndex
+}
+
+// L1 composition analysis cache: key covers doc version, dep list, dep
+// mtimes and the parser config version, so any relevant change rebuilds
+let lastComposition: { key: string; fragments: AnalysisFragment[]; merged: any } | undefined
+
+async function getMarkOperators(conn: Connection): Promise<MarkOperatorConfig> {
+  if (!markOperators) {
+    try {
+      const cfg = await conn.workspace.getConfiguration('postscript.parser')
+      markOperators = {
+        consuming: Array.isArray((cfg as any)?.markConsumingOperators)
+          ? (cfg as any).markConsumingOperators.filter((s: unknown) => typeof s === 'string')
+          : DEFAULT_MARK_OPERATORS.consuming,
+        suspending: Array.isArray((cfg as any)?.markSuspendingOperators)
+          ? (cfg as any).markSuspendingOperators.filter((s: unknown) => typeof s === 'string')
+          : DEFAULT_MARK_OPERATORS.suspending
+      }
+    } catch {
+      markOperators = DEFAULT_MARK_OPERATORS
+    }
+  }
+  return markOperators
+}
+
+/**
+ * L1 composition analysis for a document: only documents declared in a
+ * postscript.config.json belong to an analysis unit; everything else keeps
+ * pure single-file (L0) diagnostics. The merged stream follows the compile
+ * merge order, so what the compiler would actually see is what we analyze.
+ */
+async function getCompositionAnalysis(textDocument: TextDocument): Promise<{ fragments: AnalysisFragment[]; merged: any } | undefined> {
+  const currentFilePath = fileUriToFsPath(textDocument.uri)
+  if (!currentFilePath) return undefined
+
+  const workspaceRoot = await getWorkspaceRoot(connection, currentFilePath)
+  const cfg = await getProjectConfigForFile(currentFilePath, workspaceRoot)
+  if (!cfg.configPath || !cfg.configDir) return undefined
+  if (!isFileDeclared(cfg.rawConfig.dependencies, currentFilePath, workspaceRoot)) return undefined
+
+  const preload = resolvePreloadConfig(cfg.rawConfig, currentFilePath, cfg.configDir, workspaceRoot)
+  const deps = [...preload.globalLevel, ...preload.workspaceLevel, ...preload.fileLevel]
+
+  const mtimes = await Promise.all(deps.map(async f => {
+    try {
+      return (await fs.promises.stat(f)).mtimeMs
+    } catch {
+      return -1
+    }
+  }))
+  const key = JSON.stringify({
+    v: textDocument.version,
+    f: currentFilePath,
+    d: deps,
+    m: mtimes,
+    pc: parserConfigVersion
+  })
+  if (lastComposition && lastComposition.key === key) {
+    return { fragments: lastComposition.fragments, merged: lastComposition.merged }
+  }
+
+  const built: CompositionStream = await buildCompositionStream(
+    currentFilePath, textDocument.getText(), deps
+  )
+  const merged = parseComposition(built.stream, await getMarkOperators(connection))
+  lastComposition = { key, fragments: built.fragments, merged }
+  return { fragments: built.fragments, merged }
+}
+
 async function getOrParseDocument(textDocument: TextDocument): Promise<ParseCacheEntry> {
   try {
     const uri = textDocument.uri
@@ -652,8 +871,9 @@ async function getOrParseDocument(textDocument: TextDocument): Promise<ParseCach
     const now = Date.now()
     
     const cached = await parseCache.get(uri)
-    const isCacheValid = cached && 
-      cached.version === version && 
+    const isCacheValid = cached &&
+      cached.version === version &&
+      cached.parserConfigVersion === parserConfigVersion &&
       now - cached.timestamp < MAX_CACHE_AGE
     
     if (isCacheValid) {
@@ -676,7 +896,7 @@ async function getOrParseDocument(textDocument: TextDocument): Promise<ParseCach
     }
     
     const lexResult = (PsStrictLexer as any).tokenize(text)
-    const builder = new PostScriptSymbolBuilder()
+    const builder = new PostScriptSymbolBuilder(await getMarkOperators(connection))
     
     let symbols: DocumentSymbol[] = []
     let errors: any[] = []
@@ -695,7 +915,8 @@ async function getOrParseDocument(textDocument: TextDocument): Promise<ParseCach
       symbols,
       errors,
       timestamp: Date.now(),
-      isBinary: false
+      isBinary: false,
+      parserConfigVersion
     }
     
     await parseCache.set(uri, entry)
@@ -725,13 +946,78 @@ async function getOrParseDocument(textDocument: TextDocument): Promise<ParseCach
   connection.onDocumentSymbol(async (params: DocumentSymbolParams) => {
     const doc = documents.get(params.textDocument.uri)
     if (!doc) return []
-    
+
     try {
       const { symbols, isBinary } = await getOrParseDocument(doc)
       return isBinary ? [] : symbols
     } catch (error) {
       feedback.logError(`Error building document symbols: URI: ${params.textDocument.uri}`, error)
       return []
+    }
+  })
+
+  function defEntryToLocation(entry: { uri: string; def: { startLine: number; startColumn: number; endLine: number; endColumn: number } }): Location {
+    const d = entry.def
+    const range: Range = {
+      start: { line: d.startLine - 1, character: d.startColumn - 1 },
+      end: { line: d.endLine - 1, character: d.endColumn }
+    }
+    return { uri: entry.uri, range }
+  }
+
+  connection.onWorkspaceSymbol(async (params: WorkspaceSymbolParams): Promise<SymbolInformation[]> => {
+    try {
+      const index = await getWorkspaceIndex(connection)
+      if (!index) return []
+      await index.ensure()
+      return index.query(params.query ?? '').map(entry => ({
+        name: entry.def.name,
+        kind: entry.def.isProcedure ? SymbolKind.Function : SymbolKind.Variable,
+        location: defEntryToLocation(entry)
+      }))
+    } catch (error) {
+      feedback.logError('Error in workspace symbol search', error)
+      return []
+    }
+  })
+
+  connection.onDefinition(async (params: DefinitionParams): Promise<Location[] | null> => {
+    try {
+      const doc = documents.get(params.textDocument.uri)
+      if (!doc) return null
+      const text = doc.getText()
+      const offset = doc.offsetAt(params.position)
+
+      // token under the cursor: executable name or literal name (strip '/');
+      // chevrotain endOffset is inclusive of the last character
+      const lex = (PsStrictLexer as any).tokenize(text)
+      const tokens: any[] = lex?.tokens ?? []
+      const hit = tokens.find(t => offset >= t.startOffset && offset <= t.endOffset)
+      if (!hit) return null
+      const type: string = hit.tokenType?.name ?? ''
+      if (type !== 'ExecutableName' && type !== 'LiteralName') return null
+      const name: string = hit.image.startsWith('/') ? hit.image.slice(1) : hit.image
+      if (!name) return null
+
+      const index = await getWorkspaceIndex(connection, params.textDocument.uri)
+      if (!index) return null
+      await index.ensure()
+
+      // dirty-buffer definitions first (not yet on disk), then disk index;
+      // exclude the occurrence under the cursor itself
+      const localDefs = extractDefinitions(text)
+        .filter(d => d.name === name && !(offset >= d.startOffset && offset < d.endOffset))
+        .map(d => ({ uri: params.textDocument.uri, def: d }))
+      const indexed = index
+        .lookup(name)
+        .filter(e => e.uri !== params.textDocument.uri || !(offset >= e.def.startOffset && offset < e.def.endOffset))
+        .map(e => ({ uri: e.uri, def: e.def }))
+
+      const results = [...localDefs, ...indexed]
+      return results.length > 0 ? results.map(defEntryToLocation) : null
+    } catch (error) {
+      feedback.logError(`Error in definition lookup: ${params.textDocument.uri}`, error)
+      return null
     }
   })
   
