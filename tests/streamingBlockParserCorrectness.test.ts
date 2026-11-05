@@ -1,39 +1,51 @@
+import { describe, it } from 'node:test';
+import * as assert from 'node:assert';
+import { StreamingBlockParser, RangeBlock } from '../out/debugger/StreamingBlockParser.js';
 
-import { StreamingBlockParser, RangeBlock } from '@/debugger/StreamingBlockParser';
+const TEMPLATES = [
+  { name: 'outer', startTemplate: 'OUTER({id})', endTemplate: 'END_OUTER({id})' },
+  { name: 'inner', startTemplate: 'INNER({id})', endTemplate: 'END_INNER({id})' }
+];
 
-function runCorrectnessTest() {
-  console.log('====== 测试新流式解析器 (Optimized) ======\n');
-
-  const parser = new StreamingBlockParser([
-    { name: 'outer', startTemplate: 'OUTER({id})', endTemplate: 'END_OUTER({id})' },
-    { name: 'inner', startTemplate: 'INNER({id})', endTemplate: 'END_INNER({id})' }
-  ]);
-
-  parser.write('OUTER(1) Hello INNER(A)inner-dataEND_INNER(A) World END_OUTER(1)');
-
-  let b = parser.getNextBlock() as RangeBlock;
-  console.log('1. 内部范围先反馈:', b?.name, b?.id, '内容:', b?.content);
-  if (b) b.release();
-
-  b = parser.getNextBlock() as RangeBlock;
-  console.log('2. 父范围随后反馈:', b?.name, b?.id, '内容:', b?.content);
-  if (b) b.release();
-
-  parser.write('OUTER(2)A INNER(X)xEND_INNER(X) B INNER(Y)yEND_INNER(Y) C END_OUTER(2)');
-
-  b = parser.getNextBlock() as RangeBlock;
-  console.log('3. 兄弟块 X:', b?.id, b?.content);
-  if (b) b.release();
-
-  b = parser.getNextBlock() as RangeBlock;
-  console.log('   兄弟块 Y:', b?.id, b?.content);
-  if (b) b.release();
-
-  b = parser.getNextBlock() as RangeBlock;
-  console.log('   父范围 2:', b?.id, '内容:', b?.content);
-  if (b) b.release();
-
-  console.log('\n====== 所有测试通过 (Optimized) ======');
+function next(parser: StreamingBlockParser): RangeBlock | undefined {
+  const block = parser.getNextBlock() as RangeBlock;
+  return block ?? undefined;
 }
 
-runCorrectnessTest();
+describe('StreamingBlockParser correctness', () => {
+  it('emits nested blocks before their parent, stripping inner ranges', () => {
+    const parser = new StreamingBlockParser(TEMPLATES);
+    parser.write('OUTER(1) Hello INNER(A)inner-dataEND_INNER(A) World END_OUTER(1)');
+
+    const inner = next(parser);
+    assert.ok(inner);
+    assert.strictEqual(inner!.name, 'inner');
+    assert.strictEqual(inner!.id, 'A');
+    assert.strictEqual(inner!.content, 'inner-data');
+    inner!.release();
+
+    const outer = next(parser);
+    assert.ok(outer);
+    assert.strictEqual(outer!.name, 'outer');
+    assert.strictEqual(outer!.id, '1');
+    // the nested range is removed from the parent content
+    assert.ok(!outer!.content.includes('inner-data'));
+    assert.ok(outer!.content.includes('Hello'));
+    assert.ok(outer!.content.includes('World'));
+    outer!.release();
+
+    assert.strictEqual(next(parser), undefined);
+  });
+
+  it('emits sibling blocks in order after a second write', () => {
+    const parser = new StreamingBlockParser(TEMPLATES);
+    parser.write('OUTER(2)A INNER(X)xEND_INNER(X) B INNER(Y)yEND_INNER(Y) C END_OUTER(2)');
+
+    const ids: string[] = [];
+    for (let block = next(parser); block; block = next(parser)) {
+      ids.push(`${block.name}:${block.id}`);
+      block.release();
+    }
+    assert.deepStrictEqual(ids, ['inner:X', 'inner:Y', 'outer:2']);
+  });
+});

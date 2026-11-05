@@ -2,7 +2,7 @@ import { describe, it } from 'node:test'
 import * as assert from 'node:assert'
 import * as path from 'path'
 import * as fs from 'fs'
-import { DebugConfigurationParser } from '@/debugger/debugConfigurationParser'
+import { DebugConfigurationParser } from '../out/debugger/debugConfigurationParser.js'
 
 function setupTestDir(): string {
   const testDir = path.join(__dirname, 'testdata')

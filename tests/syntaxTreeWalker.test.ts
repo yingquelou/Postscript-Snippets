@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test'
 import * as assert from 'node:assert'
-import { psParserHelper } from '@/parser/postscriptParser'
-import { CstWalker } from '@/parser/syntaxTreeWalker'
+import { psParserHelper } from '../out/parser/postscriptParser.js'
+import { CstWalker } from '../out/parser/syntaxTreeWalker.js'
 
 describe('SyntaxTreeWalker', () => {
   it('should correctly walk through CST nodes', () => {
@@ -17,18 +17,19 @@ describe('SyntaxTreeWalker', () => {
     const walker = new CstWalker(cst, programText)
 
     assert.strictEqual(walker.getCurrentNodeText(), 'sd')
-    assert.strictEqual(walker.step(), true)
+    // step() returns the consumed token text (not a boolean)
+    assert.strictEqual(walker.step(), 'sd')
     assert.strictEqual(walker.getCurrentNodeText(), '{12}')
 
     const savedState = walker.saveState()
     assert.strictEqual(savedState.index, 1)
 
-    assert.strictEqual(walker.step(), true)
+    assert.strictEqual(walker.step(), '{12}')
     assert.strictEqual(walker.getCurrentNodeText(), '(23)')
 
     walker.rollback(savedState)
     assert.strictEqual(walker.getCurrentNodeText(), '{12}')
-    assert.strictEqual(walker.step(), true)
+    assert.strictEqual(walker.step(), '{12}')
     assert.strictEqual(walker.getCurrentNodeText(), '(23)')
   })
 
@@ -37,7 +38,7 @@ describe('SyntaxTreeWalker', () => {
     const cst = parseResult.cst!
 
     const walker = new CstWalker(cst, '')
-    assert.strictEqual(walker.step(), false)
+    assert.strictEqual(walker.step(), '')
     assert.strictEqual(walker.getCurrentNodeText(), '')
   })
 
@@ -52,8 +53,9 @@ describe('SyntaxTreeWalker', () => {
     const walker = new CstWalker(cst, programText)
     const nodes: string[] = []
 
-    while (walker.step()) {
-      nodes.push(walker.getCurrentNodeText())
+    // collect the text returned by each step (getCurrentNodeText reads ahead)
+    for (let text = walker.step(); text; text = walker.step()) {
+      nodes.push(text)
     }
 
     assert.deepStrictEqual(nodes, ['1', '2', '{ 3 4 add }', 'bind'])

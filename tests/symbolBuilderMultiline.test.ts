@@ -24,9 +24,11 @@ describe('symbolBuilder multiline string parsing', () => {
   it('parses procedure with multiline content correctly', () => {
     const text = '{\n(line1\nline2)\n}'
     const result = parsePostScript(text)
-    
+
     assert.strictEqual(result.errors.length, 0)
     assert.strictEqual(result.symbols.length, 1)
-    assert.ok(result.symbols[0].name.includes('procedure'))
+    // procedures are outlined as "{...}" with the Function kind
+    assert.strictEqual(result.symbols[0].name, '{...}')
+    assert.strictEqual(result.symbols[0].kind, 12)
   })
 })

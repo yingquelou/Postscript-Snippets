@@ -64,6 +64,38 @@ export interface ParseResult {
   errors: ParseError[];
 }
 
+/**
+ * Mark-aware operator tables (issue #2).
+ *
+ * `consuming`: operators that pop the operand stack down to and including the
+ * nearest mark (e.g. cleartomark, pdfmark). Content collected since the mark
+ * is attached to the consuming operator's symbol so the outline keeps it.
+ *
+ * `suspending`: operators that discard the whole operand stack below the
+ * current procedure boundary (e.g. clear, clearstack). Pending marks are
+ * dropped silently instead of reported as orphans at end of input.
+ *
+ * Matching is exact-image against executable name tokens only; `/pdfmark`
+ * (a literal name) never matches.
+ */
+export interface MarkOperatorConfig {
+  consuming: string[];
+  suspending: string[];
+}
+
+/**
+ * Entries marked "gs-verified" were confirmed against Ghostscript 10.08.0
+ * (`mark 1 2 3 <op>` then `count`); do not add operators here on PLRM
+ * reading alone — run them through the interpreter first.
+ */
+export const DEFAULT_MARK_OPERATORS: MarkOperatorConfig = {
+  // cleartomark / pdfmark: pop to and including the mark.
+  // packedarray: gs accepts a mark form (`mark 1 2 3 packedarray` → 1 packed
+  // array, the mark is consumed). gs-verified.
+  consuming: ['cleartomark', 'packedarray', 'pdfmark'],
+  suspending: ['clear', 'clearstack']
+};
+
 export class PostScriptSymbolBuilder {
   private tokens: TokenInfo[] = [];
   private rootSymbols: DocumentSymbol[] = [];
@@ -71,6 +103,13 @@ export class PostScriptSymbolBuilder {
   private stack: StackElement[] = [];
   private stringBuffer: { startToken: TokenInfo; parts: string[]; depth: number; tokens: TokenInfo[] } | null = null;
   private containerDepth = -1;
+  private consumingSet: Set<string>;
+  private suspendingSet: Set<string>;
+
+  constructor(markOperators: MarkOperatorConfig = DEFAULT_MARK_OPERATORS) {
+    this.consumingSet = new Set(markOperators.consuming);
+    this.suspendingSet = new Set(markOperators.suspending);
+  }
 
   public buildSymbols(text: string): DocumentSymbol[] {
     const result = this.parse(text);
@@ -170,10 +209,88 @@ export class PostScriptSymbolBuilder {
         this.addValueSymbol(token);
         break;
 
-      default:
+      default: {
+        if (token.type === 'ExecutableName') {
+          // Exact match on executable name tokens only; a literal name such
+          // as /pdfmark is a LiteralName token and never enters this branch.
+          if (this.suspendingSet.has(token.image)) {
+            this.handleMarkSuspend(token);
+            break;
+          }
+          if (this.consumingSet.has(token.image)) {
+            this.handleMarkConsume(token);
+            break;
+          }
+        }
         this.addValueSymbol(token);
         break;
+      }
     }
+  }
+
+  /**
+   * Pop the stack down to and including the nearest mark-family entry
+   * (array/dictionary/mark), without crossing a procedure boundary.
+   * Collected content is attached to the consuming operator's symbol so the
+   * document outline keeps it.
+   */
+  private handleMarkConsume(token: TokenInfo): void {
+    const collected: StackElement[] = [];
+    let consumed = false;
+
+    while (this.stack.length > 0) {
+      const top = this.stack[this.stack.length - 1];
+      if (top.type === 'procedure') {
+        break;
+      }
+      this.stack.pop();
+      if (top.type === 'array' || top.type === 'dictionary' || top.type === 'mark') {
+        this.containerDepth--;
+        consumed = true;
+        break;
+      }
+      collected.push(top);
+    }
+
+    if (consumed) {
+      const symbol = this.createLeafSymbol(token);
+      const children: DocumentSymbol[] = [];
+      for (let i = collected.length - 1; i >= 0; i--) {
+        const elem = collected[i];
+        if (elem.symbol) {
+          children.push(elem.symbol);
+        } else if (elem.token) {
+          children.push(this.createLeafSymbol(elem.token));
+        }
+      }
+      symbol.children = children.length > 0 ? children : undefined;
+      this.stack.push({ type: 'value', token, symbol });
+    } else {
+      // No mark in scope: restore what we popped and treat as a plain value.
+      while (collected.length > 0) {
+        this.stack.push(collected.pop()!);
+      }
+      this.addValueSymbol(token);
+    }
+  }
+
+  /**
+   * Drop every pending operand-stack element above the nearest procedure
+   * boundary (mark-family entries included) without any diagnostic — the
+   * operator has discarded them by definition.
+   */
+  private handleMarkSuspend(token: TokenInfo): void {
+    while (this.stack.length > 0) {
+      const top = this.stack[this.stack.length - 1];
+      if (top.type === 'procedure') {
+        break;
+      }
+      this.stack.pop();
+      if (top.type === 'array' || top.type === 'dictionary' || top.type === 'mark') {
+        this.containerDepth--;
+      }
+    }
+    this.addValueSymbol(token);
   }
 
   private startStringLiteral(token: TokenInfo): void {

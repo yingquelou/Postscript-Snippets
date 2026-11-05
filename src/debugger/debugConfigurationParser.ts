@@ -70,8 +70,13 @@ export class DebugConfigurationParser {
       explicitPath: config.ghostscriptPath,
       configPath
     })
-    
-    if (!result.path) {
+
+    if (config.ghostscriptPath && result.source !== 'explicit') {
+      // An explicit path that fails validation must NOT be silently replaced by
+      // an auto-detected interpreter: keep the requested path so
+      // validateResolvedPaths can report it (the user asked for that binary).
+      parsed.ghostscriptPath = config.ghostscriptPath
+    } else if (!result.path) {
       errors.push({
         field: 'ghostscriptPath',
         message: 'Ghostscript executable not found',

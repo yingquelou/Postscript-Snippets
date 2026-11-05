@@ -1,10 +1,7 @@
 import * as vscode from 'vscode'
-import * as fs from 'fs'
-import * as path from 'path'
 import { resolveGhostscript } from './ghostscriptHelper'
 import {
-  PROJECT_CONFIG_FILENAME,
-  getProjectConfig,
+  getProjectConfigForFile,
   matchesCompileFile,
   resolveConfigPath,
   PostscriptProjectConfig
@@ -24,13 +21,14 @@ export async function compilePostscript(resource?: vscode.Uri): Promise<void> {
   }
 
   const workspaceRoot = workspaceFolder.uri.fsPath
-  const configPath = path.join(workspaceRoot, PROJECT_CONFIG_FILENAME)
-  const hasConfigFile = fs.existsSync(configPath)
 
-  const { rawConfig, configDir } = await getProjectConfig(workspaceRoot)
-  const projectConfig = rawConfig as PostscriptProjectConfig
-
+  // same upward search as the language server so compile and analysis share
+  // one analysis unit (config next to the file wins over the workspace root)
   const currentFilePath = documentUri.fsPath
+  const { rawConfig, configDir, configPath } = await getProjectConfigForFile(currentFilePath, workspaceRoot)
+  const projectConfig = rawConfig as PostscriptProjectConfig
+  const hasConfigFile = !!configPath
+
   const dependencyEntry = hasConfigFile && projectConfig.dependencies
     ? projectConfig.dependencies.find(entry =>
         entry.file && matchesCompileFile(entry.file, currentFilePath, configDir || workspaceRoot, workspaceRoot)

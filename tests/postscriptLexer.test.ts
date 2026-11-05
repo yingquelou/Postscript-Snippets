@@ -47,8 +47,8 @@ describe('PostScript Lexer', () => {
   it('should correctly tokenize executable name "mark" in different context', () => {
     const result = PsStrictLexer.tokenize('dup mark eq')
     assert.strictEqual(result.errors.length, 0, 'Should have no errors')
-    assert.strictEqual(result.tokens.length, 4, 'Should have 4 tokens')
-    assert.strictEqual(result.tokens[2].tokenType.name, 'Mark', '"mark" in executable position should be Mark token')
+    assert.strictEqual(result.tokens.length, 3, 'Should have 3 tokens')
+    assert.strictEqual(result.tokens[1].tokenType.name, 'Mark', '"mark" always lexes as a Mark token')
   })
 
   describe('ExecutableName boundary cases', () => {
@@ -87,7 +87,7 @@ describe('PostScript Lexer', () => {
     it('should correctly tokenize brackets as separate tokens', () => {
       const result = PsStrictLexer.tokenize('<< >> [ ] { }')
       assert.strictEqual(result.errors.length, 0, 'Should have no errors')
-      assert.strictEqual(result.tokens.length, 8, 'Should have 8 tokens')
+      assert.strictEqual(result.tokens.length, 6, 'Should have 6 tokens')
       assert.strictEqual(result.tokens[0].tokenType.name, 'DictStart', 'First should be DictStart')
       assert.strictEqual(result.tokens[1].tokenType.name, 'DictEnd', 'Second should be DictEnd')
       assert.strictEqual(result.tokens[2].tokenType.name, 'ArrayStart', 'Third should be ArrayStart')
