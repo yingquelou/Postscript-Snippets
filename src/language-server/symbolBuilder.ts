@@ -75,12 +75,30 @@ export interface ParseResult {
  * current procedure boundary (e.g. clear). Pending marks are dropped
  * silently instead of reported as orphans at end of input.
  *
- * Matching is exact-image against executable name tokens only; `/pdfmark`
- * (a literal name) never matches.
+ * Matching is against executable name tokens only; `/pdfmark` (a literal name)
+ * never matches. `//pdfmark` does match: it is an immediate name, the same
+ * operator as `pdfmark` (see `operatorTableKey`).
  */
 export interface MarkOperatorConfig {
   consuming: string[];
   suspending: string[];
+}
+
+/**
+ * Reduce an executable name token to the key used against the operator tables.
+ *
+ * `//name` is an immediate name: the scanner resolves it while building the
+ * procedure and splices the resulting object in, so it denotes the same
+ * object as the bare `name`. gs 10.08 agrees on the operand-stack effect —
+ * `mark 1 2 //cleartomark` leaves `count` 0 exactly like the bare form, and
+ * `mark /a 1 //.dicttomark` yields a dict just like `.dicttomark`.
+ *
+ * The tables are written with plain names, so the prefix is dropped before
+ * lookup. `//` on its own (empty name) keeps its image: it is a lexical
+ * error, not an operator, and must not match an empty table entry.
+ */
+function operatorTableKey(image: string): string {
+  return image.length > 2 && image.startsWith('//') ? image.slice(2) : image;
 }
 
 /**
@@ -216,13 +234,16 @@ export class PostScriptSymbolBuilder {
 
       default: {
         if (token.type === 'ExecutableName') {
-          // Exact match on executable name tokens only; a literal name such
+          // Match against executable name tokens only; a literal name such
           // as /pdfmark is a LiteralName token and never enters this branch.
-          if (this.suspendingSet.has(token.image)) {
+          // `//name` is the same operator as `name`, so it is normalized
+          // before the lookup.
+          const key = operatorTableKey(token.image);
+          if (this.suspendingSet.has(key)) {
             this.handleMarkSuspend(token);
             break;
           }
-          if (this.consumingSet.has(token.image)) {
+          if (this.consumingSet.has(key)) {
             this.handleMarkConsume(token);
             break;
           }

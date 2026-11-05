@@ -73,9 +73,17 @@ complete solution. L3 is the final semantic arbiter.
     that can never match is worse than no entry, because it implies support
     that does not exist. Add it yourself if you target an interpreter that
     has it.
-- Matching rules: exact match on **executable name tokens only**; `/pdfmark`
-  (literal name) does not match. `counttomark` is read-only and deliberately
-  not in the default consuming table.
+- Matching rules: match against **executable name tokens only**; `/pdfmark`
+  (literal name) does not match. `//name` does match: an immediate name denotes
+  the same operator as `name`, so the lookup strips the `//` prefix and one
+  table entry covers both spellings. gs 10.08 verified: `mark 1 2 //cleartomark`
+  leaves `count` 0, `mark /a 1 //.dicttomark` yields a dict,
+  `[ /Title (x) /DOCINFO //pdfmark` consumes the mark — all identical to the
+  bare forms (including `pdfmark`'s `/typecheck` on a non-key-value operand
+  stack, which the spelling does not change). A bare `//` (empty name)
+  is a lexical error and matches nothing, so it is never treated as a consumer.
+  `counttomark` is read-only and deliberately not in the default consuming
+  table.
 - Closing rules follow the untyped mark of gs rather than a bracket grammar:
   - `[`, `<<` and `mark` push the **same** mark entry; the `kind` tag is a
     rendering hint only. gs confirms they are one object: `([) load` and
@@ -100,6 +108,30 @@ complete solution. L3 is the final semantic arbiter.
 - Consumption is limited to the current procedure scope: a mark opened before
   `{` is not consumed inside a procedure body, mirroring gs's per-procedure
   operand-stack discipline for structural analysis purposes.
+
+#### Configuring around local conventions
+
+The two tables are the supported answer to "in this project `error` also closes
+a mark". gs' own pdfwrite implementation (the 8335-line `ghostscript.ps` from
+the gs distribution) is the reference case: 60 warnings out of the box, nearly
+all of them the `mark (msg) //error exec` idiom, where the consumer is a
+procedure defined in the same file (`/error { … cleartomark … } def`) or an
+internal operator (`/.dicttomark {>>} bind def`). Two entries remove them:
+
+```jsonc
+// .vscode/settings.json — workspace scope
+"postscript.parser.markConsumingOperators": [
+  "cleartomark", "packedarray", "pdfmark", "error", ".dicttomark"
+]
+```
+
+Plain names only: `//error` hits the same entry, because an immediate name is
+the same operator. Measured on that file: **60 → 5** warnings. The five that
+remain are the shapes this layer does not model on purpose — `mark` used as an
+`eq` operand, a procedure body that is nothing but a delimiter (`{>>}`), and a
+mark handed to an unknown caller through the operand stack. All five are
+settled by `PostScript: Validate with Ghostscript`: the file runs clean with
+residue 0, so they become hints (PS014).
 
 ### L1 — composition flow analysis (implemented)
 
@@ -382,6 +414,20 @@ output is never used to suppress a diagnostic — one direction only.
   Dropped: L3 settles those cases exactly, so a pattern table would add a second
   source of confidence for the same subset and still miss every non-literal
   binding.
+- **Resolving user-defined closers automatically** — registering a
+  `/name { … cleartomark … } def` body in the consuming table, treating `mark`
+  as an `eq` operand, or reading a `{>>}` body as a macro. Rejected as a class
+  by one criterion: a static change may not assume *which object a name
+  denotes*. That is name resolution — scope, `def` order, conditional branches,
+  `load`/`exec`, runtime rebinding — and it is undecidable at this layer; the
+  tables are the explicit declaration and L3 is the arbiter. The cost of the
+  approximation is measured: adding `eq` as a consumer turns the legal
+  `[ 1 (a) (b) eq ]` (gs: `[1 false]`, exit 0) into a diagnostic *and* silences
+  a genuine leftover mark, because consumption pops the nearest mark without
+  knowing where it came from — on `ghostscript.ps` the count went 5 → 6, with
+  two false positives on `]cvx`. The `//name` normalization is not an exception
+  to the criterion: it assumes nothing about the object, only that two
+  spellings of one token denote one token.
 - **`[` ↔ `pdfmark` cross-highlight** (issue #2, "cursor on `[` highlights the
   closer"). Not planned, and not a gap this layer can close: `colorizedBracketPairs`
   in `language-configuration.json` pairs *bracket tokens* only, which is why

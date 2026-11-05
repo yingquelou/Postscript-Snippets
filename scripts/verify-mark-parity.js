@@ -46,6 +46,10 @@ const cases = [
   { name: 'bind idiom: /pdfmark {cleartomark} bind def (no mark)', snippet: '/pdfmark {cleartomark} bind def', gsOk: true, lsShouldFlag: false },
   { name: 'stylistic only: mark 1 2 3 (leftover, gs silent)', snippet: 'mark 1 2 3', gsOk: true, lsShouldFlag: true, stylistic: true },
   { name: 'stylistic only: [ 1 2 counttomark (read-only)', snippet: '[ 1 2 counttomark', gsOk: true, lsShouldFlag: true, stylistic: true },
+  // `//name` is an immediate name — the same operator as the bare name.
+  { name: 'immediate name: mark 1 2 //cleartomark', snippet: 'mark 1 2 //cleartomark', gsOk: true, lsShouldFlag: false },
+  { name: 'immediate name: [ /Title (x) /DOCINFO //pdfmark', snippet: '[ /Title (x) /DOCINFO //pdfmark', gsOk: true, lsShouldFlag: false },
+  { name: 'immediate name of a non-consuming proc', snippet: '/noop {} def mark 1 2 //noop', gsOk: true, lsShouldFlag: true, stylistic: true },
 ]
 
 let pass = 0, fail = 0
@@ -69,6 +73,31 @@ const consumer = r.symbols[0]
 const outlineOk = r.symbols.length === 1 && consumer.name === 'pdfmark' &&
   consumer.children && consumer.children.length === 3
 outlineOk ? (pass++, console.log('PASS  outline: pdfmark symbol keeps 3 collected children')) : (fail++, console.log('FAIL  outline:', JSON.stringify(r.symbols)))
+
+// immediate-name equivalence, measured rather than argued: gs must produce the
+// same operand-stack effect for `//x` and `x`. This is the evidence behind
+// normalizing the `//` prefix before the table lookup.
+function gsStdout(snippet) {
+  const f = path.join(os.tmpdir(), 'ps-parity-stdout.ps')
+  fs.writeFileSync(f, snippet + '\nquit\n')
+  try {
+    return execFileSync(GS, ['-q', '-dNODISPLAY', '-dBATCH', '-dNOPAUSE', f], { encoding: 'utf8', timeout: 15000 }).trim()
+  } catch (e) {
+    return String(e.stdout || '').trim()
+  }
+}
+const equivalentPairs = [
+  { label: 'cleartomark', bare: 'mark 1 2 3 cleartomark count ==', immediate: 'mark 1 2 3 //cleartomark count ==' },
+  { label: '.dicttomark', bare: 'mark /a 1 /b 2 .dicttomark type ==', immediate: 'mark /a 1 /b 2 //.dicttomark type ==' },
+  { label: 'clear', bare: '1 2 3 clear count ==', immediate: '1 2 3 //clear count ==' },
+]
+for (const p of equivalentPairs) {
+  const a = gsStdout(p.bare)
+  const b = gsStdout(p.immediate)
+  const ok = a !== '' && a === b
+  ok ? pass++ : fail++
+  console.log(`${ok ? 'PASS' : 'FAIL'}  gs: //${p.label} == ${p.label}  (bare=${JSON.stringify(a)} immediate=${JSON.stringify(b)})`)
+}
 
 console.log(`\n${pass} passed, ${fail} failed (gs: ${GS})`)
 process.exit(fail > 0 ? 1 : 0)

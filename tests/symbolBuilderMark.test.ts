@@ -106,3 +106,54 @@ describe('symbolBuilder mark-aware operators (issue #2)', () => {
     assert.ok(result.errors.length > 0, 'orphan mark should be reported when suspending table is empty')
   })
 })
+
+describe('immediate names (//name) match the mark tables', () => {
+  // gs 10.08: `mark 1 2 //cleartomark` and `mark 1 2 cleartomark` both leave
+  // `count` 0 — an immediate name denotes the same operator, so a table entry
+  // written as a plain name must match it.
+  it('//cleartomark consumes the mark like cleartomark', () => {
+    const result = parsePostScript('mark 1 2 //cleartomark')
+    assert.strictEqual(result.errors.length, 0, `expected no errors, got: ${JSON.stringify(result.errors)}`)
+    assert.strictEqual(result.symbols.length, 1)
+    assert.strictEqual(result.symbols[0].name, '//cleartomark')
+    assert.strictEqual(result.symbols[0].children!.length, 2)
+  })
+
+  it('//pdfmark consumes the mark like pdfmark', () => {
+    const result = parsePostScript('[ /Title (x) /DOCINFO //pdfmark')
+    assert.strictEqual(result.errors.length, 0, `expected no errors, got: ${JSON.stringify(result.errors)}`)
+    assert.strictEqual(result.symbols[0].name, '//pdfmark')
+  })
+
+  it('//clear suspends pending marks like clear', () => {
+    const result = parsePostScript('[ 1 2 3 //clear')
+    assert.strictEqual(result.errors.length, 0, `expected no errors, got: ${JSON.stringify(result.errors)}`)
+  })
+
+  it('a configured alias matches through its immediate-name form', () => {
+    // the shape used by gs' own pdfwrite: `mark (msg) //error exec`
+    const builder = new PostScriptSymbolBuilder({
+      consuming: [...DEFAULT_MARK_OPERATORS.consuming, '.dicttomark'],
+      suspending: DEFAULT_MARK_OPERATORS.suspending
+    })
+    const result = builder.parse('mark /a 1 //.dicttomark')
+    assert.strictEqual(result.errors.length, 0, `expected no errors, got: ${JSON.stringify(result.errors)}`)
+    assert.strictEqual(result.symbols[0].name, '//.dicttomark')
+  })
+
+  it('still reports an immediate name that is not in the tables', () => {
+    const result = parsePostScript('mark 1 2 //someop')
+    assert.ok(result.errors.length > 0, 'unknown immediate name must not consume the mark')
+  })
+
+  it('a bare // (empty name) does not match an empty table entry', () => {
+    const builder = new PostScriptSymbolBuilder({ consuming: [''], suspending: [] })
+    const result = builder.parse('mark 1 2 //')
+    assert.ok(result.errors.length > 0, 'empty name must not be treated as a consumer')
+  })
+
+  it('a literal name //-prefixed inside a string is not a token', () => {
+    const result = parsePostScript('(//cleartomark) mark 1 2')
+    assert.ok(result.errors.length > 0, 'text inside a string must not consume the mark')
+  })
+})
