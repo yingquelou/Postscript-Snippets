@@ -17,7 +17,7 @@ For complete documentation, please visit the [PostScript Extension Wiki](https:/
 ## Quick Start
 
 1. Install the extension from VSCode Marketplace
-2. Install Ghostscript (required for debugging)
+2. Install Ghostscript (required for compiling, debugging and validation)
 3. Open a `.ps` or `.eps` file
 4. Press `F5` to start debugging
 5. Run `PostScript: Validate with Ghostscript` to check the file against the interpreter

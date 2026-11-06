@@ -34,7 +34,7 @@ Both registries receive the exact same VSIX. The extension is bundled with esbui
 - **Go to Definition & Workspace Symbols** — A token-level index of `/name … def` pairs across the workspace; definitions in an unsaved buffer are offered before the copy on disk.
 - **Ghostscript Validation** — `PostScript: Validate with Ghostscript` runs the file (or its whole build unit, when `postscript.config.json` declares one) through the real interpreter and reports the failure where it happened. Clean runs, `quit`, structured and human-readable errors are told apart, and a leftover mark is reported separately from a clean stack.
 - **Build Trace** — `PostScript: Generate Build Trace` replays the configured build with `run` shadowed and writes `.postscript/build-trace.json`; stderr order is the real execution order, nested `run` included.
-- **Code snippets** — Snippets for operators and errors.
+- **Code snippets** — 460+ snippets across 23 operator categories, plus error and custom entries.
 - **Debugger** — Run and debug PostScript with Ghostscript, with breakpoints, step operations, and debug console output.
 - **PostScript Compilation** — Compile PostScript files directly from the editor with a toolbar button or command.
 - **Project Configuration** — Define project-specific settings, dependencies, build arguments, and custom Ghostscript paths via `postscript.config.json`.
@@ -43,7 +43,7 @@ Both registries receive the exact same VSIX. The extension is bundled with esbui
 
 ## Requirements
 
-**Ghostscript** installed and available on `PATH`, or specify the full path in settings. It is used by the debugger, by `Validate with Ghostscript`, and by `Generate Build Trace`.
+**Ghostscript** installed and available on `PATH`, or specify the full path in settings. It is used by compilation, by the debugger, by `Validate with Ghostscript` and by `Generate Build Trace`.
 
 Automatic detection order:
 - **Windows**: `gswin64c` → `gswin32c` → `gs`

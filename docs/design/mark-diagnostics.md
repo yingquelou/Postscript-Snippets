@@ -1,6 +1,6 @@
 # Design: Mark-Aware Diagnostics (issue #2)
 
-Status: accepted draft · Scope: language server static analysis + optional dynamic validation
+Status: implemented (1.1.9) · Scope: language server static analysis + optional dynamic validation
 Tracking: [#2 — false "Unclosed array" on `[ ... pdfmark`](https://github.com/yingquelou/Postscript-Snippets/issues/2)
 
 ## Problem

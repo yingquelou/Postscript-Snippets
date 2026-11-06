@@ -17,7 +17,7 @@
 ## 快速开始
 
 1. 从 VSCode 市场安装扩展
-2. 安装 Ghostscript（调试功能必需）
+2. 安装 Ghostscript（编译、调试与校验都需要）
 3. 打开 `.ps` 或 `.eps` 文件
 4. 按 `F5` 开始调试
 5. 运行 `PostScript: Validate with Ghostscript`，用解释器校验当前文件
